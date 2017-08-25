@@ -3,7 +3,7 @@ HOMEPAGE = "https://github.com/applesrc/mDNSResponder"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://${B}/LICENSE;md5=31c50371921e0fb731003bbc665f29bf"
 
-SRC_URI = "git://github.com/applesrc/mDNSResponder.git"
+SRC_URI = "git://github.com/applesrc/mDNSResponder.git;destsuffix=mDNSResponder-${PV}"
 SRC_URI += "\
            file://001-owrt_compile.patch \
            file://100-oe_compile.patch \
