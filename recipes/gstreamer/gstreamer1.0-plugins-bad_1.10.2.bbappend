@@ -21,19 +21,19 @@ python do_getpatches() {
 
 addtask getpatches before do_fetch
 
-#PACKAGECONFIG_append_apq8098 = "wayland egl"
-#DEPENDS_apq8098 += "weston"
-#FILESEXTRAPATHS_prepend_apq8098 := "${THISDIR}/qti-patches:"
-#SRC_URI_append_apq8098 = " \
-#       file://waylandsink-Add-support-for-gbm-buffer-backend.patch \
-#"
-#python do_after_patch_apq8098 () {
-#    import os
-#
-#    cmd = "install -d ${S}/gst-libs/gst/ionbuf/ && (echo -n "" > ${S}/gst-libs/gst/ionbuf/Makefile.am)"
-#    os.system(cmd)
-#}
-#EXTRA_OECONF_remove_apq8098 = "WAYLAND_PROTOCOLS_SYSROOT_DIR=${RECIPE_SYSROOT}"
-#EXTRA_OECONF_append_apq8098 = " WAYLAND_PROTOCOLS_SYSROOT_DIR=${STAGING_DIR}/${MACHINE}"
+PACKAGECONFIG_append_apq8098 = "wayland egl"
+DEPENDS_apq8098 += "weston"
+FILESEXTRAPATHS_prepend_apq8098 := "${THISDIR}/qti-patches:"
+SRC_URI_append_apq8098 = " \
+       file://waylandsink-Add-support-for-gbm-buffer-backend.patch \
+"
+python do_after_patch_apq8098 () {
+    import os
 
-#addtask after_patch after do_patch
+    cmd = "install -d ${S}/gst-libs/gst/ionbuf/ && (echo -n "" > ${S}/gst-libs/gst/ionbuf/Makefile.am)"
+    os.system(cmd)
+}
+EXTRA_OECONF_remove_apq8098 = "WAYLAND_PROTOCOLS_SYSROOT_DIR=${RECIPE_SYSROOT}"
+EXTRA_OECONF_append_apq8098 = " WAYLAND_PROTOCOLS_SYSROOT_DIR=${STAGING_DIR}/${MACHINE}"
+
+addtask after_patch after do_patch
