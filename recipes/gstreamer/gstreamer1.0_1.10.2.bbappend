@@ -11,4 +11,9 @@ python do_getpatches() {
     os.system(cmd)
 }
 
+FILESEXTRAPATHS_prepend_apq8098 := "${THISDIR}/qti-patches:"
+SRC_URI_append_apq8098 = " \
+       file://gstreamer-baseparse-add-suport-zero-copy-for-qtivdec.patch \
+"
+
 addtask getpatches before do_fetch
