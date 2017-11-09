@@ -26,7 +26,10 @@ DEPENDS_apq8098 += "weston"
 FILESEXTRAPATHS_prepend_apq8098 := "${THISDIR}/qti-patches:"
 SRC_URI_append_apq8098 = " \
        file://waylandsink-Add-support-for-gbm-buffer-backend.patch \
+       file://gst-bad-plugins-h264-h265-zero-copy-support-for-qtivdec.patch \
+       file://waylandsink-Add-fullscreen-support.patch \
 "
+
 python do_after_patch_apq8098 () {
     import os
 
