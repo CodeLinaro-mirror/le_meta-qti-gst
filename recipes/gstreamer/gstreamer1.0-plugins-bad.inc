@@ -20,9 +20,8 @@ PACKAGECONFIG ??= " \
     ${GSTREAMER_ORC} \
     ${PACKAGECONFIG_GL} \
     ${@bb.utils.contains('DISTRO_FEATURES', 'bluetooth', 'bluez', '', d)} \
-    ${@bb.utils.contains('DISTRO_FEATURES', 'directfb', 'directfb', '', d)} \
     ${@bb.utils.contains('DISTRO_FEATURES', 'wayland', 'wayland egl', '', d)} \
-    bz2 curl dash dtls hls neon rsvg sbc smoothstreaming sndfile webp \
+    bz2 curl dash dtls hls neon rsvg sbc smoothstreaming sndfile uvch264 webp \
 "
 
 PACKAGECONFIG[assrender]       = "--enable-assrender,--disable-assrender,libass"
@@ -30,6 +29,7 @@ PACKAGECONFIG[bluez]           = "--enable-bluez,--disable-bluez,${BLUEZ}"
 PACKAGECONFIG[bz2]             = "--enable-bz2,--disable-bz2,bzip2"
 PACKAGECONFIG[curl]            = "--enable-curl,--disable-curl,curl"
 PACKAGECONFIG[dash]            = "--enable-dash,--disable-dash,libxml2"
+PACKAGECONFIG[dc1394]          = "--enable-dc1394,--disable-dc1394,libdc1394"
 PACKAGECONFIG[directfb]        = "--enable-directfb,--disable-directfb,directfb"
 PACKAGECONFIG[dtls]            = "--enable-dtls,--disable-dtls,openssl"
 PACKAGECONFIG[egl]             = "--enable-egl,--disable-egl,virtual/egl"
@@ -50,6 +50,7 @@ PACKAGECONFIG[neon]            = "--enable-neon,--disable-neon,neon"
 PACKAGECONFIG[openal]          = "--enable-openal,--disable-openal,openal-soft"
 PACKAGECONFIG[opencv]          = "--enable-opencv,--disable-opencv,opencv"
 PACKAGECONFIG[opengl]          = "--enable-opengl,--disable-opengl,virtual/libgl libglu"
+PACKAGECONFIG[openjpeg]        = "--enable-openjpeg,--disable-openjpeg,openjpeg"
 # the opus encoder/decoder elements are now in the -base package,
 # but the opus parser remains in -bad
 PACKAGECONFIG[opusparse]       = "--enable-opus,--disable-opus,libopus"
@@ -68,14 +69,14 @@ PACKAGECONFIG[wayland]         = "--enable-wayland,--disable-wayland,wayland-nat
 PACKAGECONFIG[webp]            = "--enable-webp,--disable-webp,libwebp"
 
 # these plugins have not been ported to 1.0 (yet):
-#   apexsink dc1394 lv2 linsys musepack nas timidity sdl xvid wininet
+#   apexsink linsys nas timidity sdl xvid wininet
 #   sndio cdxaparse dccp faceoverlay hdvparse tta mve nuvdemux
 #   patchdetect sdi videomeasure
 
 # these plugins have no corresponding library in OE-core or meta-openembedded:
-#   openni2 winks direct3d directsound winscreencap acm
-#   apple_media android_media avc bs2b chromaprint daala dts gme gsm kate ladspa
-#   libde265 mimic mpeg2enc mplex nvenc ofa openh264 opensles pvr soundtouch spandsp
+#   openni2 winks direct3d directsound winscreencap acm apple_media
+#   android_media avc bs2b chromaprint daala dts fdkaac gme gsm kate ladspa libde265
+#   lv2 mimic mpeg2enc mplex musepack nvenc ofa openh264 opensles pvr soundtouch spandsp
 #   spc teletextdec tinyalsa vdpau vulkan wasapi x265 zbar
 
 # qt5 support is disabled, because it is not present in OE core, and requires more work than
@@ -99,10 +100,10 @@ EXTRA_OECONF += " \
     --disable-chromaprint \
     --disable-cocoa \
     --disable-daala \
-    --disable-dc1394 \
     --disable-direct3d \
     --disable-directsound \
     --disable-dts \
+    --disable-fdk_aac \
     --disable-gme \
     --disable-gsm \
     --disable-kate \
@@ -120,7 +121,6 @@ EXTRA_OECONF += " \
     --disable-ofa \
     --disable-openexr \
     --disable-openh264 \
-    --disable-openjpeg \
     --disable-openni2 \
     --disable-opensles \
     --disable-pvr \
@@ -144,7 +144,7 @@ EXTRA_OECONF += " \
     --disable-x265 \
     --disable-xvid \
     --disable-zbar \
-    ${@bb.utils.contains("TUNE_FEATURES", "mx32", "--disable-yadif", "--disable-yadif", d)} \
+    ${@bb.utils.contains("TUNE_FEATURES", "mx32", "--disable-yadif", "", d)} \
 "
 
 export OPENCV_PREFIX = "${STAGING_DIR_TARGET}${prefix}"
@@ -156,4 +156,3 @@ FILES_${PN}-dev += "${libdir}/gstreamer-${LIBV}/include/gst/gl/gstglconfig.h"
 FILES_${PN}-freeverb += "${datadir}/gstreamer-${LIBV}/presets/GstFreeverb.prs"
 FILES_${PN}-opencv += "${datadir}/gst-plugins-bad/${LIBV}/opencv*"
 FILES_${PN}-voamrwbenc += "${datadir}/gstreamer-${LIBV}/presets/GstVoAmrwbEnc.prs"
-

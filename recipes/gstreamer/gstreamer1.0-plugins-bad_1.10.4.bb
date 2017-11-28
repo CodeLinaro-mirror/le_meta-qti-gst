@@ -19,10 +19,31 @@ SRC_URI = " \
     file://0001-smoothstreaming-use-the-duration-from-the-list-of-fr.patch \
     file://0001-mssdemux-improved-live-playback-support.patch \
 "
-SRC_URI[md5sum] = "823f4c33fe27c61332c0122273217988"
-SRC_URI[sha256sum] = "0795ca9303a99cc7e44dda0e6e18524de02b39892e4b68eaba488f7b9db53a3a"
+
+PACKAGECONFIG_append_apq8098 = "wayland egl"
+DEPENDS_apq8098 += "weston"
+FILESEXTRAPATHS_prepend_apq8098 := "${THISDIR}/qti-patches:"
+SRC_URI_append_apq8098 = " \
+       file://waylandsink-Add-support-for-gbm-buffer-backend.patch \
+       file://gst-bad-plugins-h264-h265-zero-copy-support-for-qtivdec.patch \
+       file://waylandsink-Add-fullscreen-support.patch \
+"
+
+SRC_URI[md5sum] = "2757103e57a096a1a05b3ab85b8381af"
+SRC_URI[sha256sum] = "23ddae506b3a223b94869a0d3eea3e9a12e847f94d2d0e0b97102ce13ecd6966"
 
 S = "${WORKDIR}/gst-plugins-bad-${PV}"
 
 EXTRA_OECONF += "WAYLAND_PROTOCOLS_SYSROOT_DIR=${RECIPE_SYSROOT}"
+
+python do_after_patch_apq8098 () {
+    import os
+
+    cmd = "install -d ${S}/gst-libs/gst/ionbuf/ && (echo -n "" > ${S}/gst-libs/gst/ionbuf/Makefile.am)"
+    os.system(cmd)
+}
+EXTRA_OECONF_remove_apq8098 = "WAYLAND_PROTOCOLS_SYSROOT_DIR=${RECIPE_SYSROOT}"
+EXTRA_OECONF_append_apq8098 = " WAYLAND_PROTOCOLS_SYSROOT_DIR=${STAGING_DIR}/${MACHINE}"
+
+addtask after_patch after do_patch
 
