@@ -1,0 +1,76 @@
+From c46607095ea5dab7bf42d7b6d84f090eaaa681f1 Mon Sep 17 00:00:00 2001
+From: Olivier Crete <olivier.crete@collabora.com>
+Date: Mon, 23 Jan 2017 18:31:54 +0000
+Subject: audioringbuffer: Also support raw AAC
+
+Support raw AAC streams without the ADTS header
+
+https://bugzilla.gnome.org/show_bug.cgi?id=777655
+---
+ gst-libs/gst/audio/gstaudioringbuffer.c | 16 ++++++++++++----
+ gst-libs/gst/audio/gstaudioringbuffer.h | 10 +++++++---
+ 2 files changed, 19 insertions(+), 7 deletions(-)
+
+diff --git a/gst-libs/gst/audio/gstaudioringbuffer.c b/gst-libs/gst/audio/gstaudioringbuffer.c
+index fb254e5..2d7365a 100644
+--- a/gst-libs/gst/audio/gstaudioringbuffer.c
++++ b/gst-libs/gst/audio/gstaudioringbuffer.c
+@@ -284,15 +284,23 @@ gst_audio_ring_buffer_parse_caps (GstAudioRingBufferSpec * spec, GstCaps * caps)
+   } else if (g_str_equal (mimetype, "audio/mpeg") &&
+       gst_structure_get_int (structure, "mpegversion", &i) &&
+       (i == 2 || i == 4) &&
+-      !g_strcmp0 (gst_structure_get_string (structure, "stream-format"),
+-          "adts")) {
++      (!g_strcmp0 (gst_structure_get_string (structure, "stream-format"),
++              "adts")
++          || !g_strcmp0 (gst_structure_get_string (structure, "stream-format"),
++              "raw"))) {
+     /* MPEG-2 AAC or MPEG-4 AAC */
+     if (!(gst_structure_get_int (structure, "rate", &info.rate)))
+       goto parse_error;
+ 
+     gst_structure_get_int (structure, "channels", &info.channels);
+-    spec->type = (i == 2) ? GST_AUDIO_RING_BUFFER_FORMAT_TYPE_MPEG2_AAC :
+-        GST_AUDIO_RING_BUFFER_FORMAT_TYPE_MPEG4_AAC;
++    if (!g_strcmp0 (gst_structure_get_string (structure, "stream-format"),
++            "adts"))
++      spec->type = (i == 2) ? GST_AUDIO_RING_BUFFER_FORMAT_TYPE_MPEG2_AAC :
++          GST_AUDIO_RING_BUFFER_FORMAT_TYPE_MPEG4_AAC;
++    else
++      spec->type = (i == 2) ?
++          GST_AUDIO_RING_BUFFER_FORMAT_TYPE_MPEG2_AAC_RAW :
++          GST_AUDIO_RING_BUFFER_FORMAT_TYPE_MPEG4_AAC_RAW;
+     info.bpf = 1;
+   } else {
+     goto parse_error;
+diff --git a/gst-libs/gst/audio/gstaudioringbuffer.h b/gst-libs/gst/audio/gstaudioringbuffer.h
+index 4ddc8e1..27ead3a 100644
+--- a/gst-libs/gst/audio/gstaudioringbuffer.h
++++ b/gst-libs/gst/audio/gstaudioringbuffer.h
+@@ -83,8 +83,10 @@ typedef enum {
+  * @GST_AUDIO_RING_BUFFER_FORMAT_TYPE_AC3: samples in AC3 format
+  * @GST_AUDIO_RING_BUFFER_FORMAT_TYPE_EAC3: samples in EAC3 format
+  * @GST_AUDIO_RING_BUFFER_FORMAT_TYPE_DTS: samples in DTS format
+- * @GST_AUDIO_RING_BUFFER_FORMAT_TYPE_MPEG2_AAC: samples in MPEG-2 AAC format
+- * @GST_AUDIO_RING_BUFFER_FORMAT_TYPE_MPEG4_AAC: samples in MPEG-4 AAC format
++ * @GST_AUDIO_RING_BUFFER_FORMAT_TYPE_MPEG2_AAC: samples in MPEG-2 AAC ADTS format
++ * @GST_AUDIO_RING_BUFFER_FORMAT_TYPE_MPEG4_AAC: samples in MPEG-4 AAC ADTS format
++ * @GST_AUDIO_RING_BUFFER_FORMAT_TYPE_MPEG2_AAC_RAW: samples in MPEG-2 AAC raw format
++ * @GST_AUDIO_RING_BUFFER_FORMAT_TYPE_MPEG4_AAC_RAW: samples in MPEG-4 AAC raw format
+  *
+  * The format of the samples in the ringbuffer.
+  */
+@@ -101,7 +103,9 @@ typedef enum
+   GST_AUDIO_RING_BUFFER_FORMAT_TYPE_EAC3,
+   GST_AUDIO_RING_BUFFER_FORMAT_TYPE_DTS,
+   GST_AUDIO_RING_BUFFER_FORMAT_TYPE_MPEG2_AAC,
+-  GST_AUDIO_RING_BUFFER_FORMAT_TYPE_MPEG4_AAC
++  GST_AUDIO_RING_BUFFER_FORMAT_TYPE_MPEG4_AAC,
++  GST_AUDIO_RING_BUFFER_FORMAT_TYPE_MPEG2_AAC_RAW,
++  GST_AUDIO_RING_BUFFER_FORMAT_TYPE_MPEG4_AAC_RAW
+ } GstAudioRingBufferFormatType;
+ 
+ /**
+-- 
+cgit v1.1
+

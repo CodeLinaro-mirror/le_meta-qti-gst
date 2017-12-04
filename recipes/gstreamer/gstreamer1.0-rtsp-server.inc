@@ -3,7 +3,7 @@ HOMEPAGE = "http://cgit.freedesktop.org/gstreamer/gst-rtsp-server/"
 SECTION = "multimedia"
 LICENSE = "LGPLv2"
 
-DEPENDS = "gstreamer1.0 libcgroup gstreamer1.0-plugins-base"
+DEPENDS = "gstreamer1.0 libcgroup gstreamer1.0-plugins-base libcheck"
 
 PNREAL = "gst-rtsp-server"
 
@@ -34,5 +34,5 @@ patch_gtk_doc_makefiles() {
            ${S}/common/gtk-doc*mak
 }
 
-
+do_configure[prefuncs] += " delete_pkg_m4_file patch_gtk_doc_makefiles"
 
