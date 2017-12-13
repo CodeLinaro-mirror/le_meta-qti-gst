@@ -13,7 +13,7 @@ acpaths = "-I ${S}/common/m4 -I ${S}/m4"
 
 
 GSTREAMER_1_0_OMX_TARGET ?= "bellagio"
-GSTREAMER_1_0_OMX_CORE_NAME ?= "${libdir}/libomxil-bellagio.so.0"
+GSTREAMER_1_0_OMX_CORE_NAME ?= "${libdir}/libOmxCore.so"
 
 EXTRA_OECONF += "--disable-valgrind --with-omx-target=${GSTREAMER_1_0_OMX_TARGET}"
 
