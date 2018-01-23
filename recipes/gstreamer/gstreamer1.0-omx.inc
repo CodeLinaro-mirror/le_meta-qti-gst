@@ -7,13 +7,17 @@ LICENSE = "LGPLv2.1"
 
 DEPENDS = "gstreamer1.0 gstreamer1.0-plugins-base gstreamer1.0-plugins-bad"
 
+#Including media dependency as we need libOmxCore.so
+DEPENDS += "media"
+RDEPENDS_${PN} = "media"
+
 inherit autotools pkgconfig gettext gtk-doc upstream-version-is-even
 
 acpaths = "-I ${S}/common/m4 -I ${S}/m4"
 
 
 GSTREAMER_1_0_OMX_TARGET ?= "bellagio"
-GSTREAMER_1_0_OMX_CORE_NAME ?= "${libdir}/libomxil-bellagio.so.0"
+GSTREAMER_1_0_OMX_CORE_NAME ?= "${libdir}/libOmxCore.so"
 
 EXTRA_OECONF += "--disable-valgrind --with-omx-target=${GSTREAMER_1_0_OMX_TARGET}"
 
