@@ -1,8 +1,21 @@
+
+---
+ configure.ac                 |   9 ++
+ ext/wayland/Makefile.am      |  12 +-
+ ext/wayland/gstwaylandsink.c | 305 ++++++++++++++++++++++++++++++++++++++++++-
+ ext/wayland/gstwaylandsink.h |   4 +
+ ext/wayland/wlbuffer.c       |  59 +++++++++
+ ext/wayland/wlbuffer.h       |   6 +
+ ext/wayland/wldisplay.c      |  32 ++++-
+ ext/wayland/wldisplay.h      |   6 +
+ gst-libs/gst/Makefile.am     |   4 +-
+ 9 files changed, 425 insertions(+), 12 deletions(-)
+
 diff --git a/configure.ac b/configure.ac
-index b87d9d1..5e2a0ea 100644
+index 30e26b8..7f62c05 100644
 --- a/configure.ac
 +++ b/configure.ac
-@@ -3621,6 +3621,14 @@ $MKDIR_P tests/check/orc
+@@ -3505,6 +3505,13 @@ $MKDIR_P tests/check/orc
 
  dnl po/Makefile.in
 
@@ -13,58 +26,51 @@ index b87d9d1..5e2a0ea 100644
 +
 +AC_SUBST([IONBUF_DIR])
 +AC_SUBST([IONBUF_PC_FILES])
-+
  AC_CONFIG_FILES(
  Makefile
  common/Makefile
-@@ -3721,6 +3729,7 @@ gst-libs/gst/base/Makefile
+@@ -3597,6 +3604,7 @@ gst-libs/gst/base/Makefile
  gst-libs/gst/player/Makefile
  gst-libs/gst/video/Makefile
  gst-libs/gst/audio/Makefile
 +gst-libs/gst/ionbuf/Makefile
+ gst-libs/gst/opencv/Makefile
+ gst-libs/gst/allocators/Makefile
  sys/Makefile
- sys/dshowdecwrapper/Makefile
- sys/acmenc/Makefile
-@@ -3878,6 +3887,7 @@ pkgconfig/gstreamer-bad-video.pc
- pkgconfig/gstreamer-bad-video-uninstalled.pc
- pkgconfig/gstreamer-bad-audio.pc
+@@ -3751,6 +3759,7 @@ pkgconfig/gstreamer-bad-audio.pc
  pkgconfig/gstreamer-bad-audio-uninstalled.pc
+ pkgconfig/gstreamer-bad-allocators.pc
+ pkgconfig/gstreamer-bad-allocators-uninstalled.pc
 +${IONBUF_PC_FILES}
  tools/Makefile
  m4/Makefile
  )
 diff --git a/ext/wayland/Makefile.am b/ext/wayland/Makefile.am
-index a23d44d..79bc6ec 100644
+index 8442dbd..11f11d8 100644
 --- a/ext/wayland/Makefile.am
 +++ b/ext/wayland/Makefile.am
-@@ -1,6 +1,10 @@
- plugin_LTLIBRARIES = libgstwaylandsink.la
-
--BUILT_SOURCES = viewporter-protocol.c viewporter-client-protocol.h
-+BUILT_SOURCES = \
-+	viewporter-protocol.c \
-+	viewporter-client-protocol.h \
-+	gbm-buffer-backend-protocol.c \
-+	gbm-buffer-backend-client-protocol.h
+@@ -4,7 +4,9 @@ BUILT_SOURCES = \
+ 	viewporter-protocol.c \
+ 	viewporter-client-protocol.h \
+ 	linux-dmabuf-unstable-v1-protocol.c \
+-	linux-dmabuf-unstable-v1-client-protocol.h
++	linux-dmabuf-unstable-v1-client-protocol.h \
++        gbm-buffer-backend-protocol.c \
++        gbm-buffer-backend-client-protocol.h
 
  libgstwaylandsink_la_SOURCES =  \
-	gstwaylandsink.c \
-@@ -10,7 +14,9 @@ libgstwaylandsink_la_SOURCES =  \
-	wlwindow.c \
-	wlvideoformat.c
+ 	gstwaylandsink.c \
+@@ -17,7 +19,8 @@ libgstwaylandsink_la_SOURCES =  \
 
--nodist_libgstwaylandsink_la_SOURCES = viewporter-protocol.c
-+nodist_libgstwaylandsink_la_SOURCES = \
-+	viewporter-protocol.c \
+ nodist_libgstwaylandsink_la_SOURCES = \
+ 	viewporter-protocol.c \
+-	linux-dmabuf-unstable-v1-protocol.c
++	linux-dmabuf-unstable-v1-protocol.c \
 +	gbm-buffer-backend-protocol.c
 
- libgstwaylandsink_la_CFLAGS = $(GST_CFLAGS) $(GST_PLUGINS_BASE_CFLAGS) \
-                                $(WAYLAND_CFLAGS) $(GST_PLUGINS_BAD_CFLAGS)
-@@ -20,9 +26,15 @@ libgstwaylandsink_la_LIBADD = \
-	-lgstallocators-$(GST_API_VERSION) \
-	$(WAYLAND_LIBS) \
-	$(top_builddir)/gst-libs/gst/wayland/libgstwayland-$(GST_API_VERSION).la
-+
+ libgstwaylandsink_la_CFLAGS = \
+ 	$(GST_PLUGINS_BAD_CFLAGS) \
+@@ -33,6 +36,11 @@ libgstwaylandsink_la_LIBADD = \
  libgstwaylandsink_la_LDFLAGS = $(GST_PLUGIN_LDFLAGS)
  libgstwaylandsink_la_LIBTOOLFLAGS = $(GST_PLUGIN_LIBTOOLFLAGS)
 
@@ -74,24 +80,23 @@ index a23d44d..79bc6ec 100644
 +endif
 +
  noinst_HEADERS = \
-	gstwaylandsink.h \
-	wlshmallocator.h \
+ 	gstwaylandsink.h \
+ 	wlshmallocator.h \
 diff --git a/ext/wayland/gstwaylandsink.c b/ext/wayland/gstwaylandsink.c
-index 4b39ae1..44fdf84 100644
+index 46a710f..1e2c6f1 100644
 --- a/ext/wayland/gstwaylandsink.c
 +++ b/ext/wayland/gstwaylandsink.c
-@@ -49,6 +49,10 @@
+@@ -49,6 +49,9 @@
+
  #include <gst/wayland/wayland.h>
  #include <gst/video/videooverlay.h>
-
 +#if defined(GBM_BUFFER_BACKEND_PROTOCOL)
 +#include <gst/ionbuf/gstionbuf_meta.h>
 +#endif
-+
+
  /* signals */
  enum
- {
-@@ -108,6 +112,7 @@ static void gst_wayland_sink_waylandvideo_init (GstWaylandVideoInterface *
+@@ -113,6 +116,7 @@ static void gst_wayland_sink_waylandvideo_init (GstWaylandVideoInterface *
      iface);
  static void gst_wayland_sink_begin_geometry_change (GstWaylandVideo * video);
  static void gst_wayland_sink_end_geometry_change (GstWaylandVideo * video);
@@ -99,7 +104,7 @@ index 4b39ae1..44fdf84 100644
 
  #define gst_wayland_sink_parent_class parent_class
  G_DEFINE_TYPE_WITH_CODE (GstWaylandSink, gst_wayland_sink, GST_TYPE_VIDEO_SINK,
-@@ -116,6 +121,43 @@ G_DEFINE_TYPE_WITH_CODE (GstWaylandSink, gst_wayland_sink, GST_TYPE_VIDEO_SINK,
+@@ -121,6 +125,43 @@ G_DEFINE_TYPE_WITH_CODE (GstWaylandSink, gst_wayland_sink, GST_TYPE_VIDEO_SINK,
      G_IMPLEMENT_INTERFACE (GST_TYPE_WAYLAND_VIDEO,
          gst_wayland_sink_waylandvideo_init));
 
@@ -143,7 +148,7 @@ index 4b39ae1..44fdf84 100644
  static void
  gst_wayland_sink_class_init (GstWaylandSinkClass * klass)
  {
-@@ -129,6 +171,8 @@ gst_wayland_sink_class_init (GstWaylandSinkClass * klass)
+@@ -134,6 +175,8 @@ gst_wayland_sink_class_init (GstWaylandSinkClass * klass)
    gstbasesink_class = (GstBaseSinkClass *) klass;
    gstvideosink_class = (GstVideoSinkClass *) klass;
 
@@ -152,7 +157,7 @@ index 4b39ae1..44fdf84 100644
    gobject_class->set_property = gst_wayland_sink_set_property;
    gobject_class->get_property = gst_wayland_sink_get_property;
    gobject_class->finalize = GST_DEBUG_FUNCPTR (gst_wayland_sink_finalize);
-@@ -212,6 +256,10 @@ gst_wayland_sink_finalize (GObject * object)
+@@ -217,6 +260,10 @@ gst_wayland_sink_finalize (GObject * object)
 
    if (sink->last_buffer)
      gst_buffer_unref (sink->last_buffer);
@@ -163,7 +168,7 @@ index 4b39ae1..44fdf84 100644
    if (sink->display)
      g_object_unref (sink->display);
    if (sink->window)
-@@ -219,7 +267,8 @@ gst_wayland_sink_finalize (GObject * object)
+@@ -224,7 +271,8 @@ gst_wayland_sink_finalize (GObject * object)
    if (sink->pool)
      gst_object_unref (sink->pool);
 
@@ -173,7 +178,7 @@ index 4b39ae1..44fdf84 100644
 
    g_mutex_clear (&sink->display_lock);
    g_mutex_clear (&sink->render_lock);
-@@ -343,6 +392,11 @@ gst_wayland_sink_change_state (GstElement * element, GstStateChange transition)
+@@ -348,6 +396,11 @@ gst_wayland_sink_change_state (GstElement * element, GstStateChange transition)
         * restarted (GstVideoOverlay behaves like that in other sinks)
         */
        if (sink->display && !sink->window) {     /* -> the window was toplevel */
@@ -183,80 +188,72 @@ index 4b39ae1..44fdf84 100644
 +#endif
 +
          g_clear_object (&sink->display);
-       }
-       g_mutex_unlock (&sink->display_lock);
-@@ -385,6 +439,7 @@ gst_wayland_sink_get_caps (GstBaseSink * bsink, GstCaps * filter)
-
-   sink = GST_WAYLAND_SINK (bsink);
-
-+
-   caps = gst_pad_get_pad_template_caps (GST_VIDEO_SINK_PAD (sink));
-
-   g_mutex_lock (&sink->display_lock);
-@@ -396,8 +451,28 @@ gst_wayland_sink_get_caps (GstBaseSink * bsink, GstCaps * filter)
+         g_mutex_lock (&sink->render_lock);
+         sink->redraw_pending = FALSE;
+@@ -404,11 +457,29 @@ gst_wayland_sink_get_caps (GstBaseSink * bsink, GstCaps * filter)
+     GArray *formats;
      gint i;
-     enum wl_shm_format fmt;
-
+     guint fmt;
+-
+-    g_value_init (&shm_list, GST_TYPE_LIST);
 +#if (defined (GBM_BUFFER_BACKEND_PROTOCOL))
 +	gint bHaveNV12 = FALSE;
-+	g_value_init (&value, G_TYPE_STRING);
++//	g_value_init (&value, G_TYPE_STRING);
 +#endif
-+
-     g_value_init (&list, GST_TYPE_LIST);
++	g_value_init (&shm_list, GST_TYPE_LIST);
+     g_value_init (&dmabuf_list, GST_TYPE_LIST);
 
+     /* Add corresponding shm formats */
 +#if (defined (GBM_BUFFER_BACKEND_PROTOCOL))
 +    formats = sink->display->shm_formats;
-+
 +    for (i = 0; i < formats->len; i++) {
++      g_value_init (&value, G_TYPE_STRING);
 +      fmt = g_array_index (formats, uint32_t, i);
 +      if(fmt == WL_SHM_FORMAT_NV12)
 +          bHaveNV12 = TRUE;
 +      g_value_set_string (&value, gst_wl_shm_format_to_string (fmt));
-+      gst_value_list_append_value (&list, &value);
++      gst_value_list_append_value (&shm_list, &value);
 +    }
 +    if (!bHaveNV12) {
 +        g_value_set_string (&value, gst_wl_shm_format_to_string (WL_SHM_FORMAT_NV12));
-+        gst_value_list_append_value (&list, &value);
++        gst_value_list_append_value (&shm_list, &value);
 +    }
 +#else
      formats = sink->display->shm_formats;
      for (i = 0; i < formats->len; i++) {
        g_value_init (&value, G_TYPE_STRING);
-@@ -406,6 +481,7 @@ gst_wayland_sink_get_caps (GstBaseSink * bsink, GstCaps * filter)
-       gst_value_list_append_and_take_value (&list, &value);
+@@ -416,7 +487,7 @@ gst_wayland_sink_get_caps (GstBaseSink * bsink, GstCaps * filter)
+       g_value_set_static_string (&value, gst_wl_shm_format_to_string (fmt));
+       gst_value_list_append_and_take_value (&shm_list, &value);
      }
-
-+#endif
-     caps = gst_caps_make_writable (caps);
-     gst_structure_take_value (gst_caps_get_structure (caps, 0), "format",
-         &list);
-@@ -471,6 +547,7 @@ gst_wayland_sink_set_caps (GstBaseSink * bsink, GstCaps * caps)
-   if ((gint) format == -1)
-     goto invalid_format;
-
-+#if (!defined (GBM_BUFFER_BACKEND_PROTOCOL))
-   /* verify we support the requested format */
-   formats = sink->display->shm_formats;
-   for (i = 0; i < formats->len; i++) {
-@@ -480,7 +557,7 @@ gst_wayland_sink_set_caps (GstBaseSink * bsink, GstCaps * caps)
-
-   if (i >= formats->len)
-     goto unsupported_format;
 -
 +#endif
-   /* store the video info */
-   sink->video_info = info;
-   sink->video_info_changed = TRUE;
-@@ -544,7 +621,7 @@ frame_redraw_callback (void *data, struct wl_callback *callback, uint32_t time)
- {
-   GstWaylandSink *sink = data;
+     gst_structure_take_value (gst_caps_get_structure (caps, 0), "format",
+         &shm_list);
+ 
+@@ -497,6 +568,13 @@ gst_wayland_sink_set_caps (GstBaseSink * bsink, GstCaps * caps)
+   use_dmabuf = gst_caps_features_contains (gst_caps_get_features (caps, 0),
+       GST_CAPS_FEATURE_MEMORY_DMABUF);
 
--  GST_LOG ("frame_redraw_cb");
-+  GST_LOG ("In frame_redraw_callback");
++#if defined (GBM_BUFFER_BACKEND_PROTOCOL)
++if (!gst_wl_display_check_format_for_shm (sink->display, format)) {
++    goto unsupported_format;
++  }
++
++#else
++
+   /* validate the format base on the memory type. */
+   if (use_dmabuf) {
+     if (!gst_wl_display_check_format_for_dmabuf (sink->display, format))
+@@ -506,6 +584,7 @@ gst_wayland_sink_set_caps (GstBaseSink * bsink, GstCaps * caps)
+   }
 
-   g_mutex_lock (&sink->render_lock);
-   sink->redraw_pending = FALSE;
-@@ -565,6 +642,11 @@ render_last_buffer (GstWaylandSink * sink)
+   sink->use_dmabuf = use_dmabuf;
++#endif
+
+   return TRUE;
+
+@@ -573,6 +652,11 @@ render_last_buffer (GstWaylandSink * sink)
    const GstVideoInfo *info = NULL;
    struct wl_surface *surface;
    struct wl_callback *callback;
@@ -268,7 +265,7 @@ index 4b39ae1..44fdf84 100644
 
    wlbuffer = gst_buffer_get_wl_buffer (sink->last_buffer);
    surface = gst_wl_window_get_wl_surface (sink->window);
-@@ -577,9 +659,79 @@ render_last_buffer (GstWaylandSink * sink)
+@@ -585,9 +669,78 @@ render_last_buffer (GstWaylandSink * sink)
      info = &sink->video_info;
      sink->video_info_changed = FALSE;
    }
@@ -278,7 +275,6 @@ index 4b39ae1..44fdf84 100644
 +  wl_surface_set_opaque_region(sink->window->video_surface, region);
 +  wl_region_destroy(region);
 +#endif
-+
    gst_wl_window_render (sink->window, wlbuffer, info);
  }
 
@@ -330,7 +326,7 @@ index 4b39ae1..44fdf84 100644
 +  for (i = 0; i < 2; i++) {
 +    if (gst_wl_display_roundtrip (sink->display->display) < 0) {
 +      GST_LOG("gst_wayland_sink_create_wl_buffer_gbm::Failed at gst_wl_display_roundtrip\n");
-+      return NULL;
++     return NULL;
 +    }
 +  }
 +  return self;
@@ -348,8 +344,8 @@ index 4b39ae1..44fdf84 100644
  static GstFlowReturn
  gst_wayland_sink_show_frame (GstVideoSink * vsink, GstBuffer * buffer)
  {
-@@ -588,6 +740,9 @@ gst_wayland_sink_show_frame (GstVideoSink * vsink, GstBuffer * buffer)
-   GstWlBuffer *wlbuffer;
+@@ -601,6 +754,9 @@ gst_wayland_sink_show_frame (GstVideoSink * vsink, GstBuffer * buffer)
+
    GstFlowReturn ret = GST_FLOW_OK;
 
 +#if defined(GBM_BUFFER_BACKEND_PROTOCOL)
@@ -358,7 +354,7 @@ index 4b39ae1..44fdf84 100644
    g_mutex_lock (&sink->render_lock);
 
    GST_LOG_OBJECT (sink, "render buffer %p", buffer);
-@@ -605,10 +760,35 @@ gst_wayland_sink_show_frame (GstVideoSink * vsink, GstBuffer * buffer)
+@@ -618,7 +774,29 @@ gst_wayland_sink_show_frame (GstVideoSink * vsink, GstBuffer * buffer)
            &sink->video_info, &sink->render_lock);
      }
    }
@@ -387,17 +383,11 @@ index 4b39ae1..44fdf84 100644
 +  }
 +#endif
    /* drop buffers until we get a frame callback */
-   if (sink->redraw_pending)
-+  {
-+    GST_WARNING_OBJECT (sink,"drop buffers until we get a frame callback");
-     goto done;
-+  }
-
-   /* make sure that the application has called set_render_rectangle() */
-   if (G_UNLIKELY (sink->window->render_rectangle.w == 0))
-@@ -625,6 +805,12 @@ gst_wayland_sink_show_frame (GstVideoSink * vsink, GstBuffer * buffer)
-     GstMemory *mem;
-     struct wl_buffer *wbuf = NULL;
+   if (sink->redraw_pending) {
+     GST_LOG_OBJECT (sink, "buffer %p dropped (redraw pending)", buffer);
+@@ -641,6 +819,12 @@ gst_wayland_sink_show_frame (GstVideoSink * vsink, GstBuffer * buffer)
+   /* update video info from video meta */
+   mem = gst_buffer_peek_memory (buffer, 0);
 
 +#ifdef GBM_BUFFER_BACKEND_PROTOCOL
 +    GstWlBuffer *gstwlbuf = NULL;
@@ -405,21 +395,15 @@ index 4b39ae1..44fdf84 100644
 +    ionBufFdMeta = gst_wayland_sink_read_ionbuffd(sink, buffer);
 +    if (!ionBufFdMeta) {
 +#endif
-     /* update video info from video meta */
-     vmeta = gst_buffer_get_video_meta (buffer);
-     if (vmeta) {
-@@ -642,6 +828,7 @@ gst_wayland_sink_show_frame (GstVideoSink * vsink, GstBuffer * buffer)
-     /* FIXME check all memory when introducing DMA-Buf */
-     mem = gst_buffer_peek_memory (buffer, 0);
+   vmeta = gst_buffer_get_video_meta (buffer);
+   if (vmeta) {
+     gint i;
+@@ -731,10 +915,119 @@ gst_wayland_sink_show_frame (GstVideoSink * vsink, GstBuffer * buffer)
 
-+    GST_LOG_OBJECT (sink, "software buffer %p mem size %p %d", buffer,mem, mem->size);
-     if (gst_is_wl_shm_memory (mem)) {
-       wbuf = gst_wl_shm_memory_construct_wl_buffer (mem, sink->display,
-           &sink->video_info);
-@@ -709,6 +896,116 @@ gst_wayland_sink_show_frame (GstVideoSink * vsink, GstBuffer * buffer)
        gst_video_frame_unmap (&src);
        gst_video_frame_unmap (&dst);
-     }
++		}
++  }
 +#ifdef GBM_BUFFER_BACKEND_PROTOCOL
 +    }
 +    else {
@@ -468,7 +452,8 @@ index 4b39ae1..44fdf84 100644
 +          sink->video_info.stride[i] = vmeta->stride[i];
 +        }
 +      }
-+
+
+-      goto render;
 +      /* FIXME check all memory when introducing DMA-Buf */
 +      GstVideoFrame src, dst;
 +      GstVideoInfo src_info = sink->video_info;
@@ -527,30 +512,30 @@ index 4b39ae1..44fdf84 100644
 +
 +      gst_video_frame_unmap (&src);
 +      gst_video_frame_unmap (&dst);
-+    }
-+  }
-+#endif
+     }
    }
++#endif
++      goto render;
 
-   /* drop double rendering */
+   if (!wbuf)
+     goto no_wl_buffer;
 diff --git a/ext/wayland/gstwaylandsink.h b/ext/wayland/gstwaylandsink.h
-index afbed40..6a94541 100644
+index 2704d00..0d5cd24 100644
 --- a/ext/wayland/gstwaylandsink.h
 +++ b/ext/wayland/gstwaylandsink.h
-@@ -57,6 +57,11 @@ struct _GstWaylandSink
+@@ -57,6 +57,10 @@ struct _GstWaylandSink
    GstWlWindow *window;
    GstBufferPool *pool;
-
+   gboolean use_dmabuf;
 +  #ifdef GBM_BUFFER_BACKEND_PROTOCOL
 +  /* Map from ion buffer to GstWlBuffer */
 +  GHashTable *buffer_table;
 +  #endif
-+
+
    gboolean video_info_changed;
    GstVideoInfo video_info;
-
 diff --git a/ext/wayland/wlbuffer.c b/ext/wayland/wlbuffer.c
-index 4ac99ef..0656ee4 100644
+index 4ac99ef..5b00e55 100644
 --- a/ext/wayland/wlbuffer.c
 +++ b/ext/wayland/wlbuffer.c
 @@ -105,6 +105,7 @@ gst_wl_buffer_dispose (GObject * gobject)
@@ -585,7 +570,7 @@ index 4ac99ef..0656ee4 100644
    GstWlBuffer *self;
 
    self = g_object_new (GST_TYPE_WL_BUFFER, NULL);
-@@ -180,9 +184,63 @@ gst_buffer_add_wl_buffer (GstBuffer * gstbuffer, struct wl_buffer *wlbuffer,
+@@ -180,9 +184,62 @@ gst_buffer_add_wl_buffer (GstBuffer * gstbuffer, struct wl_buffer *wlbuffer,
    return self;
  }
 
@@ -641,7 +626,6 @@ index 4ac99ef..0656ee4 100644
 +}
 +
 +#endif
-+
  GstWlBuffer *
  gst_buffer_get_wl_buffer (GstBuffer * gstbuffer)
  {
@@ -649,7 +633,7 @@ index 4ac99ef..0656ee4 100644
    return gst_mini_object_get_qdata ((GstMiniObject *) gstbuffer,
        gst_wl_buffer_qdata_quark ());
  }
-@@ -190,6 +248,7 @@ gst_buffer_get_wl_buffer (GstBuffer * gstbuffer)
+@@ -190,6 +247,7 @@ gst_buffer_get_wl_buffer (GstBuffer * gstbuffer)
  void
  gst_wl_buffer_force_release_and_unref (GstWlBuffer * self)
  {
@@ -657,7 +641,7 @@ index 4ac99ef..0656ee4 100644
    /* Force a buffer release.
     * At this point, the GstWlDisplay has killed its event loop,
     * so we don't need to worry about buffer_release() being called
-@@ -220,6 +279,7 @@ gst_wl_buffer_force_release_and_unref (GstWlBuffer * self)
+@@ -220,6 +278,7 @@ gst_wl_buffer_force_release_and_unref (GstWlBuffer * self)
  void
  gst_wl_buffer_attach (GstWlBuffer * self, struct wl_surface *surface)
  {
@@ -683,10 +667,10 @@ index cbb50f7..b1bd8d6 100644
 
  void gst_wl_buffer_attach (GstWlBuffer * self, struct wl_surface *surface);
 diff --git a/ext/wayland/wldisplay.c b/ext/wayland/wldisplay.c
-index 1011a04..3f3d0e6 100644
+index 39782bc..a52796a 100644
 --- a/ext/wayland/wldisplay.c
 +++ b/ext/wayland/wldisplay.c
-@@ -37,6 +37,7 @@ static void gst_wl_display_finalize (GObject * gobject);
+@@ -38,6 +38,7 @@ static void gst_wl_display_finalize (GObject * gobject);
  static void
  gst_wl_display_class_init (GstWlDisplayClass * klass)
  {
@@ -694,38 +678,34 @@ index 1011a04..3f3d0e6 100644
    GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
    gobject_class->finalize = gst_wl_display_finalize;
  }
-@@ -44,6 +45,8 @@ gst_wl_display_class_init (GstWlDisplayClass * klass)
+@@ -45,6 +46,7 @@ gst_wl_display_class_init (GstWlDisplayClass * klass)
  static void
  gst_wl_display_init (GstWlDisplay * self)
  {
 +  GST_LOG("In gst_wl_display_init");
-+
    self->shm_formats = g_array_new (FALSE, FALSE, sizeof (uint32_t));
+   self->dmabuf_formats = g_array_new (FALSE, FALSE, sizeof (uint32_t));
    self->wl_fd_poll = gst_poll_new (TRUE);
-   self->buffers = g_hash_table_new (g_direct_hash, g_direct_equal);
-@@ -53,6 +56,9 @@ gst_wl_display_init (GstWlDisplay * self)
+@@ -55,6 +57,7 @@ gst_wl_display_init (GstWlDisplay * self)
  static void
  gst_wl_display_finalize (GObject * gobject)
  {
-+
 +  GST_LOG("In gst_wl_display_finalize");
-+
    GstWlDisplay *self = GST_WL_DISPLAY (gobject);
 
    gst_poll_set_flushing (self->wl_fd_poll, TRUE);
-@@ -84,6 +90,11 @@ gst_wl_display_finalize (GObject * gobject)
+@@ -89,6 +92,10 @@ gst_wl_display_finalize (GObject * gobject)
+
    if (self->shell)
      wl_shell_destroy (self->shell);
-
 +#ifdef GBM_BUFFER_BACKEND_PROTOCOL
 +  if (self->gbmbuf)
 +    gbm_buffer_backend_destroy(self->gbmbuf);
 +#endif
-+
+
    if (self->compositor)
      wl_compositor_destroy (self->compositor);
-
-@@ -115,9 +126,10 @@ static const struct wl_callback_listener sync_listener = {
+@@ -121,9 +128,10 @@ static const struct wl_callback_listener sync_listener = {
    sync_callback
  };
 
@@ -737,18 +717,35 @@ index 1011a04..3f3d0e6 100644
    struct wl_callback *callback;
    gint ret = 0;
    gboolean done = FALSE;
-@@ -153,6 +165,8 @@ registry_handle_global (void *data, struct wl_registry *registry,
+@@ -179,6 +187,9 @@ gst_wl_display_check_format_for_shm (GstWlDisplay * display,
+   if (shm_fmt == (enum wl_shm_format) -1)
+     return FALSE;
+
++#if defined (GBM_BUFFER_BACKEND_PROTOCOL)
++    return TRUE;
++#else
+   formats = display->shm_formats;
+   for (i = 0; i < formats->len; i++) {
+     if (g_array_index (formats, uint32_t, i) == shm_fmt)
+@@ -186,6 +197,7 @@ gst_wl_display_check_format_for_shm (GstWlDisplay * display,
+   }
+
+   return FALSE;
++#endif
+ }
+
+ gboolean
+@@ -216,6 +228,7 @@ registry_handle_global (void *data, struct wl_registry *registry,
+     uint32_t id, const char *interface, uint32_t version)
  {
    GstWlDisplay *self = data;
-
 +  GST_LOG("In registry_handle_global");
-+
+ 
    if (g_strcmp0 (interface, "wl_compositor") == 0) {
      self->compositor = wl_registry_bind (registry, id, &wl_compositor_interface,
-         MIN (version, 3));
-@@ -168,6 +182,14 @@ registry_handle_global (void *data, struct wl_registry *registry,
-     self->viewporter =
-         wl_registry_bind (registry, id, &wp_viewporter_interface, 1);
+@@ -236,6 +249,14 @@ registry_handle_global (void *data, struct wl_registry *registry,
+         wl_registry_bind (registry, id, &zwp_linux_dmabuf_v1_interface, 1);
+     zwp_linux_dmabuf_v1_add_listener (self->dmabuf, &dmabuf_listener, self);
    }
 +#ifdef GBM_BUFFER_BACKEND_PROTOCOL
 +  else if (g_strcmp0 (interface, "gbm_buffer_backend") == 0) {
@@ -761,17 +758,7 @@ index 1011a04..3f3d0e6 100644
  }
 
  static const struct wl_registry_listener registry_listener = {
-@@ -177,6 +199,9 @@ static const struct wl_registry_listener registry_listener = {
- static gpointer
- gst_wl_display_thread_run (gpointer data)
- {
-+
-+  GST_LOG("In gst_wl_display_thread_run");
-+
-   GstWlDisplay *self = data;
-   GstPollFD pollfd = GST_POLL_FD_INIT;
-
-@@ -213,6 +238,7 @@ error:
+@@ -281,6 +302,7 @@ error:
  GstWlDisplay *
  gst_wl_display_new (const gchar * name, GError ** error)
  {
@@ -779,16 +766,15 @@ index 1011a04..3f3d0e6 100644
    struct wl_display *display;
 
    display = wl_display_connect (name);
-@@ -235,6 +261,8 @@ gst_wl_display_new_existing (struct wl_display * display,
+@@ -303,6 +325,7 @@ gst_wl_display_new_existing (struct wl_display * display,
    GError *err = NULL;
    gint i;
 
 +  GST_LOG("In gst_wl_display_new_existing");
-+
    g_return_val_if_fail (display != NULL, NULL);
-
+ 
    self = g_object_new (GST_TYPE_WL_DISPLAY, NULL);
-@@ -255,7 +283,12 @@ gst_wl_display_new_existing (struct wl_display * display,
+@@ -323,7 +346,12 @@ gst_wl_display_new_existing (struct wl_display * display,
        return NULL;
      }
    }
@@ -803,46 +789,48 @@ index 1011a04..3f3d0e6 100644
  #define VERIFY_INTERFACE_EXISTS(var, interface) \
    if (!self->var) { \
 diff --git a/ext/wayland/wldisplay.h b/ext/wayland/wldisplay.h
-index 9cbb500..a77c348 100644
+index 7c89212..3ed0242 100644
 --- a/ext/wayland/wldisplay.h
 +++ b/ext/wayland/wldisplay.h
-@@ -25,6 +25,10 @@
+@@ -26,6 +26,9 @@
  #include <wayland-client.h>
  #include "viewporter-client-protocol.h"
-
+ #include "linux-dmabuf-unstable-v1-client-protocol.h"
 +#if defined(GBM_BUFFER_BACKEND_PROTOCOL)
 +#include "gbm-buffer-backend-client-protocol.h"
 +#endif
-+
+
  G_BEGIN_DECLS
 
- #define GST_TYPE_WL_DISPLAY                  (gst_wl_display_get_type ())
-@@ -54,6 +58,10 @@ struct _GstWlDisplay
-   struct wp_viewporter *viewporter;
+@@ -57,6 +60,9 @@ struct _GstWlDisplay
+   struct zwp_linux_dmabuf_v1 *dmabuf;
    GArray *shm_formats;
-
+   GArray *dmabuf_formats;
 +#if defined(GBM_BUFFER_BACKEND_PROTOCOL)
 +  struct gbm_buffer_backend *gbmbuf;
 +#endif
-+
+
    /* private */
    gboolean own_display;
-   GThread *thread;
 diff --git a/gst-libs/gst/Makefile.am b/gst-libs/gst/Makefile.am
-index 7d0b309..3845a71 100644
+index 338f708..5fbe7fc 100644
 --- a/gst-libs/gst/Makefile.am
 +++ b/gst-libs/gst/Makefile.am
-@@ -11,11 +11,11 @@ WAYLAND_DIR=wayland
+@@ -15,12 +15,12 @@ OPENCV_DIR=opencv
  endif
 
  SUBDIRS = uridownloader adaptivedemux interfaces basecamerabinsrc codecparsers \
--	 insertbin mpegts base video audio player $(GL_DIR) $(WAYLAND_DIR)
-+	insertbin mpegts base video audio player $(IONBUF_DIR) $(GL_DIR) $(WAYLAND_DIR)
+-	 insertbin mpegts base video audio player allocators $(GL_DIR) $(WAYLAND_DIR) \
++	 insertbin mpegts base video audio player $(IONBUF_DIR) allocators $(GL_DIR) $(WAYLAND_DIR) \
+ 	 $(OPENCV_DIR)
 
  noinst_HEADERS = gst-i18n-plugin.h gettext.h glib-compat-private.h
  DIST_SUBDIRS = uridownloader adaptivedemux interfaces gl basecamerabinsrc \
--	codecparsers insertbin mpegts wayland base video audio player
-+	codecparsers insertbin mpegts wayland base video audio player $(IONBUF_DIR)
+-	codecparsers insertbin mpegts wayland opencv base video audio player allocators
++	codecparsers insertbin mpegts wayland opencv base video audio player $(IONBUF_DIR) allocators
 
  #dependencies
  video, audio: base
+--
+1.9.1
+
