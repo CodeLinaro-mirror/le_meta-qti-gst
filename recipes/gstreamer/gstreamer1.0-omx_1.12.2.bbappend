@@ -9,4 +9,4 @@ RDEPENDS_${PN} = "media"
 
 LICENSE_FLAGS_WHITELIST = "commercial"
 
-GSTREAMER_1_0_OMX_CORE_NAME ?= "${libdir}/libOmxCore.so"
+GSTREAMER_1_0_OMX_CORE_NAME = "${libdir}/libOmxCore.so"
