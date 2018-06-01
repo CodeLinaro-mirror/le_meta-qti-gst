@@ -18,4 +18,4 @@ python do_after_patch_apq8098 () {
     os.system(cmd)
 }
 
-addtask after_patch after do_patch
+addtask after_patch_apq8098 after do_patch
