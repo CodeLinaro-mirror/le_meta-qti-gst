@@ -1,0 +1,139 @@
+diff -uprN a/omx/gstomx.c b/omx/gstomx.c
+--- a/omx/gstomx.c	2018-09-11 18:02:46.315978000 +0800
++++ b/omx/gstomx.c	2018-09-12 16:26:12.686469000 +0800
+@@ -306,6 +306,7 @@ gst_omx_component_handle_messages (GstOM
+
+           if (index == OMX_ALL || index == port->index) {
+             port->settings_cookie++;
++            port->changed_config = msg->content.port_settings_changed.config;
+             gst_omx_port_update_port_definition (port, NULL);
+             if (port->port_def.eDir == OMX_DirOutput && !port->tunneled)
+               outports = g_list_prepend (outports, port);
+@@ -550,8 +551,11 @@ EventHandler (OMX_HANDLETYPE hComponent,
+
+       msg->type = GST_OMX_MESSAGE_PORT_SETTINGS_CHANGED;
+       msg->content.port_settings_changed.port = index;
+-      GST_DEBUG_OBJECT (comp->parent, "%s settings changed (port index: %u)",
+-          comp->name, (guint) msg->content.port_settings_changed.port);
++      msg->content.port_settings_changed.config = nData2;
++      GST_DEBUG_OBJECT (comp->parent,
++          "%s settings changed (port index: %u, changed config: 0x%08x)",
++          comp->name, (guint) msg->content.port_settings_changed.port,
++          msg->content.port_settings_changed.config);
+
+       gst_omx_component_send_message (comp, msg);
+       break;
+@@ -955,6 +959,7 @@ gst_omx_component_add_port (GstOMXCompon
+   port->enabled_pending = FALSE;
+   port->disabled_pending = FALSE;
+   port->eos = FALSE;
++  port->changed_config = OMX_IndexComponentStartUnused;
+
+   if (port->port_def.eDir == OMX_DirInput)
+     comp->n_in_ports++;
+@@ -2240,6 +2245,7 @@ gst_omx_port_mark_reconfigured (GstOMXPo
+     goto done;
+
+   port->configured_settings_cookie = port->settings_cookie;
++  port->changed_config = OMX_IndexComponentStartUnused;
+
+   if (port->port_def.eDir == OMX_DirOutput) {
+     GList *l;
+diff -uprN a/omx/gstomx.h b/omx/gstomx.h
+--- a/omx/gstomx.h	2018-09-11 18:02:42.562944000 +0800
++++ b/omx/gstomx.h	2018-09-11 18:12:20.351839000 +0800
+@@ -213,6 +213,7 @@ struct _GstOMXMessage {
+     } port_enable;
+     struct {
+       OMX_U32 port;
++      OMX_U32 config;
+     } port_settings_changed;
+     struct {
+       OMX_U32 port;
+@@ -248,6 +249,7 @@ struct _GstOMXPort {
+    */
+   gint settings_cookie;
+   gint configured_settings_cookie;
++  OMX_U32 changed_config;
+ };
+
+ struct _GstOMXComponent {
+diff -uprN a/omx/gstomxvideodec.c b/omx/gstomxvideodec.c
+--- a/omx/gstomxvideodec.c	2018-09-11 18:02:55.114051000 +0800
++++ b/omx/gstomxvideodec.c	2018-09-12 16:24:51.303757000 +0800
+@@ -1274,30 +1274,52 @@ gst_omx_video_dec_loop (GstOMXVideoDec *
+     GST_DEBUG_OBJECT (self, "Port settings have changed, updating caps");
+
+     /* Reallocate all buffers */
+-    if (acq_return == GST_OMX_ACQUIRE_BUFFER_RECONFIGURE
+-        && gst_omx_port_is_enabled (port)) {
+-      err = gst_omx_port_set_enabled (port, FALSE);
+-      if (err != OMX_ErrorNone)
+-        goto reconfigure_error;
+-
+-      err = gst_omx_port_wait_buffers_released (port, 5 * GST_SECOND);
+-      if (err != OMX_ErrorNone)
+-        goto reconfigure_error;
+-
+-      err = gst_omx_video_dec_deallocate_output_buffers (self);
+-      if (err != OMX_ErrorNone)
+-        goto reconfigure_error;
+-
+-      err = gst_omx_port_wait_enabled (port, 1 * GST_SECOND);
+-      if (err != OMX_ErrorNone)
+-        goto reconfigure_error;
+-    }
+-
+     if (acq_return == GST_OMX_ACQUIRE_BUFFER_RECONFIGURE) {
+-      /* We have the possibility to reconfigure everything now */
+-      err = gst_omx_video_dec_reconfigure_output_port (self);
+-      if (err != OMX_ErrorNone)
+-        goto reconfigure_error;
++        if (gst_omx_port_is_enabled(port)) {
++        /* The current QTI OpenMax Core implementation exposes port reconfigre
++         * event for the following changes:
++         *   1. 0x02000001, OMX_IndexParamPortDefinition
++         *   2. 0x0700000F, OMX_IndexConfigCommonOutputCrop
++         *   3. 0x7F000062, OMX_QTIIndexConfigDescribeColorAspects
++         *   4. 0x7F000067, OMX_QTIIndexConfigDescribeHDRColorInfo
++         *
++         * We needed only to reconfig output port for 1, others will be handled
++         * by display component/element.
++         */
++        if (port->changed_config == OMX_IndexParamPortDefinition) {
++          GST_DEBUG_OBJECT(self,
++              "Reallocate buffer for settings change (port index: %u, config: 0x%08x) ",
++              (guint)port->index, (guint) port->changed_config);
++
++          err = gst_omx_port_set_enabled(port, FALSE);
++          if (err != OMX_ErrorNone)
++            goto reconfigure_error;
++
++          err = gst_omx_port_wait_buffers_released(port, 5 * GST_SECOND);
++          if (err != OMX_ErrorNone)
++            goto reconfigure_error;
++
++          err = gst_omx_video_dec_deallocate_output_buffers(self);
++          if (err != OMX_ErrorNone)
++            goto reconfigure_error;
++
++          err = gst_omx_port_wait_enabled(port, 1 * GST_SECOND);
++          if (err != OMX_ErrorNone)
++            goto reconfigure_error;
++
++          } else {
++            GST_DEBUG_OBJECT (self,
++                "Unhandled port settings change (port index: %u, config: 0x%08x) ",
++                (guint) port->index, (guint) port->changed_config);
++            gst_omx_port_mark_reconfigured(port);
++           return;
++        }
++
++        /* We have the possibility to reconfigure everything now */
++        err = gst_omx_video_dec_reconfigure_output_port(self);
++        if (err != OMX_ErrorNone)
++          goto reconfigure_error;
++      }
+     } else {
+       /* Just update caps */
+       GST_VIDEO_DECODER_STREAM_LOCK (self);

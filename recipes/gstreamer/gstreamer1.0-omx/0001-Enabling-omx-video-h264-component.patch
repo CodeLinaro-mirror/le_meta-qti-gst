@@ -1,7 +1,7 @@
-diff -Naur a/config/bellagio/gstomx.conf b/config/bellagio/gstomx.conf
---- a/config/bellagio/gstomx.conf	2018-08-29 17:33:33.479494003 +0800
-+++ b/config/bellagio/gstomx.conf	2018-08-29 17:35:26.394628457 +0800
-@@ -32,4 +32,22 @@
+diff -uprN a/config/bellagio/gstomx.conf b/config/bellagio/gstomx.conf
+--- a/config/bellagio/gstomx.conf	2018-09-13 19:40:53.037836000 +0800
++++ b/config/bellagio/gstomx.conf	2018-09-13 18:36:06.411511000 +0800
+@@ -32,4 +32,22 @@ component-name=OMX.qcom.audio.decoder.am
  rank=0
  in-port-index=0
  out-port-index=1
@@ -16,7 +16,7 @@ diff -Naur a/config/bellagio/gstomx.conf b/config/bellagio/gstomx.conf
 +rank=0
 +in-port-index=0
 +out-port-index=1
-+hacks=no-empty-eos-buffer;no-disable-outport
++hacks=no-disable-outport
 +
 +[omxh264enc]
 +type-name=GstOMXH264Enc
@@ -25,4 +25,4 @@ diff -Naur a/config/bellagio/gstomx.conf b/config/bellagio/gstomx.conf
 +rank=0
 +in-port-index=0
 +out-port-index=1
-+hacks=no-empty-eos-buffer;no-disable-outport
++hacks=no-disable-outport
