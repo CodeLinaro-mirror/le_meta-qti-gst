@@ -1,5 +1,7 @@
 # Packages installed to the root file system
 
+DISTRO_FEATURES_append = "wayland"
+
 IMAGE_INSTALL += "gstreamer1.0"
 IMAGE_INSTALL += "gstreamer1.0-plugins-base"
 IMAGE_INSTALL += "gstreamer1.0-plugins-good"
