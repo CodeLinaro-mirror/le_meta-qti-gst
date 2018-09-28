@@ -5,4 +5,4 @@ SRC_URI_append_apq8098 = " \
        file://gstreamer-baseparse-add-suport-zero-copy-for-qtivdec.patch \
 "
 
-EXTRA_OECONF="--libexecdir=${libdir}/${BPN}"
+EXTRA_OECONF = "--libexecdir=${libdir}/${BPN}"
