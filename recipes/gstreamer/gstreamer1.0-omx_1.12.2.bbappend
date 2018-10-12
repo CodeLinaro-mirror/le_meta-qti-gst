@@ -4,6 +4,9 @@ SRC_URI += "file://0001-omxaacenc-fix-samples-per-buffer-calculation.patch"
 SRC_URI += "file://0001-Enabling-omx-aac-encoder-component.patch"
 SRC_URI += "file://0001-Enabling-omx-video-h264-component.patch"
 SRC_URI += "file://0002-omxh264dec-fix-reconfigure-release-buffer.patch"
+SRC_URI += "file://0003-Enabling-omx-video-64bit-component.patch"
+
+CPPFLAGS += "-I${WORKSPACE}/hardware/qcom/media/mm-core/inc"
 
 #Including media dependency as we need libOmxCore.so
 DEPENDS += "media"
