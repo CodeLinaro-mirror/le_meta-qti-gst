@@ -4,6 +4,8 @@ CPPFLAGS += " ${@bb.utils.contains('DISTRO_FEATURES', 'wayland', '-D__GBM__', ''
 
 DEPENDS_append_apq8098 = " wayland wayland-native libdrm weston"
 
+PACKAGECONFIG_append_apq8098 = "wayland"
+
 FILESEXTRAPATHS_prepend_apq8098 := "${THISDIR}/qti-patches:"
 SRC_URI_append_apq8098 = " \
        file://waylandsink-Add-support-for-gbm-buffer-backend.patch \
