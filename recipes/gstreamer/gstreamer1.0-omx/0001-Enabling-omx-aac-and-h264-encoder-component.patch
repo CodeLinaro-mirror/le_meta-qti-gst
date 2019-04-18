@@ -1,0 +1,93 @@
+diff -Naur a/config/bellagio/gstomx.conf b/config/bellagio/gstomx.conf
+--- a/config/bellagio/gstomx.conf	2018-03-24 02:17:59.000000000 +0530
++++ b/config/bellagio/gstomx.conf	2019-04-19 15:16:50.158845768 +0530
+@@ -1,60 +1,53 @@
+-[omxmpeg4videodec]
+-type-name=GstOMXMPEG4VideoDec
+-core-name=/usr/local/lib/libomxil-bellagio.so.0
+-component-name=OMX.st.video_decoder.mpeg4
+-rank=257
+-in-port-index=0
+-out-port-index=1
+-hacks=event-port-settings-changed-ndata-parameter-swap;event-port-settings-changed-port-0-to-1
+-
+-[omxh264dec]
+-type-name=GstOMXH264Dec
+-core-name=/usr/local/lib/libomxil-bellagio.so.0
+-component-name=OMX.st.video_decoder.avc
+-rank=257
++[omxaacenc]
++type-name=GstOMXAACEnc
++core-name=/usr/lib/libOmxCore.so
++component-name=OMX.qcom.audio.encoder.aac
++rank=0
+ in-port-index=0
+ out-port-index=1
+-hacks=event-port-settings-changed-ndata-parameter-swap;event-port-settings-changed-port-0-to-1
++hacks=no-disable-outport
+ 
+-[omxmpeg4videoenc]
+-type-name=GstOMXMPEG4VideoEnc
+-core-name=/usr/local/lib/libomxil-bellagio.so.0
+-component-name=OMX.st.video_encoder.mpeg4
++[omxaacdec]
++type-name=GstOMXAACDec
++core-name=/usr/lib/libOmxCore.so
++component-name=OMX.qcom.audio.decoder.multiaac
+ rank=0
+ in-port-index=0
+ out-port-index=1
+-hacks=event-port-settings-changed-ndata-parameter-swap;video-framerate-integer;syncframe-flag-not-used
++hacks=no-disable-outport
+ 
+-[omxaacenc]
+-type-name=GstOMXAACEnc
+-core-name=/usr/local/lib/libomxil-bellagio.so.0
+-component-name=OMX.st.audio_encoder.aac
++[omxamrnbdec]
++type-name=GstOMXAMRDec
++core-name=/usr/lib/libOmxCore.so
++component-name=OMX.qcom.audio.decoder.amrnb
+ rank=0
+ in-port-index=0
+ out-port-index=1
+-hacks=event-port-settings-changed-ndata-parameter-swap
++hacks=no-disable-outport
+ 
+-[omxmp3dec]
+-type-name=GstOMXMP3Dec
+-core-name=/usr/lib/libomxil-bellagio.so.0
+-component-name=OMX.st.audio_decoder.mp3.mad
++[omxamrwbdec]
++type-name=GstOMXAMRDec
++core-name=/usr/lib/libOmxCore.so
++component-name=OMX.qcom.audio.decoder.amrwb
+ rank=0
+ in-port-index=0
+ out-port-index=1
+-hacks=event-port-settings-changed-ndata-parameter-swap;no-component-role;no-disable-outport;drain-may-not-return
++hacks=no-disable-outport
+ 
+ [omxh264dec]
+ type-name=GstOMXH264Dec
+-core-name=/usr/lib/libomxil-bellagio.so.0
+-component-name=OMX.mesa.video_decoder.avc
++core-name=/usr/lib/libOmxCore.so
++component-name=OMX.qcom.video.decoder.avc
+ rank=0
+ in-port-index=0
+ out-port-index=1
++hacks=no-disable-outport
+ 
+-[omxmpeg2dec]
+-type-name=GstOMXMPEG2VideoDec
+-core-name=/usr/lib/libomxil-bellagio.so.0
+-component-name=OMX.mesa.video_decoder.mpeg2
++[omxh264enc]
++type-name=GstOMXH264Enc
++core-name=/usr/lib/libOmxCore.so
++component-name=OMX.qcom.video.encoder.avc
+ rank=0
+ in-port-index=0
+ out-port-index=1
++hacks=no-disable-outport
