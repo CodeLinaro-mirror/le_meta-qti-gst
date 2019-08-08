@@ -3,6 +3,7 @@ FILESEXTRAPATHS_prepend := "${THISDIR}/gstreamer1.0-omx:"
 SRC_URI += "file://0001-omxaacenc-fix-samples-per-buffer-calculation.patch"
 SRC_URI += "file://0001-Enabling-omx-aac-and-h264-encoder-component.patch"
 SRC_URI += "file://0001-Enabling-omx-video-h265-component.patch"
+SRC_URI += "file://0001-fix-gstomx-PortSettingsChanged-event.patch"
 
 #Including media dependency as we need libOmxCore.so
 DEPENDS += "media"
