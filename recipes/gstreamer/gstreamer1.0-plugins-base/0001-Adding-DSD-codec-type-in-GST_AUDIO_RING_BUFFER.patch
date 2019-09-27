@@ -1,0 +1,24 @@
+From 1958810d9ee34d50ff0e9991aa680e517693ec2f Mon Sep 17 00:00:00 2001
+From: Arindam Biswas <arinbisw@codeaurora.org>
+Date: Thu, 8 Aug 2019 17:51:11 +0530
+Subject: [PATCH] Adding DSD codec type in GST_AUDIO_RING_BUFFER
+
+---
+ gst-libs/gst/audio/gstaudioringbuffer.h | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/gst-libs/gst/audio/gstaudioringbuffer.h b/gst-libs/gst/audio/gstaudioringbuffer.h
+index ec55f3d..de4d328 100644
+--- a/gst-libs/gst/audio/gstaudioringbuffer.h
++++ b/gst-libs/gst/audio/gstaudioringbuffer.h
+@@ -116,6 +116,7 @@ typedef enum
+   GST_AUDIO_RING_BUFFER_FORMAT_TYPE_ALAC,
+   GST_AUDIO_RING_BUFFER_FORMAT_TYPE_WMA,
+   GST_AUDIO_RING_BUFFER_FORMAT_TYPE_IEC61937,
++  GST_AUDIO_RING_BUFFER_FORMAT_TYPE_DSD,
+ } GstAudioRingBufferFormatType;
+ 
+ /**
+-- 
+1.9.1
+

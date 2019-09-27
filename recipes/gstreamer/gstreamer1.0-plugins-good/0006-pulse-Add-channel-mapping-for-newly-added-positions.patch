@@ -1,0 +1,36 @@
+From 3bd6e48c18ce8428cfe71d4264deb1e23fca357c Mon Sep 17 00:00:00 2001
+From: Arun Raghavan <arunsr@codeaurora.org>
+Date: Mon, 7 Jan 2019 21:50:02 +0530
+Subject: [PATCH 6/6] pulse: Add channel mapping for newly-added positions
+
+PulseAudio adds support for left/right wide and side left/right height
+channel positions, so we add that to our maps.
+---
+ ext/pulse/pulseutil.c | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
+
+diff --git a/ext/pulse/pulseutil.c b/ext/pulse/pulseutil.c
+index 64228395a..dde6f0f86 100644
+--- a/ext/pulse/pulseutil.c
++++ b/ext/pulse/pulseutil.c
+@@ -66,6 +66,17 @@ static const struct
+         PA_CHANNEL_POSITION_TOP_REAR_RIGHT}, {
+   GST_AUDIO_CHANNEL_POSITION_TOP_REAR_CENTER,
+         PA_CHANNEL_POSITION_TOP_REAR_CENTER}, {
++#if defined(PA_CHANNEL_POSITION_FRONT_LEFT_WIDE) && \
++    defined(PA_CHANNEL_POSITION_FRONT_RIGHT_WIDE)
++  GST_AUDIO_CHANNEL_POSITION_WIDE_LEFT, PA_CHANNEL_POSITION_FRONT_LEFT_WIDE}, {
++  GST_AUDIO_CHANNEL_POSITION_WIDE_RIGHT, PA_CHANNEL_POSITION_FRONT_RIGHT_WIDE}, {
++#endif
++#if defined(PA_CHANNEL_POSITION_TOP_SIDE_LEFT) && \
++    defined(PA_CHANNEL_POSITION_TOP_SIDE_RIGHT)
++  GST_AUDIO_CHANNEL_POSITION_TOP_SIDE_LEFT, PA_CHANNEL_POSITION_TOP_SIDE_LEFT}, {
++  GST_AUDIO_CHANNEL_POSITION_TOP_SIDE_RIGHT,
++        PA_CHANNEL_POSITION_TOP_SIDE_RIGHT}, {
++#endif
+   GST_AUDIO_CHANNEL_POSITION_NONE, PA_CHANNEL_POSITION_INVALID}
+ };
+ 
+-- 
+2.19.1
+

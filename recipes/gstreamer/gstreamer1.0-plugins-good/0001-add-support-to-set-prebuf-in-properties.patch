@@ -1,0 +1,76 @@
+From 521395a406f224b0129db6d059a05e4cbfb4a6f1 Mon Sep 17 00:00:00 2001
+From: Dhananjay Kumar <dhakumar@codeaurora.org>
+Date: Wed, 20 Mar 2019 20:17:07 +0530
+Subject: [PATCH] add support to set prebuf in properties
+
+---
+ ext/pulse/pulsesink.c | 12 +++++++++++-
+ ext/pulse/pulsesink.h |  1 +
+ 2 files changed, 12 insertions(+), 1 deletion(-)
+
+diff --git a/ext/pulse/pulsesink.c b/ext/pulse/pulsesink.c
+index d1a8990..7eddf68 100644
+--- a/ext/pulse/pulsesink.c
++++ b/ext/pulse/pulsesink.c
+@@ -89,6 +89,7 @@ enum
+   PROP_CLIENT_NAME,
+   PROP_STREAM_PROPERTIES,
+   PROP_STREAM_FLAGS,
++  PROP_PREBUF,
+   PROP_LAST
+ };
+ 
+@@ -967,7 +968,7 @@ gst_pulseringbuffer_acquire (GstAudioRingBuffer * buf,
+   memset (&wanted, 0, sizeof (wanted));
+   wanted.tlength = spec->segtotal * spec->segsize;
+   wanted.maxlength = -1;
+-  wanted.prebuf = 0;
++  wanted.prebuf = psink->prebuf;
+   wanted.minreq = spec->segsize;
+ 
+   GST_INFO_OBJECT (psink, "tlength:   %d", wanted.tlength);
+@@ -1988,6 +1989,11 @@ gst_pulsesink_class_init (GstPulseSinkClass * klass)
+           GST_TYPE_PULSE_STREAM_FLAGS, DEFAULT_STREAM_FLAGS,
+           G_PARAM_WRITABLE | G_PARAM_STATIC_STRINGS));
+ 
++  g_object_class_install_property (gobject_class, PROP_PREBUF,
++      g_param_spec_int ("prebuf", "Prebuf bytes",
++          "Prebuf to be set with sink-input",
++          -1 /* min */, G_MAXINT /* max */, 0 /* default */,
++          G_PARAM_WRITABLE | G_PARAM_STATIC_STRINGS));
+ 
+   gst_element_class_set_static_metadata (gstelement_class,
+       "PulseAudio Audio Sink",
+@@ -2391,6 +2397,7 @@ gst_pulsesink_init (GstPulseSink * pulsesink)
+   pulsesink->properties = NULL;
+   pulsesink->proplist = NULL;
+   pulsesink->flags = DEFAULT_STREAM_FLAGS;
++  pulsesink->prebuf = 0;
+ 
+   /* override with a custom clock */
+   if (GST_AUDIO_BASE_SINK (pulsesink)->provided_clock)
+@@ -2912,6 +2919,9 @@ gst_pulsesink_set_property (GObject * object,
+     case PROP_STREAM_FLAGS:
+       pulsesink->flags = g_value_get_flags (value);
+       break;
++    case PROP_PREBUF:
++      pulsesink->prebuf = g_value_get_int (value);
++      break;
+     default:
+       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+       break;
+diff --git a/ext/pulse/pulsesink.h b/ext/pulse/pulsesink.h
+index 558851a..b6f687d 100644
+--- a/ext/pulse/pulsesink.h
++++ b/ext/pulse/pulsesink.h
+@@ -86,6 +86,7 @@ struct _GstPulseSink
+   volatile gint format_lost;
+   GstClockTime format_lost_time;
+   pa_stream_flags_t flags;
++  gint prebuf;
+ };
+ 
+ struct _GstPulseSinkClass
+-- 
+1.9.1
+
