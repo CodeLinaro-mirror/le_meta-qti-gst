@@ -1,0 +1,352 @@
+From 80f7d92a5ff6c6435ab63f9336069450c744fe59 Mon Sep 17 00:00:00 2001
+From: Amrutha Sai Gattu <agattu@codeaurora.org>
+Date: Tue, 3 Sep 2019 18:22:02 +0300
+Subject: [CHANGE 2/4] waylandsink: support for xdg-shell protocol
+
+---
+ ext/wayland/Makefile.am      |  7 +++-
+ ext/wayland/gstwaylandsink.c | 19 ++++++++-
+ ext/wayland/gstwaylandsink.h |  1 +
+ ext/wayland/wldisplay.c      | 12 ++++--
+ ext/wayland/wldisplay.h      |  2 +
+ ext/wayland/wlwindow.c       | 92 ++++++++++++++++++++++++++++++++++++--------
+ ext/wayland/wlwindow.h       |  4 +-
+ 7 files changed, 113 insertions(+), 24 deletions(-)
+
+diff --git a/ext/wayland/Makefile.am b/ext/wayland/Makefile.am
+index 387f84f..41ca5c7 100644
+--- a/ext/wayland/Makefile.am
++++ b/ext/wayland/Makefile.am
+@@ -4,7 +4,9 @@ BUILT_SOURCES = \
+ 	viewporter-protocol.c \
+ 	viewporter-client-protocol.h \
+ 	linux-dmabuf-unstable-v1-protocol.c \
+-	linux-dmabuf-unstable-v1-client-protocol.h
++	linux-dmabuf-unstable-v1-client-protocol.h \
++	xdg-shell-protocol.c \
++	xdg-shell-client-protocol.h
+ 
+ libgstwaylandsink_la_SOURCES =  \
+ 	gstwaylandsink.c \
+@@ -17,7 +19,8 @@ libgstwaylandsink_la_SOURCES =  \
+ 
+ nodist_libgstwaylandsink_la_SOURCES = \
+ 	viewporter-protocol.c \
+-	linux-dmabuf-unstable-v1-protocol.c
++	linux-dmabuf-unstable-v1-protocol.c \
++	xdg-shell-protocol.c
+ 
+ libgstwaylandsink_la_CFLAGS = \
+ 	$(GST_PLUGINS_BAD_CFLAGS) \
+diff --git a/ext/wayland/gstwaylandsink.c b/ext/wayland/gstwaylandsink.c
+index d06ff99..377034f 100644
+--- a/ext/wayland/gstwaylandsink.c
++++ b/ext/wayland/gstwaylandsink.c
+@@ -62,6 +62,7 @@ enum
+ {
+   PROP_0,
+   PROP_DISPLAY,
++  PROP_XDG_SHELL,
+   PROP_FULLSCREEN
+ };
+ 
+@@ -204,6 +205,11 @@ gst_wayland_sink_class_init (GstWaylandSinkClass * klass)
+           "display name to connect to, if not supplied via the GstContext",
+           NULL, G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+ 
++  g_object_class_install_property (gobject_class, PROP_XDG_SHELL,
++      g_param_spec_boolean ("xdg-shell", "Wayland Display xdg-shell protocol",
++          "Whether to use the XDG shell protocol for the display", TRUE,
++          G_PARAM_READWRITE | G_PARAM_CONSTRUCT | G_PARAM_STATIC_STRINGS));
++
+   g_object_class_install_property (gobject_class, PROP_FULLSCREEN,
+       g_param_spec_boolean ("fullscreen", "Fullscreen",
+           "Whether the surface should be made fullscreen ", FALSE,
+@@ -229,6 +235,11 @@ gst_wayland_sink_get_property (GObject * object,
+       g_value_set_string (value, sink->display_name);
+       GST_OBJECT_UNLOCK (sink);
+       break;
++    case PROP_XDG_SHELL:
++      GST_OBJECT_LOCK (sink);
++      g_value_set_boolean (value, sink->use_xdg_shell);
++      GST_OBJECT_UNLOCK (sink);
++      break;
+     case PROP_FULLSCREEN:
+       GST_OBJECT_LOCK (sink);
+       g_value_set_boolean (value, sink->fullscreen);
+@@ -252,6 +263,11 @@ gst_wayland_sink_set_property (GObject * object,
+       sink->display_name = g_value_dup_string (value);
+       GST_OBJECT_UNLOCK (sink);
+       break;
++    case PROP_XDG_SHELL:
++      GST_OBJECT_LOCK (sink);
++      sink->use_xdg_shell = g_value_get_boolean (value);
++      GST_OBJECT_UNLOCK (sink);
++      break;
+     case PROP_FULLSCREEN:
+       GST_OBJECT_LOCK (sink);
+       sink->fullscreen = g_value_get_boolean (value);
+@@ -675,7 +691,8 @@ gst_wayland_sink_show_frame (GstVideoSink * vsink, GstBuffer * buffer)
+     if (!sink->window) {
+       /* if we were not provided a window, create one ourselves */
+       sink->window = gst_wl_window_new_toplevel (sink->display,
+-          &sink->video_info, sink->fullscreen, &sink->render_lock);
++          &sink->video_info, sink->fullscreen, sink->use_xdg_shell,
++          &sink->render_lock);
+     }
+   }
+ 
+diff --git a/ext/wayland/gstwaylandsink.h b/ext/wayland/gstwaylandsink.h
+index be92fe7..e29b508 100644
+--- a/ext/wayland/gstwaylandsink.h
++++ b/ext/wayland/gstwaylandsink.h
+@@ -62,6 +62,7 @@ struct _GstWaylandSink
+   GstVideoInfo video_info;
+   gboolean fullscreen;
+ 
++  gboolean use_xdg_shell;
+   gchar *display_name;
+ 
+   gboolean redraw_pending;
+diff --git a/ext/wayland/wldisplay.c b/ext/wayland/wldisplay.c
+index 39782bc..a76b61c 100644
+--- a/ext/wayland/wldisplay.c
++++ b/ext/wayland/wldisplay.c
+@@ -90,6 +90,9 @@ gst_wl_display_finalize (GObject * gobject)
+   if (self->shell)
+     wl_shell_destroy (self->shell);
+ 
++  if(self->xdgshell)
++    xdg_shell_destroy(self->xdgshell);
++
+   if (self->compositor)
+     wl_compositor_destroy (self->compositor);
+ 
+@@ -142,7 +145,7 @@ gst_wl_display_roundtrip (GstWlDisplay * self)
+ }
+ 
+ static void
+-shm_format (void *data, struct wl_shm *wl_shm, uint32_t format)
++shm_format (void *data, struct wl_shm *wl_shm, guint format)
+ {
+   GstWlDisplay *self = data;
+ 
+@@ -155,7 +158,7 @@ static const struct wl_shm_listener shm_listener = {
+ 
+ static void
+ dmabuf_format (void *data, struct zwp_linux_dmabuf_v1 *zwp_linux_dmabuf,
+-    uint32_t format)
++    guint format)
+ {
+   GstWlDisplay *self = data;
+ 
+@@ -213,7 +216,7 @@ gst_wl_display_check_format_for_dmabuf (GstWlDisplay * display,
+ 
+ static void
+ registry_handle_global (void *data, struct wl_registry *registry,
+-    uint32_t id, const char *interface, uint32_t version)
++    guint id, const char *interface, guint version)
+ {
+   GstWlDisplay *self = data;
+ 
+@@ -225,6 +228,9 @@ registry_handle_global (void *data, struct wl_registry *registry,
+         wl_registry_bind (registry, id, &wl_subcompositor_interface, 1);
+   } else if (g_strcmp0 (interface, "wl_shell") == 0) {
+     self->shell = wl_registry_bind (registry, id, &wl_shell_interface, 1);
++  } else if (g_strcmp0(interface, "xdg_shell") == 0) {
++    self->xdgshell = wl_registry_bind(registry, id, &xdg_shell_interface, 1);
++    xdg_shell_use_unstable_version(self->xdgshell, 5);
+   } else if (g_strcmp0 (interface, "wl_shm") == 0) {
+     self->shm = wl_registry_bind (registry, id, &wl_shm_interface, 1);
+     wl_shm_add_listener (self->shm, &shm_listener, self);
+diff --git a/ext/wayland/wldisplay.h b/ext/wayland/wldisplay.h
+index 7c89212..33eaac7 100644
+--- a/ext/wayland/wldisplay.h
++++ b/ext/wayland/wldisplay.h
+@@ -24,6 +24,7 @@
+ #include <gst/gst.h>
+ #include <gst/video/video.h>
+ #include <wayland-client.h>
++#include "xdg-shell-client-protocol.h"
+ #include "viewporter-client-protocol.h"
+ #include "linux-dmabuf-unstable-v1-client-protocol.h"
+ 
+@@ -52,6 +53,7 @@ struct _GstWlDisplay
+   struct wl_compositor *compositor;
+   struct wl_subcompositor *subcompositor;
+   struct wl_shell *shell;
++  struct xdg_shell *xdgshell;
+   struct wl_shm *shm;
+   struct wp_viewporter *viewporter;
+   struct zwp_linux_dmabuf_v1 *dmabuf;
+diff --git a/ext/wayland/wlwindow.c b/ext/wayland/wlwindow.c
+index 9ef8c32..573bd92 100644
+--- a/ext/wayland/wlwindow.c
++++ b/ext/wayland/wlwindow.c
+@@ -36,15 +36,44 @@ G_DEFINE_TYPE (GstWlWindow, gst_wl_window, G_TYPE_OBJECT);
+ static void gst_wl_window_finalize (GObject * gobject);
+ 
+ static void
++handle_xdg_surface_close (void *data, struct xdg_surface *xdg_surface)
++{
++  GstWlWindow *window = data;
++
++  GST_DEBUG ("XDG toplevel got a \"close\" event.");
++}
++
++static void
++handle_xdg_surface_configure (void *data, struct xdg_surface *xdg_surface,
++    int32_t width, int32_t height, struct wl_array *states, uint32_t serial)
++{
++
++  GstWlWindow *window = data;
++
++  GST_DEBUG ("XDG toplevel got a \"configure\" event, [ %d, %d ].",
++      width, height);
++
++  if (width <= 0 || height <= 0)
++    return;
++
++  gst_wl_window_set_render_rectangle (window, 0, 0, width, height);
++}
++
++static const struct xdg_surface_listener xdg_surface_listener = {
++  handle_xdg_surface_configure,
++  handle_xdg_surface_close,
++};
++
++static void
+ handle_ping (void *data, struct wl_shell_surface *shell_surface,
+-    uint32_t serial)
++    guint serial)
+ {
+   wl_shell_surface_pong (shell_surface, serial);
+ }
+ 
+ static void
+ handle_configure (void *data, struct wl_shell_surface *shell_surface,
+-    uint32_t edges, int32_t width, int32_t height)
++    guint edges, int32_t width, int32_t height)
+ {
+   GstWlWindow *window = data;
+ 
+@@ -86,6 +115,9 @@ gst_wl_window_finalize (GObject * gobject)
+ {
+   GstWlWindow *self = GST_WL_WINDOW (gobject);
+ 
++  if (self->xdg_surface)
++    xdg_surface_destroy (self->xdg_surface);
++
+   if (self->shell_surface)
+     wl_shell_surface_destroy (self->shell_surface);
+ 
+@@ -156,35 +188,61 @@ gst_wl_window_ensure_fullscreen (GstWlWindow * window, gboolean fullscreen)
+   if (!window)
+     return;
+ 
+-  if (fullscreen)
+-    wl_shell_surface_set_fullscreen (window->shell_surface,
+-        WL_SHELL_SURFACE_FULLSCREEN_METHOD_SCALE, 0, NULL);
+-  else
+-    wl_shell_surface_set_toplevel (window->shell_surface);
++  if (window->xdg_surface) {
++    if (fullscreen)
++      xdg_surface_set_fullscreen (window->xdg_surface, NULL);
++    else
++      xdg_surface_unset_fullscreen (window->xdg_surface);
++  } else if (window->shell_surface) {
++    if (fullscreen)
++      wl_shell_surface_set_fullscreen (window->shell_surface,
++          WL_SHELL_SURFACE_FULLSCREEN_METHOD_SCALE, 0, NULL);
++    else
++      wl_shell_surface_set_toplevel (window->shell_surface);
++  }
+ }
+ 
+ GstWlWindow *
+ gst_wl_window_new_toplevel (GstWlDisplay * display, const GstVideoInfo * info,
+-    gboolean fullscreen, GMutex * render_lock)
++    gboolean fullscreen, gboolean xdgshell, GMutex * render_lock)
+ {
+   GstWlWindow *window;
+   gint width;
+ 
+   window = gst_wl_window_new_internal (display, render_lock);
+ 
+-  /* go toplevel */
+-  window->shell_surface = wl_shell_get_shell_surface (display->shell,
+-      window->area_surface);
++  if (xdgshell && display->xdgshell) {
++    window->xdg_surface = xdg_shell_get_xdg_surface (display->xdgshell,
++        window->area_surface);
++
++    if (!window->xdg_surface) {
++      GST_ERROR ("Unable to get xdg_shell_surface");
++
++      g_object_unref (window);
++      return NULL;
++    }
++
++    xdg_surface_add_listener (window->xdg_surface, &xdg_surface_listener,
++        window);
++    gst_wl_window_ensure_fullscreen (window, fullscreen);
++
++    GST_INFO ("Using xdg_shell_surface");
++  } else if (display->shell) {
++    window->shell_surface = wl_shell_get_shell_surface (display->shell,
++        window->area_surface);
++
++    if (!window->shell_surface) {
++      GST_ERROR ("Unable to get wl_shell_surface");
++
++      g_object_unref (window);
++      return NULL;
++    }
+ 
+-  if (window->shell_surface) {
+     wl_shell_surface_add_listener (window->shell_surface,
+         &shell_surface_listener, window);
+     gst_wl_window_ensure_fullscreen (window, fullscreen);
+-  } else {
+-    GST_ERROR ("Unable to get wl_shell_surface");
+ 
+-    g_object_unref (window);
+-    return NULL;
++    GST_INFO ("Using wl_shell_surface");
+   }
+ 
+   /* set the initial size to be the same as the reported video size */
+@@ -232,7 +290,7 @@ gst_wl_window_is_toplevel (GstWlWindow * window)
+ {
+   g_return_val_if_fail (window != NULL, FALSE);
+ 
+-  return (window->shell_surface != NULL);
++  return (window->xdg_surface != NULL) || (window->shell_surface != NULL);
+ }
+ 
+ static void
+diff --git a/ext/wayland/wlwindow.h b/ext/wayland/wlwindow.h
+index 10b49fd..6a3eca9 100644
+--- a/ext/wayland/wlwindow.h
++++ b/ext/wayland/wlwindow.h
+@@ -51,6 +51,7 @@ struct _GstWlWindow
+   struct wl_subsurface *video_subsurface;
+   struct wp_viewport *video_viewport;
+   struct wl_shell_surface *shell_surface;
++  struct xdg_surface *xdg_surface;
+ 
+   /* the size and position of the area_(sub)surface */
+   GstVideoRectangle render_rectangle;
+@@ -77,7 +78,8 @@ GType gst_wl_window_get_type (void);
+ void gst_wl_window_ensure_fullscreen (GstWlWindow * window,
+         gboolean fullscreen);
+ GstWlWindow *gst_wl_window_new_toplevel (GstWlDisplay * display,
+-        const GstVideoInfo * info, gboolean fullscreen, GMutex * render_lock);
++        const GstVideoInfo * info, gboolean fullscreen, gboolean xdgshell,
++        GMutex * render_lock);
+ GstWlWindow *gst_wl_window_new_in_surface (GstWlDisplay * display,
+         struct wl_surface * parent, GMutex * render_lock);
+ 
+-- 
+1.9.1
+
