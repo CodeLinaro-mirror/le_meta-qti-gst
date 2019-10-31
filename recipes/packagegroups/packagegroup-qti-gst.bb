@@ -1,10 +1,10 @@
 SUMMARY = "QTI Gstreamer package groups"
 LICENSE = "BSD-3-Clause"
 
-inherit packagegroup
-
 PROVIDES = "${PACKAGES}"
 PACKAGE_ARCH = "${MACHINE_ARCH}"
+
+inherit packagegroup
 
 PACKAGES = " \
       packagegroup-qti-gst \
