@@ -25,4 +25,5 @@ RDEPENDS_packagegroup-qti-gstreamer = " \
       ${@bb.utils.contains("COMBINED_FEATURES", "qti-video qti-audio", "gstreamer1.0-omx", "", d)} \
       ${@bb.utils.contains_any("COMBINED_FEATURES", "qti-video qti-audio", "gstreamer1.0-libav", "", d)} \
       ${@bb.utils.contains("DISTRO_FEATURES", "qti-qmmf", "gstreamer1.0-plugins-qti-oss-qmmfsrc", "", d)} \
+      ${@bb.utils.contains("DISTRO_FEATURES", "qti-qmmf", "gstreamer1.0-plugins-qti-oss-videotransform", "", d)} \
     "
