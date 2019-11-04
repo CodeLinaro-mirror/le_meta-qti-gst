@@ -8,10 +8,6 @@ SRC_URI += "file://0001-Enabling-omx-video-h265-component.patch"
 DEPENDS += "media"
 RDEPENDS_${PN} = "media"
 
-CFLAGS_remove_sdm845 = " -I${S}/omx/openmax"
-CFLAGS_append_sdm845 = " -DOMX_VERSION_MAJOR=1 -DOMX_VERSION_MINOR=0 -DOMX_VERSION_REVISION=0 -DOMX_VERSION_STEP=0"
-EXTRA_OECONF_append_sdm845 = " --with-omx-header-path=${STAGING_INCDIR}/mm-core"
-
 LICENSE_FLAGS_WHITELIST = "commercial"
 
 GSTREAMER_1_0_OMX_CORE_NAME = "${libdir}/libOmxCore.so"
