@@ -23,4 +23,5 @@ RDEPENDS_packagegroup-qti-gst = " \
       ${@bb.utils.contains("DISTRO_FEATURES", "qti-qmmf", "gstreamer1.0-plugins-qti-oss-videotransform", "", d)} \
       ${@bb.utils.contains("DISTRO_FEATURES", "qti-qmmf", "gstreamer1.0-plugins-qti-oss-mlmeta", "", d)} \
       ${@bb.utils.contains("DISTRO_FEATURES", "qti-qmmf", "gstreamer1.0-plugins-qti-oss-overlay", "", d)} \
+      ${@bb.utils.contains("DISTRO_FEATURES", "qti-qmmf", "gstreamer1.0-plugins-qti-oss-mle", "", d)} \
     "
