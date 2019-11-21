@@ -5,7 +5,7 @@ CPPFLAGS += " ${@bb.utils.contains('DISTRO_FEATURES', 'wayland', '-D__GBM__', ''
 PACKAGE_ARCH = "${MACHINE_ARCH}"
 
 PACKAGECONFIG_remove = " \
-       ${@bb.utils.contains('COMBINED_FEATURES', 'qti-display', bb.utils.contains('DISTRO_FEATURES','wayland', '', 'wayland', d), 'wayland', d)} \
+       ${@bb.utils.contains('DISTRO_FEATURES','wayland', '', 'wayland', d)} \
       "
 
 FILESEXTRAPATHS_prepend := "${THISDIR}/qti-patches:"
