@@ -8,14 +8,9 @@ inherit packagegroup
 
 PACKAGES = " \
       packagegroup-qti-gst \
-      packagegroup-qti-gstreamer \
     "
 
 RDEPENDS_packagegroup-qti-gst = " \
-      ${@bb.utils.contains("DISTRO_FEATURES", "gstreamer", "packagegroup-qti-gstreamer", "", d)} \
-    "
-
-RDEPENDS_packagegroup-qti-gstreamer = " \
       gstreamer1.0 \
       gstreamer1.0-plugins-base \
       gstreamer1.0-plugins-good \
