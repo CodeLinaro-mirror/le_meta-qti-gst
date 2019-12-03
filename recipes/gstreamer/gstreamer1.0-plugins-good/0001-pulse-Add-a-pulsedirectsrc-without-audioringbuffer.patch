@@ -1,0 +1,2157 @@
+From e97c3b482762d3a2f0f2a897bac349e33e3ca55c Mon Sep 17 00:00:00 2001
+From: Santhosh S <sants@codeaurora.org>
+Date: Wed, 10 Jul 2019 14:38:30 +0530
+Subject: [PATCH] pulse: Add a pulsedirectsrc without audioringbuffer
+
+pulsedirectsrc extends base src class for cases where we don't want to
+go through GstAudioRingBuffer. Examples include when we need to pass
+timestamps directly to PulseAudio, or when sending captured compressed
+data.
+---
+ ext/pulse/Makefile.am      |    2 +
+ ext/pulse/plugin.c         |    5 +
+ ext/pulse/pulsedirectsrc.c | 1961 ++++++++++++++++++++++++++++++++++++
+ ext/pulse/pulsedirectsrc.h |  107 ++
+ ext/pulse/pulseutil.h      |    1 -
+ 5 files changed, 2075 insertions(+), 1 deletion(-)
+ create mode 100644 ext/pulse/pulsedirectsrc.c
+ create mode 100644 ext/pulse/pulsedirectsrc.h
+
+diff --git a/ext/pulse/Makefile.am b/ext/pulse/Makefile.am
+index 81d390373..d53c756b5 100644
+--- a/ext/pulse/Makefile.am
++++ b/ext/pulse/Makefile.am
+@@ -5,6 +5,7 @@ libgstpulseaudio_la_SOURCES = \
+ 	pulsesink.c \
+ 	pulsedirectsink.c \
+ 	pulsesrc.c \
++	pulsedirectsrc.c \
+ 	pulsedeviceprovider.c \
+ 	pulseutil.c
+ 
+@@ -18,6 +19,7 @@ noinst_HEADERS = \
+ 	pulsesink.h \
+ 	pulsedirectsink.h \
+ 	pulsesrc.h \
++	pulsedirectsrc.h \
+ 	pulsedeviceprovider.h \
+ 	pulseutil.h
+ 
+diff --git a/ext/pulse/plugin.c b/ext/pulse/plugin.c
+index eed7642dd..4aa0718c3 100644
+--- a/ext/pulse/plugin.c
++++ b/ext/pulse/plugin.c
+@@ -28,6 +28,7 @@
+ #include "pulsesink.h"
+ #include "pulsedirectsink.h"
+ #include "pulsesrc.h"
++#include "pulsedirectsrc.h"
+ #include "pulsedeviceprovider.h"
+ 
+ GST_DEBUG_CATEGORY (pulse_debug);
+@@ -54,6 +55,10 @@ plugin_init (GstPlugin * plugin)
+           GST_TYPE_PULSESRC))
+     return FALSE;
+ 
++  if (!gst_element_register (plugin, "pulsedirectsrc", GST_RANK_NONE,
++          GST_TYPE_PULSEDIRECTSRC))
++    return FALSE;
++
+   if (!gst_device_provider_register (plugin, "pulsedeviceprovider",
+           GST_RANK_PRIMARY, GST_TYPE_PULSE_DEVICE_PROVIDER))
+     return FALSE;
+diff --git a/ext/pulse/pulsedirectsrc.c b/ext/pulse/pulsedirectsrc.c
+new file mode 100644
+index 000000000..8cfd4ff2d
+--- /dev/null
++++ b/ext/pulse/pulsedirectsrc.c
+@@ -0,0 +1,1961 @@
++/*
++ *
++ *  Copyright (C) 2019 Linux Foundation. All rights reserved.
++ *
++ *
++ *
++ *  GStreamer pulseaudio plugin
++ *
++ *  Copyright (c) 2004-2008 Lennart Poettering
++ *
++ *  gst-pulse is free software; you can redistribute it and/or modify
++ *  it under the terms of the GNU Lesser General Public License as
++ *  published by the Free Software Foundation; either version 2.1 of the
++ *  License, or (at your option) any later version.
++ *
++ *  gst-pulse is distributed in the hope that it will be useful, but
++ *  WITHOUT ANY WARRANTY; without even the implied warranty of
++ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
++ *  Lesser General Public License for more details.
++ *
++ *  You should have received a copy of the GNU Lesser General Public
++ *  License along with gst-pulse; if not, write to the Free Software
++ *  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
++ *  USA.
++ */
++
++/**
++ * SECTION:element-pulsedirectsrc
++ * @see_also: pulsedirectsrc
++ *
++ * This element captures audio from a
++ * <ulink href="http://www.pulseaudio.org">PulseAudio sound server</ulink>.
++ *
++ * <refsect2>
++ * <title>Example pipelines</title>
++ * |[
++ * gst-launch-1.0 -v pulsedirectsrc device=pipe encoding-format=dsd blocksize=1536 ! audio/x-ac3, rate=48000, format=F16LE, channels=6 ! ddpdec ! pulsedirectsink timestamp=true
++ * ]| Record compressed parsed stream from a sound card using pulseaudio, decode
++ * using corresponding decoder to decode and use pulsedirectsink to render.
++ * </refsect2>
++ */
++
++#ifdef HAVE_CONFIG_H
++#include "config.h"
++#endif
++
++#include <string.h>
++#include <stdio.h>
++
++#include <gst/base/gstbasesrc.h>
++#include <gst/gsttaglist.h>
++#include <gst/audio/audio.h>
++
++#include "pulsedirectsrc.h"
++#include "pulseutil.h"
++
++GST_DEBUG_CATEGORY_EXTERN (pulse_debug);
++#define GST_CAT_DEFAULT pulse_debug
++
++#define PROVIDE_CLOCK             TRUE
++#define CUSTOM_TIMESTAMP          FALSE
++
++#define DEFAULT_SERVER            NULL
++#define DEFAULT_DEVICE            NULL
++#define DEFAULT_CURRENT_DEVICE    NULL
++#define DEFAULT_DEVICE_NAME       NULL
++#define DEFAULT_TIMESTAMP         FALSE
++#define DEFAULT_PROVIDE_CLOCK     TRUE
++#define MAX_VOLUME                10.0
++#define DEFAULT_ENCODING_FORMAT   "pcm"
++
++#define CONTEXT_OK(c) ((c) && PA_CONTEXT_IS_GOOD (pa_context_get_state ((c))))
++#define STREAM_OK(s) ((s) && PA_STREAM_IS_GOOD (pa_stream_get_state ((s))))
++
++enum
++{
++  PROP_0,
++  PROP_SERVER,
++  PROP_DEVICE,
++  PROP_DEVICE_NAME,
++  PROP_CURRENT_DEVICE,
++  PROP_CLIENT_NAME,
++  PROP_STREAM_PROPERTIES,
++  PROP_SOURCE_OUTPUT_INDEX,
++  PROP_TIMESTAMP,
++  PROP_PROVIDE_CLOCK,
++  PROP_ENCODING_FORMAT,
++  PROP_LAST
++};
++
++static GstStaticPadTemplate srcpad_template = GST_STATIC_PAD_TEMPLATE ("src",
++    GST_PAD_SRC,
++    GST_PAD_ALWAYS,
++    GST_STATIC_CAPS (PULSE_DIRECT_SRC_TEMPLATE_CAPS));
++
++static void gst_pulsedirectsrc_destroy_stream (GstPulseDirectSrc * pulsesrc);
++static void gst_pulsedirectsrc_destroy_context (GstPulseDirectSrc * pulsesrc);
++static gboolean gst_pulsedirectsrc_set_corked (GstPulseDirectSrc * psrc,
++    gboolean corked, gboolean wait);
++static gboolean gst_pulsedirectsrc_open (GstPulseDirectSrc * pulsesrc);
++static gboolean gst_pulsedirectsrc_close (GstPulseDirectSrc * pulsesrc);
++static gboolean gst_pulsedirectsrc_query (GstBaseSrc * src, GstQuery * query);
++static GstFlowReturn gst_pulsedirectsrc_create (GstBaseSrc * bsrc,
++    guint64 offset, guint length, GstBuffer ** buf);
++static gboolean gst_pulsedirectsrc_start (GstBaseSrc * basesink);
++static gboolean gst_pulsedirectsrc_stop (GstBaseSrc * basesink);
++static gboolean gst_pulsedirectsrc_event (GstBaseSrc * bsrc, GstEvent * event);
++static GstStateChangeReturn gst_pulsedirectsrc_change_state (GstElement *
++    element, GstStateChange transition);
++static gboolean gst_pulsedirectsrc_negotiate (GstBaseSrc * basesrc);
++static gboolean gst_pulsedirectsrc_setcaps (GstBaseSrc * bsrc, GstCaps * caps);
++static void gst_pulsedirectsrc_set_property (GObject * object,
++    guint prop_id, const GValue * value, GParamSpec * pspec);
++static void gst_pulsedirectsrc_get_property (GObject * object,
++    guint prop_id, GValue * value, GParamSpec * pspec);
++static void gst_pulsedirectsrc_finalize (GObject * obj);
++#if PROVIDE_CLOCK
++static GstClock *gst_pulsedirectsrc_provide_clock (GstElement * element);
++static GstClockTime gst_pulsedirectsrc_get_time (GstClock * clock,
++    GstPulseDirectSrc * src);
++#endif
++static void gst_pulsedirectsrc_get_times (GstBaseSrc * bsrc,
++    GstBuffer * buffer, GstClockTime * start, GstClockTime * end);
++
++#define gst_pulsedirectsrc_parent_class parent_class
++G_DEFINE_TYPE_WITH_CODE (GstPulseDirectSrc, gst_pulsedirectsrc,
++    GST_TYPE_BASE_SRC, NULL);
++
++static void
++gst_pulsedirectsrc_class_init (GstPulseDirectSrcClass * klass)
++{
++  GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
++  GstBaseSrcClass *gstbasesrc_class = GST_BASE_SRC_CLASS (klass);
++  GstElementClass *gstelement_class = GST_ELEMENT_CLASS (klass);
++  gchar *clientname;
++
++  gobject_class->finalize = gst_pulsedirectsrc_finalize;
++  gobject_class->set_property = gst_pulsedirectsrc_set_property;
++  gobject_class->get_property = gst_pulsedirectsrc_get_property;
++  gstelement_class->change_state =
++      GST_DEBUG_FUNCPTR (gst_pulsedirectsrc_change_state);
++#if PROVIDE_CLOCK
++  gstelement_class->provide_clock =
++      GST_DEBUG_FUNCPTR (gst_pulsedirectsrc_provide_clock);
++#endif
++  gstbasesrc_class->event = GST_DEBUG_FUNCPTR (gst_pulsedirectsrc_event);
++  gstbasesrc_class->negotiate =
++      GST_DEBUG_FUNCPTR (gst_pulsedirectsrc_negotiate);
++  gstbasesrc_class->set_caps = GST_DEBUG_FUNCPTR (gst_pulsedirectsrc_setcaps);
++  gstbasesrc_class->create = GST_DEBUG_FUNCPTR (gst_pulsedirectsrc_create);
++  gstbasesrc_class->start = GST_DEBUG_FUNCPTR (gst_pulsedirectsrc_start);
++  gstbasesrc_class->stop = GST_DEBUG_FUNCPTR (gst_pulsedirectsrc_stop);
++  gstbasesrc_class->query = GST_DEBUG_FUNCPTR (gst_pulsedirectsrc_query);
++  gstbasesrc_class->get_times =
++      GST_DEBUG_FUNCPTR (gst_pulsedirectsrc_get_times);
++
++  /* Overwrite GObject fields */
++  g_object_class_install_property (gobject_class,
++      PROP_SERVER,
++      g_param_spec_string ("server", "Server",
++          "The PulseAudio server to connect to", DEFAULT_SERVER,
++          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
++
++  g_object_class_install_property (gobject_class, PROP_DEVICE,
++      g_param_spec_string ("device", "Device",
++          "The PulseAudio source device to connect to", DEFAULT_DEVICE,
++          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
++
++  g_object_class_install_property (gobject_class, PROP_CURRENT_DEVICE,
++      g_param_spec_string ("current-device", "Current Device",
++          "The current PulseAudio source device", DEFAULT_CURRENT_DEVICE,
++          G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
++
++  g_object_class_install_property (gobject_class,
++      PROP_DEVICE_NAME,
++      g_param_spec_string ("device-name", "Device name",
++          "Human-readable name of the sound device", DEFAULT_DEVICE_NAME,
++          G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
++
++  g_object_class_install_property (gobject_class, PROP_TIMESTAMP,
++      g_param_spec_boolean ("timestamp", "Timestamp",
++          "Provide buffers with timestamp", DEFAULT_TIMESTAMP,
++          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
++
++  g_object_class_install_property (gobject_class, PROP_PROVIDE_CLOCK,
++      g_param_spec_boolean ("provide-clock", "Provide clock",
++          "Provide a clock that can be used as the pipeline clock",
++          DEFAULT_PROVIDE_CLOCK, G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
++
++  g_object_class_install_property (gobject_class, PROP_ENCODING_FORMAT,
++      g_param_spec_string ("encoding-format", "Encoding Format",
++          "The PulseAudio source format to connect to",
++          DEFAULT_ENCODING_FORMAT, G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
++
++  clientname = gst_pulse_client_name ();
++  GST_LOG_OBJECT (gstbasesrc_class, " Client Name : %s", clientname);
++  /**
++   * GstPulseDirectSrc:client-name
++   *
++   * The PulseAudio client name to use.
++   */
++  g_object_class_install_property (gobject_class,
++      PROP_CLIENT_NAME,
++      g_param_spec_string ("client-name", "Client Name",
++          "The PulseAudio client_name_to_use", clientname,
++          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS |
++          GST_PARAM_MUTABLE_READY));
++  g_free (clientname);
++
++  /**
++   * GstPulseDirectSrc:stream-properties:
++   *
++   * List of pulseaudio stream properties. A list of defined properties can be
++   * found in the <ulink href="http://0pointer.de/lennart/projects/pulseaudio/doxygen/proplist_8h.html">pulseaudio api docs</ulink>.
++   *
++   * Below is an example for registering as a music application to pulseaudio.
++   * |[
++   * GstStructure *props;
++   *
++   * props = gst_structure_from_string ("props,media.role=music", NULL);
++   * g_object_set (pulse, "stream-properties", props, NULL);
++   * gst_structure_free (props);
++   * ]|
++   */
++  g_object_class_install_property (gobject_class,
++      PROP_STREAM_PROPERTIES,
++      g_param_spec_boxed ("stream-properties", "stream properties",
++          "list of pulseaudio stream properties",
++          GST_TYPE_STRUCTURE, G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
++  /**
++   * GstPulseDirectSrc:source-output-index:
++   *
++   * The index of the PulseAudio source output corresponding to this element.
++   */
++
++  g_object_class_install_property (gobject_class,
++      PROP_SOURCE_OUTPUT_INDEX,
++      g_param_spec_uint ("source-output-index", "source output index",
++          "The index of the PulseAudio source output corresponding to this "
++          "record stream", 0, G_MAXUINT, PA_INVALID_INDEX,
++          G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
++
++  gst_element_class_set_static_metadata (gstelement_class,
++      "PulseAudio Audio Direct Source",
++      "Source/Audio", "Captures audio from a PulseAudio server", "Santhosh S");
++
++  gst_element_class_add_static_pad_template (gstelement_class,
++      &srcpad_template);
++}
++
++static void
++gst_pulsedirectsrc_set_provide_clock (GstPulseDirectSrc * psrc,
++    gboolean provide_clock)
++{
++  GST_OBJECT_LOCK (psrc);
++  GST_DEBUG_OBJECT (psrc, " set provide clock %d", provide_clock);
++
++  psrc->provide_clock = provide_clock;
++
++  if (psrc->provide_clock)
++    GST_OBJECT_FLAG_SET (psrc, GST_ELEMENT_FLAG_PROVIDE_CLOCK);
++  else
++    GST_OBJECT_FLAG_UNSET (psrc, GST_ELEMENT_FLAG_PROVIDE_CLOCK);
++
++  GST_OBJECT_UNLOCK (psrc);
++}
++
++
++static void
++gst_pulsedirectsrc_init (GstPulseDirectSrc * pulsesrc)
++{
++  pulsesrc->server = NULL;
++  pulsesrc->device = NULL;
++  pulsesrc->encoding_format = NULL;
++  pulsesrc->client_name = gst_pulse_client_name ();
++  pulsesrc->device_description = NULL;
++
++  pulsesrc->context = NULL;
++  pulsesrc->stream = NULL;
++  pulsesrc->stream_connected = FALSE;
++  pulsesrc->source_output_idx = PA_INVALID_INDEX;
++
++  pulsesrc->read_buffer = NULL;
++  pulsesrc->read_buffer_length = 0;
++
++  pa_sample_spec_init (&pulsesrc->sample_spec);
++
++  pulsesrc->paused = FALSE;
++  pulsesrc->operation_success = FALSE;
++
++  pulsesrc->properties = NULL;
++  pulsesrc->proplist = NULL;
++
++  pulsesrc->provide_clock = DEFAULT_PROVIDE_CLOCK;
++  pulsesrc->timestamp = DEFAULT_TIMESTAMP;
++  pulsesrc->non_pcm = FALSE;
++
++#if PROVIDE_CLOCK
++  pulsesrc->clock = gst_audio_clock_new ("PulseDirectSrcClock",
++      (GstAudioClockGetTimeFunc) gst_pulsedirectsrc_get_time, pulsesrc, NULL);
++#endif
++
++  /* we are always a live source */
++  gst_base_src_set_live (GST_BASE_SRC (pulsesrc), TRUE);
++  /* we operate in time */
++  gst_base_src_set_format (GST_BASE_SRC (pulsesrc), GST_FORMAT_TIME);
++  gst_base_src_set_do_timestamp (GST_BASE_SRC (pulsesrc), TRUE);
++}
++
++static gboolean
++gst_pulsedirectsrc_query (GstBaseSrc * src, GstQuery * query)
++{
++  gboolean ret;
++
++  switch (GST_QUERY_TYPE (query)) {
++    case GST_QUERY_SCHEDULING:
++    {
++      /* a pulsedirect source can by default never operate in pull mode override
++       * if you want something different. */
++      gst_query_set_scheduling (query, GST_SCHEDULING_FLAG_SEQUENTIAL, 1, -1,
++          0);
++      gst_query_add_scheduling_mode (query, GST_PAD_MODE_PUSH);
++
++      ret = TRUE;
++      break;
++    }
++    default:
++      ret = GST_BASE_SRC_CLASS (parent_class)->query (src, query);
++      break;
++  }
++  return ret;
++}
++
++static void
++gst_pulsedirectsrc_destroy_stream (GstPulseDirectSrc * pulsesrc)
++{
++  GST_LOG_OBJECT (pulsesrc, " destroy stream ");
++  if (pulsesrc->stream) {
++    pa_stream_disconnect (pulsesrc->stream);
++    pa_stream_unref (pulsesrc->stream);
++    pulsesrc->stream = NULL;
++    pulsesrc->stream_connected = FALSE;
++    pulsesrc->source_output_idx = PA_INVALID_INDEX;
++    g_object_notify (G_OBJECT (pulsesrc), "source-output-index");
++  }
++
++  g_free (pulsesrc->device_description);
++  pulsesrc->device_description = NULL;
++}
++
++static void
++gst_pulsedirectsrc_destroy_context (GstPulseDirectSrc * pulsesrc)
++{
++  GST_LOG_OBJECT (pulsesrc, " destroy context ");
++  gst_pulsedirectsrc_destroy_stream (pulsesrc);
++
++  if (pulsesrc->context) {
++    pa_context_disconnect (pulsesrc->context);
++
++    /* Make sure we don't get any further callbacks */
++    pa_context_set_state_callback (pulsesrc->context, NULL, NULL);
++    pa_context_set_subscribe_callback (pulsesrc->context, NULL, NULL);
++
++    pa_context_unref (pulsesrc->context);
++
++    pulsesrc->context = NULL;
++  }
++}
++
++static void
++gst_pulsedirectsrc_finalize (GObject * obj)
++{
++  GstPulseDirectSrc *psrc = GST_PULSEDIRECTSRC_CAST (obj);
++
++  g_free (psrc->server);
++  g_free (psrc->device);
++  g_free (psrc->encoding_format);
++  g_free (psrc->client_name);
++
++  /* TODO: check if clock is unref properly */
++#if PROVIDE_CLOCK
++  gst_object_unref (psrc->clock);
++#endif
++  if (psrc->properties)
++    gst_structure_free (psrc->properties);
++  if (psrc->proplist)
++    pa_proplist_free (psrc->proplist);
++
++  G_OBJECT_CLASS (parent_class)->finalize (obj);
++}
++
++static gboolean
++gst_pulsedirectsrc_is_dead (GstPulseDirectSrc * pulsesrc, gboolean check_stream)
++{
++  if (!pulsesrc->stream_connected)
++    return TRUE;
++
++  if (!CONTEXT_OK (pulsesrc->context))
++    goto error;
++
++  if (check_stream && !STREAM_OK (pulsesrc->stream))
++    goto error;
++
++  return FALSE;
++
++error:
++  {
++    const gchar *err_str = pulsesrc->context ?
++        pa_strerror (pa_context_errno (pulsesrc->context)) : NULL;
++    GST_ELEMENT_ERROR ((pulsesrc), RESOURCE, FAILED, ("Disconnected: %s",
++            err_str), (NULL));
++    return TRUE;
++  }
++}
++
++static void
++gst_pulsedirectsrc_source_output_info_cb (pa_context * c,
++    const pa_source_output_info * i, int eol, void *userdata)
++{
++  GstPulseDirectSrc *psrc;
++
++  psrc = GST_PULSEDIRECTSRC_CAST (userdata);
++
++  if (!i)
++    goto done;
++
++  /* If the index doesn't match our current stream,
++   * it implies we just recreated the stream (caps change)
++   */
++  if (i->index == psrc->source_output_idx) {
++    psrc->volume = pa_sw_volume_to_linear (pa_cvolume_max (&i->volume));
++    psrc->mute = i->mute;
++    psrc->current_source_idx = i->source;
++
++    if (G_UNLIKELY (psrc->volume > MAX_VOLUME)) {
++      GST_WARNING_OBJECT (psrc, "Clipped volume from %f to %f",
++          psrc->volume, MAX_VOLUME);
++      psrc->volume = MAX_VOLUME;
++    }
++  }
++
++done:pa_threaded_mainloop_signal (psrc->mainloop, 0);
++}
++
++static void
++gst_pulsedirectsrc_get_source_output_info (GstPulseDirectSrc * pulsesrc,
++    gdouble * volume, gboolean * mute)
++{
++  pa_operation *o = NULL;
++
++  if (!pulsesrc->mainloop)
++    goto no_mainloop;
++
++  if (pulsesrc->source_output_idx == PA_INVALID_INDEX)
++    goto no_index;
++
++  pa_threaded_mainloop_lock (pulsesrc->mainloop);
++
++  if (!(o = pa_context_get_source_output_info (pulsesrc->context,
++              pulsesrc->source_output_idx,
++              gst_pulsedirectsrc_source_output_info_cb, pulsesrc)))
++    goto info_failed;
++
++  while (pa_operation_get_state (o) == PA_OPERATION_RUNNING) {
++    if (gst_pulsedirectsrc_is_dead (pulsesrc, TRUE))
++      goto unlock;
++
++    pa_threaded_mainloop_wait (pulsesrc->mainloop);
++  }
++
++unlock:
++
++  if (volume)
++    *volume = pulsesrc->volume;
++  if (mute)
++    *mute = pulsesrc->mute;
++
++  if (o)
++    pa_operation_unref (o);
++
++  pa_threaded_mainloop_unlock (pulsesrc->mainloop);
++
++  return;
++
++  /* ERRORS */
++no_mainloop:
++  {
++    GST_DEBUG_OBJECT (pulsesrc, "we have no mainloop");
++    if (volume)
++      *volume = pulsesrc->volume;
++    if (mute)
++      *mute = pulsesrc->mute;
++    return;
++  }
++no_index:
++  {
++    GST_DEBUG_OBJECT (pulsesrc, "we don't have a stream index");
++    if (volume)
++      *volume = pulsesrc->volume;
++    if (mute)
++      *mute = pulsesrc->mute;
++    return;
++  }
++info_failed:
++  {
++    GST_ELEMENT_ERROR (pulsesrc, RESOURCE, FAILED,
++        ("pa_context_get_source_output_info() failed: %s",
++            pa_strerror (pa_context_errno (pulsesrc->context))), (NULL));
++    goto unlock;
++  }
++}
++
++static void
++gst_pulsedirectsrc_current_source_info_cb (pa_context * c,
++    const pa_source_info * i, int eol, void *userdata)
++{
++  GstPulseDirectSrc *psrc;
++
++  psrc = GST_PULSEDIRECTSRC_CAST (userdata);
++
++  if (!i)
++    goto done;
++
++  /* If the index doesn't match our current stream,
++   * it implies we just recreated the stream (caps change)
++   */
++  if (i->index == psrc->current_source_idx) {
++    g_free (psrc->current_source_name);
++    psrc->current_source_name = g_strdup (i->name);
++  }
++
++done:pa_threaded_mainloop_signal (psrc->mainloop, 0);
++}
++
++static void
++gst_pulsedirectsrc_set_stream_device (GstPulseDirectSrc * psrc,
++    const gchar * device)
++{
++  pa_operation *o = NULL;
++
++  if (!psrc->mainloop)
++    goto no_mainloop;
++
++  if (psrc->source_output_idx == PA_INVALID_INDEX)
++    goto no_index;
++
++  pa_threaded_mainloop_lock (psrc->mainloop);
++
++  GST_DEBUG_OBJECT (psrc, "setting stream device to %s", device);
++
++  if (!(o = pa_context_move_source_output_by_name (psrc->context,
++              psrc->source_output_idx, device, NULL, NULL)))
++    goto move_failed;
++
++unlock:if (o)
++    pa_operation_unref (o);
++
++  pa_threaded_mainloop_unlock (psrc->mainloop);
++
++  return;
++
++  /* ERRORS */
++no_mainloop:
++  {
++    GST_DEBUG_OBJECT (psrc, "we have no mainloop");
++    return;
++  }
++no_index:
++  {
++    GST_DEBUG_OBJECT (psrc, "we don't have a stream index");
++    return;
++  }
++move_failed:
++  {
++    GST_ELEMENT_ERROR (psrc, RESOURCE, FAILED,
++        ("pa_context_move_source_output_by_name(%s) failed: %s",
++            device, pa_strerror (pa_context_errno (psrc->context))), (NULL));
++    goto unlock;
++  }
++}
++
++static gchar *
++gst_pulsedirectsrc_get_current_device (GstPulseDirectSrc * psrc)
++{
++  pa_operation *o = NULL;
++  gchar *current_src;
++
++  if (!psrc->mainloop)
++    goto no_mainloop;
++
++  if (psrc->source_output_idx == PA_INVALID_INDEX)
++    goto no_index;
++
++  gst_pulsedirectsrc_get_source_output_info (psrc, NULL, NULL);
++
++  pa_threaded_mainloop_lock (psrc->mainloop);
++
++
++  if (!(o = pa_context_get_source_info_by_index (psrc->context,
++              psrc->current_source_idx,
++              gst_pulsedirectsrc_current_source_info_cb, psrc)))
++    goto info_failed;
++
++  while (pa_operation_get_state (o) == PA_OPERATION_RUNNING) {
++    if (gst_pulsedirectsrc_is_dead (psrc, TRUE))
++      goto unlock;
++    pa_threaded_mainloop_wait (psrc->mainloop);
++  }
++
++unlock:
++
++  current_src = g_strdup (psrc->current_source_name);
++
++  if (o)
++    pa_operation_unref (o);
++
++  pa_threaded_mainloop_unlock (psrc->mainloop);
++
++  return current_src;
++
++  /* ERRORS */
++no_mainloop:
++  {
++    GST_DEBUG_OBJECT (psrc, "we have no mainloop");
++    return NULL;
++  }
++no_index:
++  {
++    GST_DEBUG_OBJECT (psrc, "we don't have a stream index");
++    return NULL;
++  }
++info_failed:
++  {
++    GST_ELEMENT_ERROR (psrc, RESOURCE, FAILED,
++        ("pa_context_get_source_output_info() failed: %s",
++            pa_strerror (pa_context_errno (psrc->context))), (NULL));
++    goto unlock;
++  }
++}
++
++
++static void
++gst_pulsedirectsrc_source_info_cb (pa_context * c, const pa_source_info * i,
++    int eol, void *userdata)
++{
++  GstPulseDirectSrc *pulsesrc = GST_PULSEDIRECTSRC_CAST (userdata);
++
++  if (!i)
++    goto done;
++
++  g_free (pulsesrc->device_description);
++  pulsesrc->device_description = g_strdup (i->description);
++
++done:pa_threaded_mainloop_signal (pulsesrc->mainloop, 0);
++}
++
++static gchar *
++gst_pulsedirectsrc_device_description (GstPulseDirectSrc * psrc)
++{
++  pa_operation *o = NULL;
++  gchar *t;
++
++  if (!psrc->mainloop)
++    goto no_mainloop;
++
++  pa_threaded_mainloop_lock (psrc->mainloop);
++
++  if (!(o = pa_context_get_source_info_by_name (psrc->context,
++              psrc->device, gst_pulsedirectsrc_source_info_cb, psrc))) {
++
++    GST_ELEMENT_ERROR (psrc, RESOURCE, FAILED,
++        ("pa_stream_get_source_info() failed: %s",
++            pa_strerror (pa_context_errno (psrc->context))), (NULL));
++    goto unlock;
++  }
++
++  while (pa_operation_get_state (o) == PA_OPERATION_RUNNING) {
++    if (gst_pulsedirectsrc_is_dead (psrc, FALSE))
++      goto unlock;
++
++    pa_threaded_mainloop_wait (psrc->mainloop);
++  }
++
++unlock:
++
++  if (o)
++    pa_operation_unref (o);
++
++  t = g_strdup (psrc->device_description);
++
++  pa_threaded_mainloop_unlock (psrc->mainloop);
++
++  return t;
++
++no_mainloop:
++  {
++    GST_DEBUG_OBJECT (psrc, "have no mainloop");
++    return NULL;
++  }
++}
++
++static void
++gst_pulsedirectsrc_set_property (GObject * object, guint prop_id,
++    const GValue * value, GParamSpec * pspec)
++{
++  GstPulseDirectSrc *psrc = GST_PULSEDIRECTSRC_CAST (object);
++
++  switch (prop_id) {
++    case PROP_SERVER:
++      g_free (psrc->server);
++      psrc->server = g_value_dup_string (value);
++      break;
++    case PROP_DEVICE:
++      g_free (psrc->device);
++      psrc->device = g_value_dup_string (value);
++      gst_pulsedirectsrc_set_stream_device (psrc, psrc->device);
++      break;
++    case PROP_CLIENT_NAME:
++      g_free (psrc->client_name);
++      if (!g_value_get_string (value)) {
++        GST_WARNING_OBJECT (psrc,
++            "Empty PulseAudio client name not allowed. Resetting to default value");
++        psrc->client_name = gst_pulse_client_name ();
++      } else
++        psrc->client_name = g_value_dup_string (value);
++      break;
++    case PROP_STREAM_PROPERTIES:
++      if (psrc->properties)
++        gst_structure_free (psrc->properties);
++      psrc->properties = gst_structure_copy (gst_value_get_structure (value));
++      if (psrc->proplist)
++        pa_proplist_free (psrc->proplist);
++      psrc->proplist = gst_pulse_make_proplist (psrc->properties);
++      break;
++    case PROP_PROVIDE_CLOCK:
++      gst_pulsedirectsrc_set_provide_clock (psrc, g_value_get_boolean (value));
++      break;
++    case PROP_TIMESTAMP:
++      psrc->timestamp = g_value_get_boolean (value);
++      break;
++    case PROP_ENCODING_FORMAT:
++      g_free (psrc->encoding_format);
++      psrc->encoding_format = g_value_dup_string (value);
++      if (!g_str_equal (psrc->encoding_format, "pcm")) {
++        GST_DEBUG_OBJECT (psrc, " non pcm ");
++        psrc->non_pcm = TRUE;
++      }
++      break;
++    default:
++      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
++      break;
++  }
++}
++
++static void
++gst_pulsedirectsrc_get_property (GObject * object, guint prop_id,
++    GValue * value, GParamSpec * pspec)
++{
++  GstPulseDirectSrc *psrc = GST_PULSEDIRECTSRC_CAST (object);
++
++  switch (prop_id) {
++    case PROP_SERVER:
++      g_value_set_string (value, psrc->server);
++      break;
++    case PROP_DEVICE:
++      g_value_set_string (value, psrc->device);
++      break;
++    case PROP_CURRENT_DEVICE:
++    {
++      gchar *current_device = gst_pulsedirectsrc_get_current_device (psrc);
++      if (current_device)
++        g_value_take_string (value, current_device);
++      else
++        g_value_set_string (value, "");
++      break;
++    }
++    case PROP_DEVICE_NAME:
++      g_value_take_string (value, gst_pulsedirectsrc_device_description (psrc));
++      break;
++    case PROP_CLIENT_NAME:
++      g_value_set_string (value, psrc->client_name);
++      break;
++    case PROP_STREAM_PROPERTIES:
++      gst_value_set_structure (value, psrc->properties);
++      break;
++    case PROP_SOURCE_OUTPUT_INDEX:
++      g_value_set_uint (value, psrc->source_output_idx);
++      break;
++    case PROP_TIMESTAMP:
++      g_value_set_boolean (value, psrc->timestamp);
++      break;
++    case PROP_PROVIDE_CLOCK:
++      g_value_set_boolean (value, psrc->provide_clock);
++      break;
++    case PROP_ENCODING_FORMAT:
++      g_value_set_string (value, psrc->encoding_format);
++      break;
++
++    default:
++      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
++      break;
++  }
++}
++
++static void
++gst_pulsedirectsrc_context_state_cb (pa_context * c, void *userdata)
++{
++  GstPulseDirectSrc *pulsesrc = GST_PULSEDIRECTSRC_CAST (userdata);
++  GST_LOG_OBJECT (pulsesrc, " context state callback ");
++
++  switch (pa_context_get_state (c)) {
++    case PA_CONTEXT_READY:
++    case PA_CONTEXT_TERMINATED:
++    case PA_CONTEXT_FAILED:
++      pa_threaded_mainloop_signal (pulsesrc->mainloop, 0);
++      break;
++
++    case PA_CONTEXT_UNCONNECTED:
++    case PA_CONTEXT_CONNECTING:
++      case
++    PA_CONTEXT_AUTHORIZING:
++    case PA_CONTEXT_SETTING_NAME:
++      break;
++  }
++}
++
++static void
++gst_pulsedirectsrc_context_subscribe_cb (pa_context * c,
++    pa_subscription_event_type_t t, uint32_t idx, void *userdata)
++{
++  GstPulseDirectSrc *psrc = GST_PULSEDIRECTSRC (userdata);
++  GST_LOG_OBJECT (psrc, " context subscribe callback ");
++
++  if (t != (PA_SUBSCRIPTION_EVENT_SOURCE_OUTPUT | PA_SUBSCRIPTION_EVENT_CHANGE)
++      && t != (PA_SUBSCRIPTION_EVENT_SOURCE_OUTPUT | PA_SUBSCRIPTION_EVENT_NEW))
++    return;
++
++  if (idx != psrc->source_output_idx)
++    return;
++
++  /* Actually this event is also triggered when other properties of the stream
++   * change that are unrelated to the volume. However it is probably cheaper to
++   * signal the change here and check for the volume when the GObject property
++   * is read instead of querying it always. */
++
++  /* TODO: Check to query or notify */
++}
++
++static void
++gst_pulsedirectsrc_stream_state_cb (pa_stream * s, void *userdata)
++{
++  GstPulseDirectSrc *pulsesrc = GST_PULSEDIRECTSRC_CAST (userdata);
++  GST_LOG_OBJECT (pulsesrc, " stream state callback ");
++
++  switch (pa_stream_get_state (s)) {
++
++    case PA_STREAM_READY:
++    case PA_STREAM_FAILED:
++    case PA_STREAM_TERMINATED:
++      pa_threaded_mainloop_signal (pulsesrc->mainloop, 0);
++      break;
++
++    case PA_STREAM_UNCONNECTED:
++    case PA_STREAM_CREATING:
++      break;
++  }
++}
++
++static void
++gst_pulsedirectsrc_stream_request_cb (pa_stream * s, size_t length,
++    void *userdata)
++{
++  GstPulseDirectSrc *pulsesrc = GST_PULSEDIRECTSRC_CAST (userdata);
++
++  GST_LOG_OBJECT (pulsesrc, "got request for length %" G_GSIZE_FORMAT, length);
++
++  pa_threaded_mainloop_signal (pulsesrc->mainloop, 0);
++}
++
++static void
++gst_pulsedirectsrc_stream_latency_update_cb (pa_stream * s, void *userdata)
++{
++  /* TODO */
++}
++
++static void
++gst_pulsedirectsrc_stream_underflow_cb (pa_stream * s, void *userdata)
++{
++  GST_WARNING_OBJECT (GST_PULSEDIRECTSRC_CAST (userdata), "Got underflow");
++}
++
++static void
++gst_pulsedirectsrc_stream_overflow_cb (pa_stream * s, void *userdata)
++{
++  GST_WARNING_OBJECT (GST_PULSEDIRECTSRC_CAST (userdata), "Got overflow");
++}
++
++static gboolean
++gst_pulsedirectsrc_open (GstPulseDirectSrc * psrc)
++{
++  GstPulseDirectSrc *pulsesrc = GST_PULSEDIRECTSRC_CAST (psrc);
++
++  pa_threaded_mainloop_lock (pulsesrc->mainloop);
++
++  g_assert (!pulsesrc->context);
++  g_assert (!pulsesrc->stream);
++
++  GST_DEBUG_OBJECT (pulsesrc, "opening device");
++
++  if (!(pulsesrc->context =
++          pa_context_new (pa_threaded_mainloop_get_api (pulsesrc->mainloop),
++              pulsesrc->client_name))) {
++    GST_ELEMENT_ERROR (pulsesrc, RESOURCE, FAILED, ("Failed to create context"),
++        (NULL));
++    goto unlock_and_fail;
++  }
++
++  pa_context_set_state_callback (pulsesrc->context,
++      gst_pulsedirectsrc_context_state_cb, pulsesrc);
++  pa_context_set_subscribe_callback (pulsesrc->context,
++      gst_pulsedirectsrc_context_subscribe_cb, pulsesrc);
++
++  GST_DEBUG_OBJECT (pulsesrc, "connect to server %s",
++      GST_STR_NULL (pulsesrc->server));
++
++  if (pa_context_connect (pulsesrc->context, pulsesrc->server, 0, NULL) < 0) {
++    GST_ELEMENT_ERROR (pulsesrc, RESOURCE, FAILED, ("Failed to connect: %s",
++            pa_strerror (pa_context_errno (pulsesrc->context))), (NULL));
++    goto unlock_and_fail;
++  }
++
++  for (;;) {
++    pa_context_state_t state;
++
++    state = pa_context_get_state (pulsesrc->context);
++
++    if (!PA_CONTEXT_IS_GOOD (state)) {
++      GST_ELEMENT_ERROR (pulsesrc, RESOURCE, FAILED, ("Failed to connect: %s",
++              pa_strerror (pa_context_errno (pulsesrc->context))), (NULL));
++      goto unlock_and_fail;
++    }
++
++    if (state == PA_CONTEXT_READY)
++      break;
++
++    /* Wait until the context is ready */
++    pa_threaded_mainloop_wait (pulsesrc->mainloop);
++  }
++  GST_DEBUG_OBJECT (pulsesrc, "connected");
++
++  pa_threaded_mainloop_unlock (pulsesrc->mainloop);
++
++  return TRUE;
++
++  /* ERRORS */
++unlock_and_fail:
++  {
++    gst_pulsedirectsrc_destroy_context (pulsesrc);
++
++    pa_threaded_mainloop_unlock (pulsesrc->mainloop);
++
++    return FALSE;
++  }
++}
++
++static gboolean
++gst_pulsedirectsrc_close (GstPulseDirectSrc * pulsesrc)
++{
++  GST_LOG_OBJECT (pulsesrc, " close");
++  pa_threaded_mainloop_lock (pulsesrc->mainloop);
++  gst_pulsedirectsrc_destroy_context (pulsesrc);
++  pa_threaded_mainloop_unlock (pulsesrc->mainloop);
++
++  pulsesrc->read_buffer = NULL;
++  pulsesrc->read_buffer_length = 0;
++
++  return TRUE;
++}
++
++
++static gboolean
++gst_pulsedirectsrc_start (GstBaseSrc * basesink)
++{
++  GstPulseDirectSrc *psrc = GST_PULSEDIRECTSRC (basesink);
++  GST_LOG_OBJECT (psrc, " start ");
++  return gst_pulsedirectsrc_open (psrc);
++}
++
++static gboolean
++gst_pulsedirectsrc_stop (GstBaseSrc * basesink)
++{
++  GstPulseDirectSrc *psrc = GST_PULSEDIRECTSRC (basesink);
++  GST_LOG_OBJECT (psrc, " stop ");
++  return gst_pulsedirectsrc_close (psrc);
++}
++
++static void
++gst_pulsedirectsrc_success_cb (pa_stream * s, int success, void *userdata)
++{
++  GstPulseDirectSrc *pulsesrc = GST_PULSEDIRECTSRC_CAST (userdata);
++  GST_LOG_OBJECT (pulsesrc, " sucess callback success : %d ", success);
++
++  pulsesrc->operation_success = ! !success;
++  pa_threaded_mainloop_signal (pulsesrc->mainloop, 0);
++}
++
++static void
++gst_pulsedirectsrc_reset (GstPulseDirectSrc * pulsesrc)
++{
++  GST_LOG_OBJECT (pulsesrc, " reset ");
++  pa_operation *o = NULL;
++  pa_threaded_mainloop_lock (pulsesrc->mainloop);
++
++  if (gst_pulsedirectsrc_is_dead (pulsesrc, TRUE))
++    goto unlock_and_fail;
++
++  if (!(o =
++          pa_stream_flush (pulsesrc->stream, gst_pulsedirectsrc_success_cb,
++              pulsesrc))) {
++    GST_ELEMENT_ERROR (pulsesrc, RESOURCE, FAILED,
++        ("pa_stream_flush() failed: %s",
++            pa_strerror (pa_context_errno (pulsesrc->context))), (NULL));
++    goto unlock_and_fail;
++  }
++
++  pulsesrc->operation_success = FALSE;
++  while (pa_operation_get_state (o) == PA_OPERATION_RUNNING) {
++
++    if (gst_pulsedirectsrc_is_dead (pulsesrc, TRUE))
++      goto unlock_and_fail;
++
++    pa_threaded_mainloop_wait (pulsesrc->mainloop);
++  }
++  if (!pulsesrc->operation_success) {
++    GST_ELEMENT_ERROR (pulsesrc, RESOURCE, FAILED, ("Flush failed: %s",
++            pa_strerror (pa_context_errno (pulsesrc->context))), (NULL));
++    goto unlock_and_fail;
++  }
++
++unlock_and_fail:
++
++  if (o) {
++    pa_operation_cancel (o);
++    pa_operation_unref (o);
++  }
++  pa_threaded_mainloop_unlock (pulsesrc->mainloop);
++}
++
++/* update the corked state of a stream, must be called with the mainloop
++ * lock */
++static gboolean
++gst_pulsedirectsrc_set_corked (GstPulseDirectSrc * psrc, gboolean corked,
++    gboolean wait)
++{
++  pa_operation *o = NULL;
++  gboolean res = FALSE;
++
++  GST_DEBUG_OBJECT (psrc, "setting corked state to %d", corked);
++  if (!psrc->stream_connected)
++    return TRUE;
++
++  if (psrc->corked != corked) {
++    if (!(o = pa_stream_cork (psrc->stream, corked,
++                gst_pulsedirectsrc_success_cb, psrc)))
++      goto cork_failed;
++
++    while (wait && pa_operation_get_state (o) == PA_OPERATION_RUNNING) {
++      if (gst_pulsedirectsrc_is_dead (psrc, TRUE))
++        goto server_dead;
++
++      pa_threaded_mainloop_wait (psrc->mainloop);
++    }
++    psrc->corked = corked;
++  } else {
++    GST_DEBUG_OBJECT (psrc, "skipping, already in requested state");
++  }
++  res = TRUE;
++
++cleanup:
++  if (o)
++    pa_operation_unref (o);
++
++  return res;
++server_dead:
++  {
++    GST_DEBUG_OBJECT (psrc, "the server is dead");
++    goto cleanup;
++  }
++cork_failed:
++  {
++    GST_ELEMENT_ERROR (psrc, RESOURCE, FAILED,
++        ("pa_stream_cork() failed: %s",
++            pa_strerror (pa_context_errno (psrc->context))), (NULL));
++    goto cleanup;
++  }
++}
++
++/* start/resume playback ASAP */
++static gboolean
++gst_pulsedirectsrc_play (GstPulseDirectSrc * psrc)
++{
++  pa_threaded_mainloop_lock (psrc->mainloop);
++  GST_DEBUG_OBJECT (psrc, "playing");
++  psrc->paused = FALSE;
++  gst_pulsedirectsrc_set_corked (psrc, FALSE, FALSE);
++  pa_threaded_mainloop_unlock (psrc->mainloop);
++
++  return TRUE;
++}
++
++/* pause/stop playback ASAP */
++static gboolean
++gst_pulsedirectsrc_pause (GstPulseDirectSrc * psrc)
++{
++  pa_threaded_mainloop_lock (psrc->mainloop);
++  GST_DEBUG_OBJECT (psrc, "pausing");
++  /* make sure the commit method stops writing */
++  psrc->paused = TRUE;
++  pa_threaded_mainloop_unlock (psrc->mainloop);
++
++  return TRUE;
++}
++
++static GstStateChangeReturn
++gst_pulsedirectsrc_change_state (GstElement * element,
++    GstStateChange transition)
++{
++  GstStateChangeReturn ret;
++  gboolean no_preroll = FALSE;
++  GstPulseDirectSrc *this = GST_PULSEDIRECTSRC_CAST (element);
++  GST_LOG_OBJECT (this, " state changed ");
++
++  switch (transition) {
++    case GST_STATE_CHANGE_NULL_TO_READY:
++      GST_LOG_OBJECT (this, " Null to Ready ");
++      if (!(this->mainloop = pa_threaded_mainloop_new ()))
++        goto mainloop_failed;
++      if (pa_threaded_mainloop_start (this->mainloop) < 0) {
++        pa_threaded_mainloop_free (this->mainloop);
++        this->mainloop = NULL;
++        goto mainloop_start_failed;
++      }
++      break;
++    case GST_STATE_CHANGE_READY_TO_PAUSED:
++      GST_LOG_OBJECT (this, " Ready to Paused ");
++#if PROVIDE_CLOCK
++      gst_element_post_message (element,
++          gst_message_new_clock_provide (GST_OBJECT_CAST (element),
++              this->clock, TRUE));
++#endif
++      no_preroll = gst_base_src_is_live (GST_BASE_SRC (this));
++      break;
++    case GST_STATE_CHANGE_PAUSED_TO_PLAYING:
++      GST_LOG_OBJECT (this, " Paused to Playing ");
++      /* uncork and start recording */
++      if (gst_base_src_is_live (GST_BASE_SRC (this)))
++        gst_pulsedirectsrc_play (this);
++      break;
++    case GST_STATE_CHANGE_PLAYING_TO_PAUSED:
++      GST_LOG_OBJECT (this, " Playing to Paused ");
++      /* stop recording ASAP by corking */
++      pa_threaded_mainloop_lock (this->mainloop);
++      GST_DEBUG_OBJECT (this, "corking");
++      gst_pulsedirectsrc_set_corked (this, TRUE, FALSE);
++      pa_threaded_mainloop_unlock (this->mainloop);
++      break;
++    default:
++      break;
++  }
++  ret = GST_ELEMENT_CLASS (parent_class)->change_state (element, transition);
++
++  switch (transition) {
++    case GST_STATE_CHANGE_PLAYING_TO_PAUSED:
++      /* now make sure we get out of the _read method */
++      gst_pulsedirectsrc_pause (this);
++      break;
++    case GST_STATE_CHANGE_READY_TO_NULL:
++      if (this->mainloop)
++        pa_threaded_mainloop_stop (this->mainloop);
++
++      gst_pulsedirectsrc_destroy_context (this);
++
++      if (this->mainloop) {
++        pa_threaded_mainloop_free (this->mainloop);
++        this->mainloop = NULL;
++      }
++      break;
++    case GST_STATE_CHANGE_PAUSED_TO_READY:
++#if PROVIDE_CLOCK
++      /* format_lost is reset in release() in baseaudiosink */
++      gst_element_post_message (element,
++          gst_message_new_clock_lost (GST_OBJECT_CAST (element), this->clock));
++#endif
++      gst_pulsedirectsrc_reset (this);
++
++      break;
++    default:
++      break;
++  }
++  GST_DEBUG_OBJECT (this, "ret : %d no_preroll : %d", ret, no_preroll);
++  if (no_preroll && ret == GST_STATE_CHANGE_SUCCESS)
++    ret = GST_STATE_CHANGE_NO_PREROLL;
++  return ret;
++
++  /* ERRORS */
++mainloop_failed:
++  {
++    GST_ELEMENT_ERROR (this, RESOURCE, FAILED,
++        ("pa_threaded_mainloop_new() failed"), (NULL));
++    return GST_STATE_CHANGE_FAILURE;
++  }
++mainloop_start_failed:
++  {
++    GST_ELEMENT_ERROR (this, RESOURCE, FAILED,
++        ("pa_threaded_mainloop_start() failed"), (NULL));
++    return GST_STATE_CHANGE_FAILURE;
++  }
++}
++
++#if PROVIDE_CLOCK
++static GstClock *
++gst_pulsedirectsrc_provide_clock (GstElement * element)
++{
++  GstPulseDirectSrc *psrc = GST_PULSEDIRECTSRC (element);
++  GST_DEBUG_OBJECT (psrc, " provide clock ");
++
++  if (psrc->stream) {
++    GST_DEBUG_OBJECT (psrc, "Provide Clock from pulsedirectsrc");
++    return gst_object_ref (psrc->clock);
++  } else {
++    GST_DEBUG_OBJECT (psrc, "No stream, cannot provide clock");
++    return NULL;
++  }
++}
++#endif
++static gboolean
++gst_pulsedirectsrc_event (GstBaseSrc * basesrc, GstEvent * event)
++{
++  GST_DEBUG_OBJECT (basesrc, "handle event %" GST_PTR_FORMAT, event);
++
++  switch (GST_EVENT_TYPE (event)) {
++    case GST_EVENT_RECONFIGURE:
++      gst_pad_check_reconfigure (GST_BASE_SRC_PAD (basesrc));
++      break;
++    default:
++      break;
++  }
++  return GST_BASE_SRC_CLASS (parent_class)->event (basesrc, event);
++}
++
++static gboolean
++gst_pulsedirectsrc_parse_caps (GstAudioRingBufferSpec * spec, GstCaps * caps)
++{
++  const gchar *format;
++  GstStructure *structure;
++  GstAudioInfo info;
++  gint i;
++
++  structure = gst_caps_get_structure (caps, 0);
++  gst_audio_info_init (&info);
++
++  format = gst_structure_get_name (structure);
++  GST_DEBUG (" format :%s ", format);
++
++  if (g_str_equal (format, "audio/x-raw")) {
++    if (!gst_audio_info_from_caps (&info, caps))
++      goto parse_error;
++
++    spec->type = GST_AUDIO_RING_BUFFER_FORMAT_TYPE_RAW;
++  } else if (g_str_equal (format, "audio/x-dsd")) {
++    GST_DEBUG (" It's DSD");
++    /* extract the needed information from the cap */
++    gst_structure_get_int (structure, "channels", &info.channels);
++    gst_structure_get_int (structure, "rate", &info.rate);
++    GST_DEBUG ("channels %d rate %d", info.channels, info.rate);
++  } else if (g_str_equal (format, "audio/mpeg") &&
++      gst_structure_get_int (structure, "mpegaudioversion", &i) &&
++      (i == 1 || i == 2 || i == 3)) {
++    /* Now we know this is MPEG-1, MPEG-2 or MPEG-2.5 (non AAC) */
++    /* extract the needed information from the cap */
++    if (!(gst_structure_get_int (structure, "rate", &info.rate)))
++      goto parse_error;
++
++    gst_structure_get_int (structure, "channels", &info.channels);
++    spec->type = GST_AUDIO_RING_BUFFER_FORMAT_TYPE_MPEG;
++    info.bpf = 1;
++  } else if (g_str_equal (format, "audio/x-ac3")) {
++    GST_DEBUG (" It's AC3");
++    /* extract the needed information from the cap */
++    if (!(gst_structure_get_int (structure, "rate", &info.rate)))
++      goto parse_error;
++
++    gst_structure_get_int (structure, "channels", &info.channels);
++    spec->type = GST_AUDIO_RING_BUFFER_FORMAT_TYPE_AC3;
++    info.bpf = 4;
++  }
++  /* TODO: check for other audio formats as well */
++  else {
++    /* There should be no other format we support as of now */
++    g_assert_not_reached ();
++  }
++
++  gst_caps_replace (&spec->caps, caps);
++
++  /* TODO: check for segsize segtotal and seglatency */
++  spec->info = info;
++
++  return TRUE;
++
++  /* ERRORS */
++parse_error:
++  {
++    GST_DEBUG ("could not parse caps");
++    return FALSE;
++  }
++}
++
++#if PROVIDE_CLOCK
++static GstClockTime
++gst_pulsedirectsrc_get_time (GstClock * clock, GstPulseDirectSrc * psrc)
++{
++  pa_usec_t time = 0;
++  int ret;
++  GST_DEBUG_OBJECT (psrc, "get time");
++
++  pa_threaded_mainloop_lock (psrc->mainloop);
++
++  if (!psrc->stream)
++    goto unlock_and_out;
++
++  if (gst_pulsedirectsrc_is_dead (psrc, TRUE))
++    goto unlock_and_out;
++
++  ret = pa_stream_get_time (psrc->stream, &time);
++
++  if (ret < 0) {
++    GST_DEBUG_OBJECT (psrc, "could not get time");
++    return GST_CLOCK_TIME_NONE;
++  } else {
++    GST_DEBUG_OBJECT (psrc, "got time: %" GST_TIME_FORMAT,
++        GST_TIME_ARGS (time * GST_USECOND));
++    return time * GST_USECOND;
++  }
++unlock_and_out:
++  pa_threaded_mainloop_unlock (psrc->mainloop);
++
++out:
++  return time;
++}
++#endif
++
++static gboolean
++gst_pulsedirectsrc_create_stream (GstPulseDirectSrc * pulsesrc,
++    GstCaps ** caps, GstAudioRingBufferSpec * rspec)
++{
++  GST_LOG_OBJECT (pulsesrc, " Creating a new stream ");
++  pa_channel_map channel_map;
++  const pa_channel_map *m;
++  pa_format_info *format;
++  pa_format_info *formats[1];
++  GstStructure *s;
++  gboolean need_channel_layout = FALSE;
++  GstAudioRingBufferSpec new_spec, *spec = NULL;
++  const gchar *name;
++  int i;
++
++  /* If we already have a stream (renegotiation), free it first */
++  if (pulsesrc->stream) {
++    GST_LOG_OBJECT (pulsesrc, " Already having a stream freeing it");
++    gst_pulsedirectsrc_destroy_stream (pulsesrc);
++  }
++
++  if (rspec) {
++    /* Post-negotiation, we already have a spec, so we just need to
++     * use it to create a stream. */
++    spec = rspec;
++
++    /* At this point, we expect the channel-mask to be set in caps, so we just
++     * use that */
++    if (!gst_pulse_gst_to_channel_map (&channel_map, spec))
++      goto invalid_spec;
++
++  } else if (caps) {
++    /* At negotiation time, we get a fixed caps and use it to set up a stream */
++    GST_DEBUG_OBJECT (pulsesrc, "caps in create: %" GST_PTR_FORMAT, *caps);
++    s = gst_caps_get_structure (*caps, 0);
++    gst_structure_get_int (s, "channels", &new_spec.info.channels);
++    if (!gst_structure_has_field (s, "channel-mask")) {
++      if (new_spec.info.channels == 1) {
++        pa_channel_map_init_mono (&channel_map);
++      } else if (new_spec.info.channels == 2) {
++        pa_channel_map_init_stereo (&channel_map);
++      } else {
++        need_channel_layout = TRUE;
++        gst_structure_set (s, "channel-mask", GST_TYPE_BITMASK,
++            G_GUINT64_CONSTANT (0), NULL);
++      }
++    }
++
++    memset (&new_spec, 0, sizeof (GstAudioRingBufferSpec));
++    new_spec.latency_time = GST_SECOND;
++    if (!gst_pulsedirectsrc_parse_caps (&new_spec, *caps))
++      goto invalid_caps;
++
++    /* Keep the refcount of the caps at 1 to make them writable */
++    gst_caps_unref (new_spec.caps);
++
++    if (!need_channel_layout
++        && !gst_pulse_gst_to_channel_map (&channel_map, &new_spec)) {
++      need_channel_layout = TRUE;
++      gst_structure_set (s, "channel-mask", GST_TYPE_BITMASK,
++          G_GUINT64_CONSTANT (0), NULL);
++      for (i = 0; i < G_N_ELEMENTS (new_spec.info.position); i++)
++        new_spec.info.position[i] = GST_AUDIO_CHANNEL_POSITION_INVALID;
++    }
++
++    spec = &new_spec;
++  } else {
++    /* !rspec && !caps */
++    g_assert_not_reached ();
++  }
++
++  if (pulsesrc->non_pcm) {
++    format = pa_format_info_new ();
++    formats[0] = format;
++    format->encoding = PA_ENCODING_DSD;
++    pa_format_info_set_rate (formats[0], GST_AUDIO_INFO_RATE (&spec->info));
++    pa_format_info_set_channels (formats[0],
++        GST_AUDIO_INFO_CHANNELS (&spec->info));
++  } else {
++    if (!gst_pulse_fill_sample_spec (spec, &pulsesrc->sample_spec))
++      goto invalid_spec;
++  }
++
++  pa_threaded_mainloop_lock (pulsesrc->mainloop);
++
++  if (!pulsesrc->context)
++    goto bad_context;
++
++  name = "Record Stream";
++  GST_DEBUG_OBJECT (pulsesrc, " need_channel_layout %d pulsesrc->proplist %d ",
++      need_channel_layout, pulsesrc->proplist);
++  if (pulsesrc->non_pcm) {
++    /* TODO add proplist if any */
++    if (pulsesrc->proplist) {
++      GST_DEBUG_OBJECT (pulsesrc,
++          " creating stream with compressed data with proplist");
++      pulsesrc->stream =
++          pa_stream_new_extended (pulsesrc->context, name, formats, 1,
++          pulsesrc->proplist);
++      if (!pulsesrc->stream) {
++        goto create_failed;
++      }
++    } else {
++      GST_DEBUG_OBJECT (pulsesrc,
++          " creating stream with compressed data without proplist");
++      pulsesrc->stream =
++          pa_stream_new_extended (pulsesrc->context, name, formats, 1, NULL);
++      if (!pulsesrc->stream) {
++        goto create_failed;
++      }
++    }
++    pa_format_info_free (format);
++  } else {
++    if (pulsesrc->proplist) {
++      if (!(pulsesrc->stream = pa_stream_new_with_proplist (pulsesrc->context,
++                  name, &pulsesrc->sample_spec,
++                  (need_channel_layout) ? NULL : &channel_map,
++                  pulsesrc->proplist))) {
++        GST_DEBUG_OBJECT (pulsesrc, " pa_stream_new_with_proplist ");
++        goto create_failed;
++      }
++
++    } else if (!(pulsesrc->stream = pa_stream_new (pulsesrc->context,
++                name, &pulsesrc->sample_spec,
++                (need_channel_layout) ? NULL : &channel_map))) {
++      GST_DEBUG_OBJECT (pulsesrc, " pa_stream_new ");
++      goto create_failed;
++    }
++    GST_DEBUG_OBJECT (pulsesrc, " rate %d", spec->info.rate);
++    GST_DEBUG_OBJECT (pulsesrc, " channels %d", spec->info.channels);
++
++    if (caps) {
++      m = pa_stream_get_channel_map (pulsesrc->stream);
++      gst_pulse_channel_map_to_gst (m, &new_spec);
++      gst_audio_channel_positions_to_valid_order (new_spec.info.position,
++          new_spec.info.channels);
++      gst_caps_unref (*caps);
++      *caps = gst_audio_info_to_caps (&new_spec.info);
++
++      GST_DEBUG_OBJECT (pulsesrc, "Caps are %" GST_PTR_FORMAT, *caps);
++    }
++  }
++
++  pa_stream_set_state_callback (pulsesrc->stream,
++      gst_pulsedirectsrc_stream_state_cb, pulsesrc);
++  pa_stream_set_read_callback (pulsesrc->stream,
++      gst_pulsedirectsrc_stream_request_cb, pulsesrc);
++  pa_stream_set_underflow_callback (pulsesrc->stream,
++      gst_pulsedirectsrc_stream_underflow_cb, pulsesrc);
++  pa_stream_set_overflow_callback (pulsesrc->stream,
++      gst_pulsedirectsrc_stream_overflow_cb, pulsesrc);
++  pa_stream_set_latency_update_callback (pulsesrc->stream,
++      gst_pulsedirectsrc_stream_latency_update_cb, pulsesrc);
++
++  pa_threaded_mainloop_unlock (pulsesrc->mainloop);
++
++  return TRUE;
++
++  /* ERRORS */
++invalid_caps:
++  {
++    GST_ELEMENT_ERROR (pulsesrc, RESOURCE, SETTINGS,
++        ("Can't parse caps."), (NULL));
++    goto fail;
++  }
++invalid_spec:
++  {
++    GST_ELEMENT_ERROR (pulsesrc, RESOURCE, SETTINGS,
++        ("Invalid sample specification."), (NULL));
++    goto fail;
++  }
++bad_context:
++  {
++    GST_ELEMENT_ERROR (pulsesrc, RESOURCE, FAILED, ("Bad context"), (NULL));
++    goto unlock_and_fail;
++  }
++create_failed:
++  {
++    GST_ELEMENT_ERROR (pulsesrc, RESOURCE, FAILED,
++        ("Failed to create stream: %s",
++            pa_strerror (pa_context_errno (pulsesrc->context))), (NULL));
++    goto unlock_and_fail;
++  }
++unlock_and_fail:
++  {
++    gst_pulsedirectsrc_destroy_stream (pulsesrc);
++
++    pa_threaded_mainloop_unlock (pulsesrc->mainloop);
++
++  fail:
++    return FALSE;
++  }
++
++}
++
++/* This is essentially gst_base_src_negotiate_default() but the caps
++ * are guaranteed to have a channel layout for > 2 channels
++ */
++static gboolean
++gst_pulsedirectsrc_negotiate (GstBaseSrc * basesrc)
++{
++  GstPulseDirectSrc *pulsesrc = GST_PULSEDIRECTSRC_CAST (basesrc);
++  GST_LOG_OBJECT (pulsesrc, " negotiate ");
++  GstCaps *thiscaps;
++  GstCaps *caps = NULL;
++  GstCaps *dsdcaps = NULL;
++  GstCaps *anycaps = NULL;
++  GstCaps *peercaps = NULL;
++  gboolean result = FALSE;
++
++  GST_DEBUG_OBJECT (pulsesrc, " non pcm :%d ", pulsesrc->non_pcm);
++  if (pulsesrc->non_pcm) {
++    thiscaps = gst_pad_query_caps (GST_BASE_SRC_PAD (basesrc), NULL);
++    GST_DEBUG_OBJECT (pulsesrc, "non pcm caps of src: %" GST_PTR_FORMAT,
++        thiscaps);
++
++    dsdcaps = gst_caps_new_simple ("audio/x-dsd", "format", G_TYPE_STRING, "U8",
++        "rate", G_TYPE_INT, (int) 44100, "channels", G_TYPE_INT, (int) 1, NULL);
++
++    result = gst_pulsedirectsrc_create_stream (pulsesrc, &dsdcaps, NULL);
++  } else {
++    thiscaps = gst_pad_query_caps (GST_BASE_SRC_PAD (basesrc), NULL);
++    GST_DEBUG_OBJECT (basesrc, "caps of basesrc: %" GST_PTR_FORMAT, thiscaps);
++    thiscaps =
++        gst_caps_new_simple ("audio/x-raw", "format", G_TYPE_STRING, "S16LE",
++        "layout", G_TYPE_STRING, "interleaved", "rate", G_TYPE_INT, (int) 48000,
++        "channels", G_TYPE_INT, (int) 2, NULL);
++    result = gst_pulsedirectsrc_create_stream (pulsesrc, &thiscaps, NULL);
++  }
++  if (result) {
++    /* first see what is possible on our source pad */
++    thiscaps = gst_pad_query_caps (GST_BASE_SRC_PAD (basesrc), NULL);
++    GST_DEBUG_OBJECT (basesrc, "caps of src: %" GST_PTR_FORMAT, thiscaps);
++    /* nothing or anything is allowed, we're done */
++    if (thiscaps == NULL || gst_caps_is_any (thiscaps))
++      goto no_nego_needed;
++
++    /* get the peer caps */
++    peercaps = gst_pad_peer_query_caps (GST_BASE_SRC_PAD (basesrc), NULL);
++    GST_DEBUG_OBJECT (basesrc, "caps of peer: %" GST_PTR_FORMAT, peercaps);
++    if (peercaps) {
++      /* get intersection */
++      caps = gst_caps_intersect (thiscaps, peercaps);
++      GST_DEBUG_OBJECT (basesrc, "intersect: %" GST_PTR_FORMAT, caps);
++      gst_caps_unref (thiscaps);
++      gst_caps_unref (peercaps);
++    } else {
++      /* no peer, work with our own caps then */
++      caps = thiscaps;
++    }
++    if (caps) {
++      /* take first (and best, since they are sorted) possibility */
++      caps = gst_caps_truncate (caps);
++      /* now fixate */
++      if (!gst_caps_is_empty (caps)) {
++        caps = GST_BASE_SRC_CLASS (parent_class)->fixate (basesrc, caps);
++        GST_DEBUG_OBJECT (basesrc, "fixated to: %" GST_PTR_FORMAT, caps);
++
++        if (gst_caps_is_any (caps)) {
++          /* hmm, still anything, so element can do anything and
++           * nego is not needed */
++          result = TRUE;
++        } else if (gst_caps_is_fixed (caps)) {
++          /* yay, fixed caps, use those then */
++          result = gst_pulsedirectsrc_create_stream (pulsesrc, &caps, NULL);
++          if (result)
++            result = gst_base_src_set_caps (basesrc, caps);
++        }
++      }
++      gst_caps_unref (caps);
++    }
++  }
++
++  return result;
++
++no_nego_needed:
++  {
++    GST_DEBUG_OBJECT (basesrc, "no negotiation needed");
++    if (thiscaps)
++      gst_caps_unref (thiscaps);
++    return TRUE;
++  }
++}
++
++static gboolean
++gst_pulsedirectsrc_prepare (GstPulseDirectSrc * pulsesrc,
++    GstAudioRingBufferSpec * spec)
++{
++  GST_LOG_OBJECT (pulsesrc, " prepare ");
++  pa_buffer_attr wanted;
++  const pa_buffer_attr *actual;
++  pa_stream_flags_t flags;
++  pa_operation *o;
++
++  pa_threaded_mainloop_lock (pulsesrc->mainloop);
++
++  if (!pulsesrc->stream) {
++    GST_DEBUG_OBJECT (pulsesrc, " stream not created, creating new stream !");
++    gst_pulsedirectsrc_create_stream (pulsesrc, NULL, spec);
++  }
++
++  /* TODO check for channel positions */
++
++  /* enable event notifications */
++  GST_LOG_OBJECT (pulsesrc, "subscribing to context events");
++  if (!(o = pa_context_subscribe (pulsesrc->context,
++              PA_SUBSCRIPTION_MASK_SOURCE_OUTPUT, NULL, NULL))) {
++    GST_ELEMENT_ERROR (pulsesrc, RESOURCE, FAILED,
++        ("pa_context_subscribe() failed: %s",
++            pa_strerror (pa_context_errno (pulsesrc->context))), (NULL));
++    goto unlock_and_fail;
++  }
++
++  pa_operation_unref (o);
++
++  /* TODO check for description */
++
++  wanted.maxlength = -1;
++  wanted.tlength = -1;
++  wanted.prebuf = -1;
++  wanted.minreq = -1;
++
++  /* TODO fragsize should be user defined for now going with 4k buffer */
++  wanted.fragsize = 4096;
++
++  GST_INFO_OBJECT (pulsesrc, "maxlength: %d", wanted.maxlength);
++  GST_INFO_OBJECT (pulsesrc, "tlength:   %d", wanted.tlength);
++  GST_INFO_OBJECT (pulsesrc, "prebuf:    %d", wanted.prebuf);
++  GST_INFO_OBJECT (pulsesrc, "minreq:    %d", wanted.minreq);
++  GST_INFO_OBJECT (pulsesrc, "fragsize:  %d", wanted.fragsize);
++
++  flags = PA_STREAM_INTERPOLATE_TIMING | PA_STREAM_AUTO_TIMING_UPDATE |
++      PA_STREAM_NOT_MONOTONIC | PA_STREAM_ADJUST_LATENCY |
++      PA_STREAM_START_CORKED;
++  GST_DEBUG_OBJECT (pulsesrc, " device %s", pulsesrc->device);
++
++  if (pa_stream_connect_record (pulsesrc->stream, pulsesrc->device, &wanted,
++          flags) < 0) {
++    goto connect_failed;
++  }
++#if PROVIDE_CLOCK
++  /* our clock will now start from 0 again */
++  gst_audio_clock_reset (GST_AUDIO_CLOCK (pulsesrc->clock), 0);
++#endif
++
++  pulsesrc->corked = TRUE;
++  for (;;) {
++    pa_stream_state_t state;
++
++    state = pa_stream_get_state (pulsesrc->stream);
++    GST_DEBUG_OBJECT (pulsesrc, " get state %d", state);
++
++    if (!PA_STREAM_IS_GOOD (state))
++      goto stream_is_bad;
++
++    if (state == PA_STREAM_READY)
++      break;
++
++    /* Wait until the stream is ready */
++    pa_threaded_mainloop_wait (pulsesrc->mainloop);
++  }
++  pulsesrc->stream_connected = TRUE;
++  GST_DEBUG_OBJECT (pulsesrc, " connect stream record succesfull ");
++
++  /* store the source output index so it can be accessed via a property */
++  pulsesrc->source_output_idx = pa_stream_get_index (pulsesrc->stream);
++  g_object_notify (G_OBJECT (pulsesrc), "source-output-index");
++
++  /* TODO check for mute and volume impl */
++
++  /* get the actual buffering properties now */
++  actual = pa_stream_get_buffer_attr (pulsesrc->stream);
++
++  GST_INFO_OBJECT (pulsesrc, "maxlength: %d", actual->maxlength);
++  GST_INFO_OBJECT (pulsesrc, "tlength:   %d (wanted: %d)",
++      actual->tlength, wanted.tlength);
++  GST_INFO_OBJECT (pulsesrc, "prebuf:    %d", actual->prebuf);
++  GST_INFO_OBJECT (pulsesrc, "minreq:    %d (wanted %d)", actual->minreq,
++      wanted.minreq);
++  GST_INFO_OBJECT (pulsesrc, "fragsize:  %d (wanted %d)",
++      actual->fragsize, wanted.fragsize);
++
++  /* TODO check for segsize and fragsize impl */
++
++  if (!pulsesrc->paused) {
++    GST_DEBUG_OBJECT (pulsesrc, "uncorking because we are playing");
++    gst_pulsedirectsrc_set_corked (pulsesrc, FALSE, FALSE);
++  }
++  pa_threaded_mainloop_unlock (pulsesrc->mainloop);
++
++  GST_DEBUG_OBJECT (pulsesrc, "prepare returning true");
++  return TRUE;
++
++  /* ERRORS */
++connect_failed:
++  {
++    GST_ELEMENT_ERROR (pulsesrc, RESOURCE, FAILED,
++        ("Failed to connect stream: %s",
++            pa_strerror (pa_context_errno (pulsesrc->context))), (NULL));
++    goto unlock_and_fail;
++  }
++stream_is_bad:
++  {
++    GST_ELEMENT_ERROR (pulsesrc, RESOURCE, FAILED,
++        ("Failed to connect stream: %s",
++            pa_strerror (pa_context_errno (pulsesrc->context))), (NULL));
++    goto unlock_and_fail;
++  }
++unlock_and_fail:
++  {
++    gst_pulsedirectsrc_destroy_stream (pulsesrc);
++
++    pa_threaded_mainloop_unlock (pulsesrc->mainloop);
++    return FALSE;
++  }
++}
++
++static gboolean
++gst_pulsedirectsrc_setcaps (GstBaseSrc * bsrc, GstCaps * caps)
++{
++  gboolean result = FALSE;
++  GstAudioRingBufferSpec new_spec;
++
++  GstPulseDirectSrc *pulsesrc = GST_PULSEDIRECTSRC_CAST (bsrc);
++  GST_DEBUG_OBJECT (pulsesrc, " setting caps : %" GST_PTR_FORMAT, caps);
++
++  memset (&new_spec, 0, sizeof (GstAudioRingBufferSpec));
++
++  if (!pulsesrc->non_pcm)
++    gst_pulsedirectsrc_parse_caps (&new_spec, caps);
++  result = gst_pulsedirectsrc_prepare (pulsesrc, &new_spec);
++
++  return result;
++}
++
++static void
++gst_pulsedirectsrc_get_times (GstBaseSrc * bsrc, GstBuffer * buffer,
++    GstClockTime * start, GstClockTime * end)
++{
++  GST_LOG_OBJECT (bsrc, " get times ");
++
++  /* No need to sync to a clock here. We schedule the samples based
++   * on our own clock for the moment. */
++  *start = GST_CLOCK_TIME_NONE;
++  *end = GST_CLOCK_TIME_NONE;
++}
++
++static GstFlowReturn
++gst_pulsedirectsrc_create (GstBaseSrc * bsrc, guint64 offset, guint length,
++    GstBuffer ** outbuf)
++{
++  GST_LOG_OBJECT (bsrc, " Create of length %d", length);
++  GstPulseDirectSrc *pulsesrc = GST_PULSEDIRECTSRC_CAST (bsrc);
++  GstFlowReturn ret;
++  GstBuffer *buf;
++  GstMapInfo info;
++  guint8 *ptr;
++  gint bpf, rate;
++  size_t read_length;
++  const void *read_data = NULL;
++  GstClockTime *timestamp;
++  GstClockTime now = GST_CLOCK_TIME_NONE;
++  GstClockTime base_time;
++
++  /* use the basesrc allocation code to use bufferpools or custom allocators */
++  ret = GST_BASE_SRC_CLASS (parent_class)->alloc (bsrc, offset, length, &buf);
++  if (G_UNLIKELY (ret != GST_FLOW_OK))
++    goto alloc_failed;
++
++  gst_buffer_map (buf, &info, GST_MAP_WRITE);
++  ptr = info.data;
++
++  pa_threaded_mainloop_lock (pulsesrc->mainloop);
++
++  /* TODO: check for volume/mute/current-device stats */
++
++  if (!pulsesrc->stream_connected)
++    goto not_connected;
++
++  /* TODO: check for paused state */
++
++  while (length > 0) {
++    size_t l;
++    GST_LOG_OBJECT (pulsesrc, "reading %u bytes", length);
++
++    /*check if we have a leftover buffer */
++    if (!pulsesrc->read_buffer) {
++      for (;;) {
++        if (gst_pulsedirectsrc_is_dead (pulsesrc, TRUE))
++          goto unlock_and_fail;
++
++        /* read all available data, we keep a pointer to the data and the length
++         * and take from it what we need. */
++        if (!pulsesrc->timestamp) {
++          if (pa_stream_peek (pulsesrc->stream, &pulsesrc->read_buffer,
++                  &pulsesrc->read_buffer_length) < 0)
++            goto peek_failed;
++          GST_LOG_OBJECT (pulsesrc, " Peeked length : %u ",
++              pulsesrc->read_buffer_length);
++        } else {
++          /* TODO: peek with timestamps */
++        }
++
++        GST_LOG_OBJECT (pulsesrc, "have data of %" G_GSIZE_FORMAT " bytes",
++            pulsesrc->read_buffer_length);
++
++        /* if we have data, process it */
++        if (pulsesrc->read_buffer && pulsesrc->read_buffer_length)
++          break;
++
++        /* now wait for more data to become available */
++        GST_LOG_OBJECT (pulsesrc, "waiting for data");
++        pa_threaded_mainloop_wait (pulsesrc->mainloop);
++
++        if (pulsesrc->paused)
++          goto was_paused;
++
++      }
++    }
++
++    l = pulsesrc->read_buffer_length >
++        length ? length : pulsesrc->read_buffer_length;
++
++    memcpy (info.data, pulsesrc->read_buffer, l);
++
++    pulsesrc->read_buffer = (const guint8 *) pulsesrc->read_buffer + l;
++    pulsesrc->read_buffer_length -= l;
++
++    info.data = (guint8 *) info.data + l;
++    length -= l;
++
++    if (pulsesrc->read_buffer_length <= 0) {
++      /* we copied all of the data, drop it now */
++      if (pa_stream_drop (pulsesrc->stream) < 0)
++        goto drop_failed;
++
++      /* reset pointer to data */
++      pulsesrc->read_buffer = NULL;
++      pulsesrc->read_buffer_length = 0;
++    }
++
++  }
++
++  /* TODO: Time stamp support */
++
++#if CUSTOM_TIMESTAMP
++  base_time = GST_ELEMENT_CAST (bsrc)->base_time;
++  now = gst_clock_get_time (GST_ELEMENT_CLOCK (bsrc));
++  GstClockTime running_time = GST_CLOCK_TIME_NONE;
++  running_time = now - base_time;
++  GST_LOG_OBJECT (bsrc,
++      "base_time: %" GST_TIME_FORMAT ", now %" GST_TIME_FORMAT
++      ", running_time %" GST_TIME_FORMAT, GST_TIME_ARGS (base_time),
++      GST_TIME_ARGS (now), GST_TIME_ARGS (running_time));
++  GST_DEBUG_OBJECT (pulsesrc, "buffer size to timestamp %d", info.size);
++
++  GST_BUFFER_TIMESTAMP (buf) = running_time;
++  GST_BUFFER_DTS (buf) = running_time;
++  GST_BUFFER_DURATION (buf) = 32000000;
++  GstClockTime ts = GST_BUFFER_TIMESTAMP (buf);
++  GST_DEBUG_OBJECT (bsrc, "timestamp in pulsedirectsrc : %" GST_TIME_FORMAT,
++      GST_TIME_ARGS (ts));
++#endif
++
++  *outbuf = buf;
++  pa_threaded_mainloop_unlock (pulsesrc->mainloop);
++
++  gst_buffer_unmap (buf, &info);
++
++  return GST_FLOW_OK;
++
++  /* ERRORS */
++not_connected:
++  {
++    GST_LOG_OBJECT (pulsesrc, "we are not connected");
++    goto unlock_and_fail;
++  }
++was_paused:
++  {
++    GST_LOG_OBJECT (pulsesrc, "we are paused");
++    goto unlock_and_fail;
++  }
++peek_failed:
++  {
++    GST_ELEMENT_ERROR (pulsesrc, RESOURCE, FAILED,
++        ("pa_stream_peek() failed: %s",
++            pa_strerror (pa_context_errno (pulsesrc->context))), (NULL));
++    goto unlock_and_fail;
++  }
++drop_failed:
++  {
++    GST_ELEMENT_ERROR (pulsesrc, RESOURCE, FAILED,
++        ("pa_stream_drop() failed: %s",
++            pa_strerror (pa_context_errno (pulsesrc->context))), (NULL));
++    goto unlock_and_fail;
++  }
++alloc_failed:
++  {
++    GST_DEBUG_OBJECT (pulsesrc, "alloc failed: %s", gst_flow_get_name (ret));
++    return ret;
++  }
++unlock_and_fail:
++  {
++    gst_buffer_unmap (buf, &info);
++    pa_threaded_mainloop_unlock (pulsesrc->mainloop);
++
++    return (guint) - 1;
++  }
++
++}
+diff --git a/ext/pulse/pulsedirectsrc.h b/ext/pulse/pulsedirectsrc.h
+new file mode 100644
+index 000000000..eefb0b66b
+--- /dev/null
++++ b/ext/pulse/pulsedirectsrc.h
+@@ -0,0 +1,107 @@
++/*
++ *
++ *  Copyright (C) 2019 Linux Foundation. All rights reserved.
++ *
++ *
++ *
++ *  GStreamer pulseaudio plugin
++ *
++ *  Copyright (c) 2004-2008 Lennart Poettering
++ *
++ *  gst-pulse is free software; you can redistribute it and/or modify
++ *  it under the terms of the GNU Lesser General Public License as
++ *  published by the Free Software Foundation; either version 2.1 of the
++ *  License, or (at your option) any later version.
++ *
++ *  gst-pulse is distributed in the hope that it will be useful, but
++ *  WITHOUT ANY WARRANTY; without even the implied warranty of
++ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
++ *  Lesser General Public License for more details.
++ *
++ *  You should have received a copy of the GNU Lesser General Public
++ *  License along with gst-pulse; if not, write to the Free Software
++ *  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
++ *  USA.
++ */
++
++#ifndef __GST_PULSEDIRECT_SRC_H__
++#define __GST_PULSEDIRECT_SRC_H__
++
++#include <gst/gst.h>
++
++#include <pulse/pulseaudio.h>
++#include <pulse/thread-mainloop.h>
++
++G_BEGIN_DECLS
++#define GST_TYPE_PULSEDIRECTSRC \
++  (gst_pulsedirectsrc_get_type())
++#define GST_PULSEDIRECTSRC(obj) \
++  (G_TYPE_CHECK_INSTANCE_CAST((obj),GST_TYPE_PULSEDIRECTSRC,GstPulseDirectSrc))
++#define GST_PULSEDIRECTSRC_CLASS(klass) \
++  (G_TYPE_CHECK_CLASS_CAST((klass),GST_TYPE_PULSEDIRECTSRC,GstPulseDirectSrcClass))
++#define GST_PULSEDIRECTSRC_GET_CLASS(obj) \
++    (G_TYPE_INSTANCE_GET_CLASS((obj),GST_TYPE_PULSEDIRECTSRC,GstPulseDirectSrcClass))
++#define GST_IS_PULSEDIRECTSRC(obj) \
++  (G_TYPE_CHECK_INSTANCE_TYPE((obj),GST_TYPE_PULSEDIRECTSRC))
++#define GST_IS_PULSEDIRECTSRC_CLASS(obj) \
++  (G_TYPE_CHECK_CLASS_TYPE((klass),GST_TYPE_PULSEDIRECTSRC))
++#define GST_PULSEDIRECTSRC_CAST(obj) \
++  ((GstPulseDirectSrc *)(obj))
++typedef struct _GstPulseDirectSrc GstPulseDirectSrc;
++typedef struct _GstPulseDirectSrcClass GstPulseDirectSrcClass;
++
++struct _GstPulseDirectSrc
++{
++  GstBaseSrc basesrc;
++
++  gchar *server, *device, *client_name, *encoding_format;
++
++  pa_threaded_mainloop *mainloop;
++
++  pa_context *context;
++  pa_stream *stream;
++  guint32 source_output_idx;
++
++  pa_sample_spec sample_spec;
++
++  const void *read_buffer;
++  size_t read_buffer_length;
++
++  gchar *device_description;
++
++  gdouble volume;
++  gboolean mute:1;
++  guint32 current_source_idx;
++  gchar *current_source_name;
++
++  gboolean corked:1;
++  gboolean stream_connected:1;
++  gboolean operation_success:1;
++  gboolean paused:1;
++
++  GstStructure *properties;
++  pa_proplist *proplist;
++
++  GstClock *clock;
++  gboolean provide_clock;
++  gboolean timestamp;
++  gboolean non_pcm;
++
++};
++
++struct _GstPulseDirectSrcClass
++{
++  GstBaseSrcClass parentclass;
++};
++
++GType gst_pulsedirectsrc_get_type (void);
++
++#define PULSE_DIRECT_SRC_TEMPLATE_CAPS \
++  _PULSE_CAPS_PCM \
++  _PULSE_CAPS_MP3 \
++  _PULSE_CAPS_AC3 \
++  _PULSE_CAPS_AAC \
++  _PULSE_CAPS_DSD \
++
++G_END_DECLS
++#endif /* __GST_PULSEDIRECTSRC_H__ */
+diff --git a/ext/pulse/pulseutil.h b/ext/pulse/pulseutil.h
+index 6396d182a..67e1ec4c8 100644
+--- a/ext/pulse/pulseutil.h
++++ b/ext/pulse/pulseutil.h
+@@ -69,7 +69,6 @@
+ #define _PULSE_CAPS_AAC "audio/mpeg, mpegversion = (int) { 2, 4 }, " \
+     "framed = (boolean) true, stream-format = (string) { adts, raw };"
+ #define _PULSE_CAPS_UNKNOWN_IEC61937 "audio/x-iec61937"
+-
+ #define _PULSE_CAPS_DSD "audio/x-dsd ,"\
+         "rate = (int) [ 1, MAX ], channels = (int) [ 1, MAX ];"
+ 
+-- 
+2.21.0
+

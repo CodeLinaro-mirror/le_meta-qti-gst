@@ -1,0 +1,367 @@
+From 894545bc6eefbae4ade1c206a94128309636ff00 Mon Sep 17 00:00:00 2001
+From: Arun Raghavan <arunsr@codeaurora.org>
+Date: Mon, 10 Dec 2018 11:35:28 +0530
+Subject: [PATCH] pulse: Add the ability to set stream flags on
+ pulsesink/pulsesrc
+
+This allows us to add additional stream flags to the PulseAudio stream
+that pulsesink and pulsesrc create. This is primarily likely to be
+useful to allow setting flags such as DONT_MOVE or PASSTHROUGH, but for
+completeness, all flags are exposed.
+
+We do not allow overriding certain flags (latency and corking related)
+that would break functionality.
+---
+ ext/pulse/pulsesink.c | 45 ++++++++++++++++++++++----------
+ ext/pulse/pulsesink.h |  1 +
+ ext/pulse/pulsesrc.c  | 28 +++++++++++++++-----
+ ext/pulse/pulsesrc.h  |  1 +
+ ext/pulse/pulseutil.c | 60 +++++++++++++++++++++++++++++++++++++++++++
+ ext/pulse/pulseutil.h | 28 ++++++++++++++++++++
+ 6 files changed, 143 insertions(+), 20 deletions(-)
+
+diff --git a/ext/pulse/pulsesink.c b/ext/pulse/pulsesink.c
+index 44b7fa032..79f12c361 100644
+--- a/ext/pulse/pulsesink.c
++++ b/ext/pulse/pulsesink.c
+@@ -72,6 +72,10 @@ GST_DEBUG_CATEGORY_EXTERN (pulse_debug);
+ #define DEFAULT_VOLUME          1.0
+ #define DEFAULT_MUTE            FALSE
+ #define MAX_VOLUME              10.0
++#define DEFAULT_STREAM_FLAGS \
++    (PA_STREAM_INTERPOLATE_TIMING | PA_STREAM_AUTO_TIMING_UPDATE | \
++     PA_STREAM_ADJUST_LATENCY | PA_STREAM_START_CORKED)
++
+ 
+ enum
+ {
+@@ -84,6 +88,7 @@ enum
+   PROP_MUTE,
+   PROP_CLIENT_NAME,
+   PROP_STREAM_PROPERTIES,
++  PROP_STREAM_FLAGS,
+   PROP_LAST
+ };
+ 
+@@ -885,7 +890,6 @@ gst_pulseringbuffer_acquire (GstAudioRingBuffer * buf,
+   pa_operation *o = NULL;
+   pa_cvolume v;
+   pa_cvolume *pv = NULL;
+-  pa_stream_flags_t flags;
+   const gchar *name;
+   GstAudioClock *clock;
+   pa_format_info *formats[1];
+@@ -984,15 +988,16 @@ gst_pulseringbuffer_acquire (GstAudioRingBuffer * buf,
+     pv = NULL;
+   }
+ 
+-  /* construct the flags */
+-  flags = PA_STREAM_INTERPOLATE_TIMING | PA_STREAM_AUTO_TIMING_UPDATE |
+-      PA_STREAM_ADJUST_LATENCY | PA_STREAM_START_CORKED;
+-
++  /* construct the flags, don't allow overrides for some flags as that would
++   * break things */
++  psink->flags |=
++      PA_STREAM_INTERPOLATE_TIMING | PA_STREAM_AUTO_TIMING_UPDATE |
++      PA_STREAM_START_CORKED;
+   if (psink->mute_set) {
+     if (psink->mute)
+-      flags |= PA_STREAM_START_MUTED;
++      psink->flags |= PA_STREAM_START_MUTED;
+     else
+-      flags |= PA_STREAM_START_UNMUTED;
++      psink->flags |= PA_STREAM_START_UNMUTED;
+   }
+ 
+   /* we always start corked (see flags above) */
+@@ -1002,7 +1007,7 @@ gst_pulseringbuffer_acquire (GstAudioRingBuffer * buf,
+   GST_LOG_OBJECT (psink, "connect for playback to device %s",
+       GST_STR_NULL (psink->device));
+   if (pa_stream_connect_playback (pbuf->stream, psink->device,
+-          &wanted, flags, pv, NULL) < 0)
++          &wanted, psink->flags, pv, NULL) < 0)
+     goto connect_failed;
+ 
+   /* our clock will now start from 0 again */
+@@ -1976,6 +1981,13 @@ gst_pulsesink_class_init (GstPulseSinkClass * klass)
+           "list of pulseaudio stream properties",
+           GST_TYPE_STRUCTURE, G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+ 
++  g_object_class_install_property (gobject_class, PROP_STREAM_FLAGS,
++      g_param_spec_flags ("stream-flags", "Stream flags",
++          "Stream flags to use (not all default flags can be overridden)",
++          GST_TYPE_PULSE_STREAM_FLAGS, DEFAULT_STREAM_FLAGS,
++          G_PARAM_WRITABLE | G_PARAM_STATIC_STRINGS));
++
++
+   gst_element_class_set_static_metadata (gstelement_class,
+       "PulseAudio Audio Sink",
+       "Sink/Audio", "Plays audio to a PulseAudio server", "Lennart Poettering");
+@@ -2078,7 +2090,6 @@ gst_pulsesink_create_probe_stream (GstPulseSink * psink,
+ {
+   pa_format_info *formats[1] = { format };
+   pa_stream *stream;
+-  pa_stream_flags_t flags;
+ 
+   GST_LOG_OBJECT (psink, "Creating probe stream");
+ 
+@@ -2086,14 +2097,16 @@ gst_pulsesink_create_probe_stream (GstPulseSink * psink,
+               formats, 1, psink->proplist)))
+     goto error;
+ 
+-  /* construct the flags */
+-  flags = PA_STREAM_INTERPOLATE_TIMING | PA_STREAM_AUTO_TIMING_UPDATE |
+-      PA_STREAM_ADJUST_LATENCY | PA_STREAM_START_CORKED;
++  /* construct the flags, don't allow overrides for some flags as that would
++   * break things */
++  psink->flags |=
++      PA_STREAM_INTERPOLATE_TIMING | PA_STREAM_AUTO_TIMING_UPDATE |
++      PA_STREAM_START_CORKED;
+ 
+   pa_stream_set_state_callback (stream, gst_pulsering_stream_state_cb, pbuf);
+ 
+-  if (pa_stream_connect_playback (stream, psink->device, NULL, flags, NULL,
+-          NULL) < 0)
++  if (pa_stream_connect_playback (stream, psink->device, NULL, psink->flags,
++          NULL, NULL) < 0)
+     goto error;
+ 
+   if (!gst_pulsering_wait_for_stream_ready (psink, stream))
+@@ -2375,6 +2388,7 @@ gst_pulsesink_init (GstPulseSink * pulsesink)
+ 
+   pulsesink->properties = NULL;
+   pulsesink->proplist = NULL;
++  pulsesink->flags = DEFAULT_STREAM_FLAGS;
+ 
+   /* override with a custom clock */
+   if (GST_AUDIO_BASE_SINK (pulsesink)->provided_clock)
+@@ -2893,6 +2907,9 @@ gst_pulsesink_set_property (GObject * object,
+         pa_proplist_free (pulsesink->proplist);
+       pulsesink->proplist = gst_pulse_make_proplist (pulsesink->properties);
+       break;
++    case PROP_STREAM_FLAGS:
++      pulsesink->flags = g_value_get_flags (value);
++      break;
+     default:
+       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+       break;
+diff --git a/ext/pulse/pulsesink.h b/ext/pulse/pulsesink.h
+index de3b93281..d14faf1a4 100644
+--- a/ext/pulse/pulsesink.h
++++ b/ext/pulse/pulsesink.h
+@@ -85,6 +85,7 @@ struct _GstPulseSink
+ 
+   volatile gint format_lost;
+   GstClockTime format_lost_time;
++  pa_stream_flags_t flags;
+ };
+ 
+ struct _GstPulseSinkClass
+diff --git a/ext/pulse/pulsesrc.c b/ext/pulse/pulsesrc.c
+index 76d5cc20c..6df9aec87 100644
+--- a/ext/pulse/pulsesrc.c
++++ b/ext/pulse/pulsesrc.c
+@@ -59,6 +59,9 @@ GST_DEBUG_CATEGORY_EXTERN (pulse_debug);
+ #define DEFAULT_VOLUME          1.0
+ #define DEFAULT_MUTE            FALSE
+ #define MAX_VOLUME              10.0
++#define DEFAULT_STREAM_FLAGS \
++    (PA_STREAM_INTERPOLATE_TIMING | PA_STREAM_AUTO_TIMING_UPDATE | \
++     PA_STREAM_NOT_MONOTONIC | PA_STREAM_START_CORKED)
+ 
+ /* See the pulsesink code for notes on how we interact with the PA mainloop
+  * thread. */
+@@ -75,7 +78,8 @@ enum
+   PROP_SOURCE_OUTPUT_INDEX,
+   PROP_VOLUME,
+   PROP_MUTE,
+-  PROP_LAST
++  PROP_STREAM_FLAGS,
++  PROP_LAST,
+ };
+ 
+ static void gst_pulsesrc_destroy_stream (GstPulseSrc * pulsesrc);
+@@ -247,6 +251,13 @@ gst_pulsesrc_class_init (GstPulseSrcClass * klass)
+       PROP_MUTE, g_param_spec_boolean ("mute", "Mute",
+           "Mute state of this stream",
+           DEFAULT_MUTE, G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
++
++  g_object_class_install_property (gobject_class, PROP_STREAM_FLAGS,
++      g_param_spec_flags ("stream-flags", "Stream flags",
++          "Stream flags to use (not all default flags can be overridden)",
++          GST_TYPE_PULSE_STREAM_FLAGS, DEFAULT_STREAM_FLAGS,
++          G_PARAM_WRITABLE | G_PARAM_STATIC_STRINGS));
++
+ }
+ 
+ static void
+@@ -282,6 +293,8 @@ gst_pulsesrc_init (GstPulseSrc * pulsesrc)
+   pulsesrc->properties = NULL;
+   pulsesrc->proplist = NULL;
+ 
++  pulsesrc->flags = DEFAULT_STREAM_FLAGS;
++
+   /* this should be the default but it isn't yet */
+   gst_audio_base_src_set_slave_method (GST_AUDIO_BASE_SRC (pulsesrc),
+       GST_AUDIO_BASE_SRC_SLAVE_SKEW);
+@@ -827,6 +840,9 @@ gst_pulsesrc_set_property (GObject * object,
+     case PROP_MUTE:
+       gst_pulsesrc_set_stream_mute (pulsesrc, g_value_get_boolean (value));
+       break;
++    case PROP_STREAM_FLAGS:
++      pulsesrc->flags = g_value_get_flags (value);
++      break;
+     default:
+       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+       break;
+@@ -1491,7 +1507,6 @@ gst_pulsesrc_prepare (GstAudioSrc * asrc, GstAudioRingBufferSpec * spec)
+   pa_buffer_attr wanted;
+   const pa_buffer_attr *actual;
+   GstPulseSrc *pulsesrc = GST_PULSESRC_CAST (asrc);
+-  pa_stream_flags_t flags;
+   pa_operation *o;
+   GstAudioClock *clock;
+ 
+@@ -1552,12 +1567,13 @@ gst_pulsesrc_prepare (GstAudioSrc * asrc, GstAudioRingBufferSpec * spec)
+   GST_INFO_OBJECT (pulsesrc, "minreq:    %d", wanted.minreq);
+   GST_INFO_OBJECT (pulsesrc, "fragsize:  %d", wanted.fragsize);
+ 
+-  flags = PA_STREAM_INTERPOLATE_TIMING | PA_STREAM_AUTO_TIMING_UPDATE |
+-      PA_STREAM_NOT_MONOTONIC | PA_STREAM_ADJUST_LATENCY |
++  /* construct the flags, don't allow overrides for some flags as that would
++   * break things */
++  pulsesrc->flags |=
++      PA_STREAM_INTERPOLATE_TIMING | PA_STREAM_AUTO_TIMING_UPDATE |
+       PA_STREAM_START_CORKED;
+-
+   if (pa_stream_connect_record (pulsesrc->stream, pulsesrc->device, &wanted,
+-          flags) < 0) {
++          pulsesrc->flags) < 0) {
+     goto connect_failed;
+   }
+ 
+diff --git a/ext/pulse/pulsesrc.h b/ext/pulse/pulsesrc.h
+index 93d679530..eec3b3702 100644
+--- a/ext/pulse/pulsesrc.h
++++ b/ext/pulse/pulsesrc.h
+@@ -86,6 +86,7 @@ struct _GstPulseSrc
+ 
+   GstStructure *properties;
+   pa_proplist *proplist;
++  pa_stream_flags_t flags;
+ };
+ 
+ struct _GstPulseSrcClass
+diff --git a/ext/pulse/pulseutil.c b/ext/pulse/pulseutil.c
+index ac1307f07..64228395a 100644
+--- a/ext/pulse/pulseutil.c
++++ b/ext/pulse/pulseutil.c
+@@ -69,6 +69,66 @@ static const struct
+   GST_AUDIO_CHANNEL_POSITION_NONE, PA_CHANNEL_POSITION_INVALID}
+ };
+ 
++GType
++gst_pulse_paflags_get_type ()
++{
++  static gsize id = 0;
++  static const GFlagsValue values[] = {
++    {GST_PULSE_STREAM_NOFLAGS, "GST_PULSE_STREAM_NOFLAGS",
++        "Flag to pass when no specific options are needed"},
++    {GST_PULSE_STREAM_START_CORKED, "GST_PULSE_STREAM_START_CORKED",
++        "Create the stream corked"},
++    {GST_PULSE_STREAM_INTERPOLATE_TIMING, "GST_PULSE_STREAM_INTERPOLATE_TIMING",
++        "Interpolate the latency for this stream"},
++    {GST_PULSE_STREAM_NOT_MONOTONIC, "GST_PULSE_STREAM_NOT_MONOTONIC",
++        "Don't force the time to increase monotonically"},
++    {GST_PULSE_STREAM_AUTO_TIMING_UPDATE, "GST_PULSE_STREAM_AUTO_TIMING_UPDATE",
++        "Timing update requests are issued periodically automatically"},
++    {GST_PULSE_STREAM_NO_REMAP_CHANNELS, "GST_PULSE_STREAM_NO_REMAP_CHANNELS",
++        "Don't remap channels by their name, instead map them simply by their index"},
++    {GST_PULSE_STREAM_NO_REMIX_CHANNELS, "GST_PULSE_STREAM_NO_REMIX_CHANNELS",
++        "When remapping channels by name, don't upmix or downmix them to related channels"},
++    {GST_PULSE_STREAM_FIX_FORMAT, "GST_PULSE_STREAM_FIX_FORMAT",
++        "Use the sample format of the sink/device this stream is being connected to"},
++    {GST_PULSE_STREAM_FIX_RATE, "GST_PULSE_STREAM_FIX_RATE",
++        "Use the sample rate of the sink"},
++    {GST_PULSE_STREAM_FIX_CHANNELS, "GST_PULSE_STREAM_FIX_CHANNELS",
++        "Use the number of channels and the channel map of the sink"},
++    {GST_PULSE_STREAM_DONT_MOVE, "GST_PULSE_STREAM_DONT_MOVE",
++        "Don't allow moving of this stream to another sink/device"},
++    {GST_PULSE_STREAM_VARIABLE_RATE, "GST_PULSE_STREAM_VARIABLE_RATE",
++        "Allow dynamic changing of the sampling rate during playback"},
++    {GST_PULSE_STREAM_PEAK_DETECT, "GST_PULSE_STREAM_PEAK_DETECT",
++        "Find peaks instead of resampling"},
++    {GST_PULSE_STREAM_START_MUTED, "GST_PULSE_STREAM_START_MUTED",
++        "Create in muted state"},
++    {GST_PULSE_STREAM_ADJUST_LATENCY, "GST_PULSE_STREAM_ADJUST_LATENCY ",
++        "Try to adjust the latency of the sink/source based on the requested buffer metrics and adjust buffer metrics accordingly"},
++    {GST_PULSE_STREAM_EARLY_REQUESTS, "GST_PULSE_STREAM_EARLY_REQUESTS",
++        "Enable compatibility mode for legacy clients that rely on a classic hardware device fragment-style playback model"},
++    {GST_PULSE_STREAM_DONT_INHIBIT_AUTO_SUSPEND,
++          "GST_PULSE_STREAM_DONT_INHIBIT_AUTO_SUSPEND",
++        "If set this stream won't be taken into account when it is checked whether the device this stream is connected to should auto-suspend"},
++    {GST_PULSE_STREAM_START_UNMUTED, "GST_PULSE_STREAM_START_UNMUTED",
++        "Create in unmuted state"},
++    {GST_PULSE_STREAM_FAIL_ON_SUSPEND, "GST_PULSE_STREAM_FAIL_ON_SUSPEND",
++        "If the sink/source this stream is connected to is suspended during the creation of this stream, cause it to fail"},
++    {GST_PULSE_STREAM_RELATIVE_VOLUME, "GST_PULSE_STREAM_RELATIVE_VOLUME",
++        "If a volume is passed when this stream is created, creation of this stream, cause it to fail"},
++    {GST_PULSE_STREAM_PASSTHROUGH, "GST_PULSE_STREAM_PASSTHROUGH",
++        "Used to tag content that will be rendered by passthrough sinks"},
++    {0, NULL, NULL}
++  };
++
++  if (g_once_init_enter (&id)) {
++    GType tmp = g_flags_register_static ("GstPulseStreamFlags", values);
++    g_once_init_leave (&id, tmp);
++  }
++
++  return (GType) id;
++
++}
++
+ static gboolean
+ gstaudioformat_to_pasampleformat (GstAudioFormat format,
+     pa_sample_format_t * sf)
+diff --git a/ext/pulse/pulseutil.h b/ext/pulse/pulseutil.h
+index 754728db1..d6c240bd4 100644
+--- a/ext/pulse/pulseutil.h
++++ b/ext/pulse/pulseutil.h
+@@ -72,6 +72,34 @@
+   _PULSE_CAPS_ALAW \
+   _PULSE_CAPS_MULAW
+ 
++typedef enum
++{
++  GST_PULSE_STREAM_NOFLAGS = PA_STREAM_NOFLAGS,
++  GST_PULSE_STREAM_START_CORKED = PA_STREAM_START_CORKED,
++  GST_PULSE_STREAM_INTERPOLATE_TIMING = PA_STREAM_INTERPOLATE_TIMING,
++  GST_PULSE_STREAM_NOT_MONOTONIC = PA_STREAM_NOT_MONOTONIC,
++  GST_PULSE_STREAM_AUTO_TIMING_UPDATE = PA_STREAM_AUTO_TIMING_UPDATE,
++  GST_PULSE_STREAM_NO_REMAP_CHANNELS = PA_STREAM_NO_REMAP_CHANNELS,
++  GST_PULSE_STREAM_NO_REMIX_CHANNELS = PA_STREAM_NO_REMIX_CHANNELS,
++  GST_PULSE_STREAM_FIX_FORMAT = PA_STREAM_FIX_FORMAT,
++  GST_PULSE_STREAM_FIX_RATE = PA_STREAM_FIX_RATE,
++  GST_PULSE_STREAM_FIX_CHANNELS = PA_STREAM_FIX_CHANNELS,
++  GST_PULSE_STREAM_DONT_MOVE = PA_STREAM_DONT_MOVE,
++  GST_PULSE_STREAM_VARIABLE_RATE = PA_STREAM_VARIABLE_RATE,
++  GST_PULSE_STREAM_PEAK_DETECT = PA_STREAM_PEAK_DETECT,
++  GST_PULSE_STREAM_START_MUTED = PA_STREAM_START_MUTED,
++  GST_PULSE_STREAM_ADJUST_LATENCY = PA_STREAM_ADJUST_LATENCY,
++  GST_PULSE_STREAM_EARLY_REQUESTS = PA_STREAM_EARLY_REQUESTS,
++  GST_PULSE_STREAM_DONT_INHIBIT_AUTO_SUSPEND =
++      PA_STREAM_DONT_INHIBIT_AUTO_SUSPEND,
++  GST_PULSE_STREAM_START_UNMUTED = PA_STREAM_START_UNMUTED,
++  GST_PULSE_STREAM_FAIL_ON_SUSPEND = PA_STREAM_FAIL_ON_SUSPEND,
++  GST_PULSE_STREAM_RELATIVE_VOLUME = PA_STREAM_RELATIVE_VOLUME,
++  GST_PULSE_STREAM_PASSTHROUGH = PA_STREAM_PASSTHROUGH,
++} GstPulseStreamFlags;
++
++GType gst_pulse_paflags_get_type ();
++#define GST_TYPE_PULSE_STREAM_FLAGS (gst_pulse_paflags_get_type ())
+ 
+ gboolean gst_pulse_fill_sample_spec (GstAudioRingBufferSpec * spec,
+     pa_sample_spec * ss);
+-- 
+2.19.1
+

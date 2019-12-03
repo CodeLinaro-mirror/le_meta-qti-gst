@@ -1,0 +1,25 @@
+From 1c3664efb70dfbe3288b01de24d2f9e245fb785a Mon Sep 17 00:00:00 2001
+From: Arun Raghavan <arunsr@codeaurora.org>
+Date: Mon, 28 May 2018 14:39:53 +0530
+Subject: [PATCH 1/4] pulse: Fix format info to caps conversion for PCM
+
+---
+ ext/pulse/pulseutil.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/ext/pulse/pulseutil.c b/ext/pulse/pulseutil.c
+index ea08d156f..aa90ce973 100644
+--- a/ext/pulse/pulseutil.c
++++ b/ext/pulse/pulseutil.c
+@@ -467,7 +467,7 @@ gst_pulse_format_info_to_caps (pa_format_info * format)
+         ret = gst_caps_from_string (_PULSE_CAPS_LINEAR);
+ 
+         if (sformat)
+-          gst_caps_set_simple (ret, "format", G_TYPE_STRING, NULL);
++          gst_caps_set_simple (ret, "format", G_TYPE_STRING, sformat, NULL);
+       }
+ 
+       pa_xfree (tmp);
+-- 
+2.19.1
+

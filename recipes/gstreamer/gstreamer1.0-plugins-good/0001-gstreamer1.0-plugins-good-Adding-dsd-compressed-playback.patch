@@ -1,0 +1,102 @@
+From 647a7fddbc08e72fb1e9dae8ffd967c83a01d74d Mon Sep 17 00:00:00 2001
+From: Arindam Biswas <arinbisw@codeaurora.org>
+Date: Mon, 12 Aug 2019 16:25:03 +0530
+Subject: [PATCH] gstreamer1.0-plugins-good: Adding compressed playback support
+ of DSD stream
+
+---
+ ext/pulse/pulsedirectsink.c | 12 ++++++++++--
+ ext/pulse/pulsedirectsink.h |  5 ++++-
+ ext/pulse/pulseutil.c       |  5 +++--
+ ext/pulse/pulseutil.h       |  3 +++
+ 4 files changed, 20 insertions(+), 5 deletions(-)
+
+diff --git a/ext/pulse/pulsedirectsink.c b/ext/pulse/pulsedirectsink.c
+index 896933b..6d0c902 100644
+--- a/ext/pulse/pulsedirectsink.c
++++ b/ext/pulse/pulsedirectsink.c
+@@ -1047,7 +1047,16 @@ gst_pulsedirectsink_parse_caps (GstAudioRingBufferSpec * spec, GstCaps * caps)
+ 
+     info.rate = rate;
+     info.channels = channels;
+-  } else {
++  }else if (g_str_equal (format, "audio/x-dsd")) {
++    gint rate, channels;
++    spec->type = GST_AUDIO_RING_BUFFER_FORMAT_TYPE_DSD;
++    if (!gst_structure_get_int (structure, "rate", &rate))
++      goto parse_error;
++    if (!gst_structure_get_int (structure, "channels", &channels))
++      goto parse_error;
++    info.rate = rate * DSD_SAMPLE_RATE_MULTIER;
++    info.channels = channels;
++   } else {
+     /* There should be no other format we support as of now */
+     g_assert_not_reached ();
+   }
+@@ -1135,7 +1144,6 @@ gst_pulsedirectsink_create_stream (GstPulseDirectSink * psink)
+ 
+   if (psink->properties)
+     proplist = gst_pulse_make_proplist (psink->properties);
+-
+   /* create a stream */
+   if (!(psink->stream =
+           pa_stream_new_extended (psink->context, name, formats, 1, proplist)))
+diff --git a/ext/pulse/pulsedirectsink.h b/ext/pulse/pulsedirectsink.h
+index 60a40bb..d31b1dc 100644
+--- a/ext/pulse/pulsedirectsink.h
++++ b/ext/pulse/pulsedirectsink.h
+@@ -25,6 +25,8 @@
+ 
+ #include <pulse/pulseaudio.h>
+ 
++#define DSD_SAMPLE_RATE_MULTIER 8
++
+ G_BEGIN_DECLS
+ #define GST_TYPE_PULSEDIRECTSINK \
+     (gst_pulsedirectsink_get_type())
+@@ -79,10 +81,11 @@ struct _GstPulseDirectSinkClass
+ 
+ GType gst_pulsedirectsink_get_type (void);
+ 
++
+ #define PULSE_DIRECT_SINK_TEMPLATE_CAPS \
+   _PULSE_CAPS_PCM \
+   _PULSE_CAPS_MP3 \
+   _PULSE_CAPS_AAC \
+-
++  _PULSE_CAPS_DSD \
+ G_END_DECLS
+ #endif /* __GST_PULSEDIRECTSINK_H__ */
+diff --git a/ext/pulse/pulseutil.c b/ext/pulse/pulseutil.c
+index 18dd51b..43369a5 100644
+--- a/ext/pulse/pulseutil.c
++++ b/ext/pulse/pulseutil.c
+@@ -248,8 +248,9 @@ gst_pulse_fill_format_info (GstAudioRingBufferSpec * spec, pa_format_info ** f,
+   GstAudioInfo *ainfo = &spec->info;
+ 
+   format = pa_format_info_new ();
+-
+-  if (spec->type == GST_AUDIO_RING_BUFFER_FORMAT_TYPE_MU_LAW) {
++  if(spec->type == GST_AUDIO_RING_BUFFER_FORMAT_TYPE_DSD) {
++     format->encoding = PA_ENCODING_DSD;
++  } else if (spec->type == GST_AUDIO_RING_BUFFER_FORMAT_TYPE_MU_LAW) {
+     format->encoding = PA_ENCODING_PCM;
+     sf = PA_SAMPLE_ULAW;
+   } else if (spec->type == GST_AUDIO_RING_BUFFER_FORMAT_TYPE_A_LAW) {
+diff --git a/ext/pulse/pulseutil.h b/ext/pulse/pulseutil.h
+index c4eff7e..6396d18 100644
+--- a/ext/pulse/pulseutil.h
++++ b/ext/pulse/pulseutil.h
+@@ -70,6 +70,9 @@
+     "framed = (boolean) true, stream-format = (string) { adts, raw };"
+ #define _PULSE_CAPS_UNKNOWN_IEC61937 "audio/x-iec61937"
+ 
++#define _PULSE_CAPS_DSD "audio/x-dsd ,"\
++        "rate = (int) [ 1, MAX ], channels = (int) [ 1, MAX ];"
++
+ #define _PULSE_CAPS_PCM \
+   _PULSE_CAPS_LINEAR \
+   _PULSE_CAPS_ALAW \
+-- 
+1.9.1
+

@@ -1,0 +1,112 @@
+From 9885b3cc6700fa10b9afa8c4a43e6e7137a2b93e Mon Sep 17 00:00:00 2001
+From: Arun Raghavan <arunsr@codeaurora.org>
+Date: Mon, 28 May 2018 21:52:48 +0530
+Subject: [PATCH 3/4] pulsesrc: Add support for passthrough capture
+
+This cleans up some paths where we might try to work with the channel
+count of the stream which may not be available in non-PCM cases.
+---
+ ext/pulse/pulsesrc.c  | 36 +++++++++++++++++++++++++-----------
+ ext/pulse/pulseutil.c |  2 +-
+ 2 files changed, 26 insertions(+), 12 deletions(-)
+
+diff --git a/ext/pulse/pulsesrc.c b/ext/pulse/pulsesrc.c
+index 9a711e460..93dc34c6e 100644
+--- a/ext/pulse/pulsesrc.c
++++ b/ext/pulse/pulsesrc.c
+@@ -626,6 +626,9 @@ gst_pulsesrc_set_stream_volume (GstPulseSrc * pulsesrc, gdouble volume)
+   if (!pulsesrc->source_output_idx)
+     goto no_index;
+ 
++  if (!pa_format_info_is_pcm (pulsesrc->format))
++    goto passthrough;
++
+   pa_threaded_mainloop_lock (pulsesrc->mainloop);
+ 
+   GST_DEBUG_OBJECT (pulsesrc, "setting volume to %f", volume);
+@@ -661,6 +664,13 @@ no_index:
+     GST_DEBUG_OBJECT (pulsesrc, "we don't have a stream index");
+     return;
+   }
++passthrough:
++  {
++    pulsesrc->volume = volume;
++    pulsesrc->volume_set = TRUE;
++    GST_DEBUG_OBJECT (pulsesrc, "not changing volume on a passthrough stream");
++    return;
++  }
+ volume_failed:
+   {
+     GST_ELEMENT_ERROR (pulsesrc, RESOURCE, FAILED,
+@@ -1304,13 +1314,15 @@ gst_pulsesrc_create_stream (GstPulseSrc * pulsesrc, GstCaps ** caps,
+           &pulsesrc->channels))
+     goto invalid_spec;
+ 
+-  if (need_channel_layout) {
+-    /* FIXME: Is this correct? */
+-    pa_channel_map_init_auto (&channel_map, pulsesrc->channels,
+-        PA_CHANNEL_MAP_DEFAULT);
+-  }
++  if (pa_format_info_is_pcm (pulsesrc->format)) {
++    if (need_channel_layout) {
++      /* FIXME: Is this correct? */
++      pa_channel_map_init_auto (&channel_map, pulsesrc->channels,
++          PA_CHANNEL_MAP_DEFAULT);
++    }
+ 
+-  pa_format_info_set_channel_map (pulsesrc->format, &channel_map);
++    pa_format_info_set_channel_map (pulsesrc->format, &channel_map);
++  }
+ 
+   pa_threaded_mainloop_lock (pulsesrc->mainloop);
+ 
+@@ -1326,9 +1338,11 @@ gst_pulsesrc_create_stream (GstPulseSrc * pulsesrc, GstCaps ** caps,
+     goto create_failed;
+ 
+   if (caps) {
+-    gst_pulse_channel_map_to_gst (&channel_map, &new_spec);
+-    gst_audio_channel_positions_to_valid_order (new_spec.info.position,
+-        new_spec.info.channels);
++    if (pa_format_info_is_pcm (pulsesrc->format)) {
++      gst_pulse_channel_map_to_gst (&channel_map, &new_spec);
++      gst_audio_channel_positions_to_valid_order (new_spec.info.position,
++          new_spec.info.channels);
++    }
+     gst_caps_unref (*caps);
+     *caps = gst_pulse_format_info_to_caps (pulsesrc->format);
+ 
+@@ -1482,7 +1496,7 @@ gst_pulsesrc_prepare (GstAudioSrc * asrc, GstAudioRingBufferSpec * spec)
+   if (!pulsesrc->stream)
+     gst_pulsesrc_create_stream (pulsesrc, NULL, spec);
+ 
+-  {
++  if (pa_format_info_is_pcm (pulsesrc->format)) {
+     GstAudioRingBufferSpec s = *spec;
+     pa_channel_map m;
+ 
+@@ -1579,8 +1593,8 @@ gst_pulsesrc_prepare (GstAudioSrc * asrc, GstAudioRingBufferSpec * spec)
+   }
+ 
+   if (pulsesrc->volume_set) {
+-    gst_pulsesrc_set_stream_volume (pulsesrc, pulsesrc->volume);
+     pulsesrc->volume_set = FALSE;
++    gst_pulsesrc_set_stream_volume (pulsesrc, pulsesrc->volume);
+   }
+ 
+   /* get the actual buffering properties now */
+diff --git a/ext/pulse/pulseutil.c b/ext/pulse/pulseutil.c
+index 4b94854eb..c3bd3f110 100644
+--- a/ext/pulse/pulseutil.c
++++ b/ext/pulse/pulseutil.c
+@@ -188,7 +188,7 @@ gst_pulse_fill_format_info (GstAudioRingBufferSpec * spec, pa_format_info ** f,
+   *f = format;
+   if (rate)
+     *rate = GST_AUDIO_INFO_RATE (ainfo);
+-  if (channels)
++  if (channels && format->encoding == PA_ENCODING_PCM)
+     *channels = GST_AUDIO_INFO_CHANNELS (ainfo);
+ 
+   return TRUE;
+-- 
+2.19.1
+

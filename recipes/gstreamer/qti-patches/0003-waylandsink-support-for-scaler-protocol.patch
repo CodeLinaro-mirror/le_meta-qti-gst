@@ -1,43 +1,54 @@
-From 4faa3e51b983ed64614461a966402990938dd47c Mon Sep 17 00:00:00 2001
+From f710f6077fd42cdae2fc24ebe6b6cde06b58d5c7 Mon Sep 17 00:00:00 2001
 From: Amrutha Sai Gattu <agattu@codeaurora.org>
-Date: Tue, 3 Sep 2019 13:58:35 +0300
-Subject: [CHANGE 3/4] waylandsink: support for scaler protocol
+Date: Fri, 1 Nov 2019 09:56:20 +0530
+Subject: [PATCH] waylandsink: support for scaler protocol
 
 ---
- ext/wayland/Makefile.am      |  7 +++--
- ext/wayland/gstwaylandsink.c | 68 ++++++++++++++++++++++++++++++++++++++++++--
+ configure.ac                 |  6 +++
+ ext/wayland/Makefile.am      |  7 ++++
+ ext/wayland/gstwaylandsink.c | 68 ++++++++++++++++++++++++++++--
  ext/wayland/gstwaylandsink.h |  1 +
- ext/wayland/wldisplay.c      | 13 ++++++++-
- ext/wayland/wldisplay.h      |  2 ++
- ext/wayland/wlwindow.c       | 63 +++++++++++++++++++++++++++++-----------
- ext/wayland/wlwindow.h       | 10 ++++---
- 7 files changed, 138 insertions(+), 26 deletions(-)
+ ext/wayland/wldisplay.c      | 19 ++++++++-
+ ext/wayland/wldisplay.h      |  6 +++
+ ext/wayland/wlwindow.c       | 81 +++++++++++++++++++++++++++++-------
+ ext/wayland/wlwindow.h       | 12 ++++--
+ 8 files changed, 176 insertions(+), 24 deletions(-)
 
+diff --git a/configure.ac b/configure.ac
+index 6243909..385f5c8 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -1349,6 +1349,12 @@ AC_ARG_ENABLE([xdg-shell-protocol],
+       [use_xdg_shell_protocol="${enableval}"])
+ AM_CONDITIONAL([XDG_SHELL_PROTOCOL], [test "x${use_xdg_shell_protocol}" = "xyes"])
+ 
++AC_ARG_ENABLE([scaler-protocol],
++   AC_HELP_STRING([--enable-scaler-protocol],
++      [Use scaler protocol [default=no]]),
++      [use_scaler_protocol="${enableval}"])
++AM_CONDITIONAL([SCALER_PROTOCOL], [test "x${use_scaler_protocol}" = "xyes"])
++
+ dnl **** WebP ****
+ translit(dnm, m, l) AM_CONDITIONAL(USE_WEBP, true)
+ AG_GST_CHECK_FEATURE(WEBP, [WebP], webp , [
 diff --git a/ext/wayland/Makefile.am b/ext/wayland/Makefile.am
-index 41ca5c7..854ad1f 100644
+index 6d93c19..eb328da 100644
 --- a/ext/wayland/Makefile.am
 +++ b/ext/wayland/Makefile.am
-@@ -6,7 +6,9 @@ BUILT_SOURCES = \
- 	linux-dmabuf-unstable-v1-protocol.c \
- 	linux-dmabuf-unstable-v1-client-protocol.h \
- 	xdg-shell-protocol.c \
--	xdg-shell-client-protocol.h
-+	xdg-shell-client-protocol.h \
-+	scaler-protocol.c \
-+	scaler-client-protocol.h
+@@ -39,6 +39,13 @@ nodist_libgstwaylandsink_la_SOURCES += xdg-shell-unstable-v6-protocol.c
+ libgstwaylandsink_la_CFLAGS += -D__XDG_SHELL_PROTOCOL
+ endif
  
- libgstwaylandsink_la_SOURCES =  \
- 	gstwaylandsink.c \
-@@ -20,7 +22,8 @@ libgstwaylandsink_la_SOURCES =  \
- nodist_libgstwaylandsink_la_SOURCES = \
- 	viewporter-protocol.c \
- 	linux-dmabuf-unstable-v1-protocol.c \
--	xdg-shell-protocol.c
-+	xdg-shell-protocol.c \
-+	scaler-protocol.c
- 
- libgstwaylandsink_la_CFLAGS = \
- 	$(GST_PLUGINS_BAD_CFLAGS) \
++if SCALER_PROTOCOL
++BUILT_SOURCES += scaler-protocol.c \
++                 scaler-client-protocol.h
++nodist_libgstwaylandsink_la_SOURCES += scaler-protocol.c
++libgstwaylandsink_la_CFLAGS += -D__SCALER_PROTOCOL
++endif
++
+ noinst_HEADERS = \
+ 	gstwaylandsink.h \
+ 	wlshmallocator.h \
 diff --git a/ext/wayland/gstwaylandsink.c b/ext/wayland/gstwaylandsink.c
 index 377034f..553a3b4 100644
 --- a/ext/wayland/gstwaylandsink.c
@@ -158,68 +169,85 @@ index e29b508..3083967 100644
    gboolean redraw_pending;
    GMutex render_lock;
 diff --git a/ext/wayland/wldisplay.c b/ext/wayland/wldisplay.c
-index a76b61c..4aa0b3e 100644
+index 50100da..b9feb42 100644
 --- a/ext/wayland/wldisplay.c
 +++ b/ext/wayland/wldisplay.c
-@@ -81,6 +81,9 @@ gst_wl_display_finalize (GObject * gobject)
+@@ -81,6 +81,11 @@ gst_wl_display_finalize (GObject * gobject)
    if (self->viewporter)
      wp_viewporter_destroy (self->viewporter);
  
++#ifdef __SCALER_PROTOCOL
 +  if (self->scaler)
 +    wl_scaler_destroy (self->scaler);
++#endif
 +
    if (self->shm)
      wl_shm_destroy (self->shm);
  
-@@ -237,6 +240,9 @@ registry_handle_global (void *data, struct wl_registry *registry,
+@@ -253,6 +258,11 @@ registry_handle_global (void *data, struct wl_registry *registry,
    } else if (g_strcmp0 (interface, "wp_viewporter") == 0) {
      self->viewporter =
          wl_registry_bind (registry, id, &wp_viewporter_interface, 1);
++#ifdef __SCALER_PROTOCOL
 +  } else if (g_strcmp0(interface, "wl_scaler") == 0) {
 +    self->scaler =
 +        wl_registry_bind (registry, id, &wl_scaler_interface, MIN (version, 2));
++#endif
    } else if (g_strcmp0 (interface, "zwp_linux_dmabuf_v1") == 0) {
      self->dmabuf =
          wl_registry_bind (registry, id, &zwp_linux_dmabuf_v1_interface, 1);
-@@ -352,7 +358,12 @@ gst_wl_display_new_existing (struct wl_display * display,
+@@ -368,7 +378,7 @@ gst_wl_display_new_existing (struct wl_display * display,
     * compositor that don't implement this extension. */
    if (!self->viewporter) {
      g_warning ("Wayland compositor is missing the ability to scale, video "
 -        "display may not work properly.");
 +        "display may not work properly. - No viewporter present");
-+  }
-+
-+  if (!self->scaler) {
-+    g_warning ("Wayland compositor is missing the ability to scale, video "
-+        "display may not work properly - No scaler present");
    }
  
    if (!self->dmabuf) {
+@@ -382,6 +392,13 @@ gst_wl_display_new_existing (struct wl_display * display,
+   }
+ #endif
+ 
++#ifdef __SCALER_PROTOCOL
++  if (!self->scaler) {
++    g_warning ("Wayland compositor is missing the ability to scale, video "
++        "display may not work properly - No scaler present");
++  }
++#endif
++
+   self->thread = g_thread_try_new ("GstWlDisplay", gst_wl_display_thread_run,
+       self, &err);
+   if (err) {
 diff --git a/ext/wayland/wldisplay.h b/ext/wayland/wldisplay.h
-index 33eaac7..cd061cd 100644
+index 816c37d..155b1b1 100644
 --- a/ext/wayland/wldisplay.h
 +++ b/ext/wayland/wldisplay.h
-@@ -26,6 +26,7 @@
- #include <wayland-client.h>
- #include "xdg-shell-client-protocol.h"
- #include "viewporter-client-protocol.h"
+@@ -29,6 +29,9 @@
+ #ifdef __XDG_SHELL_PROTOCOL
+ #include "xdg-shell-unstable-v6-client-protocol.h"
+ #endif
++#ifdef __SCALER_PROTOCOL
 +#include "scaler-client-protocol.h"
- #include "linux-dmabuf-unstable-v1-client-protocol.h"
++#endif
  
  G_BEGIN_DECLS
-@@ -56,6 +57,7 @@ struct _GstWlDisplay
-   struct xdg_shell *xdgshell;
+ 
+@@ -60,6 +63,9 @@ struct _GstWlDisplay
+ #endif
    struct wl_shm *shm;
    struct wp_viewporter *viewporter;
++#ifdef __SCALER_PROTOCOL
 +  struct wl_scaler *scaler;
++#endif
    struct zwp_linux_dmabuf_v1 *dmabuf;
    GArray *shm_formats;
    GArray *dmabuf_formats;
 diff --git a/ext/wayland/wlwindow.c b/ext/wayland/wlwindow.c
-index 573bd92..5767cbd 100644
+index 345e877..bd58f4b 100644
 --- a/ext/wayland/wlwindow.c
 +++ b/ext/wayland/wlwindow.c
-@@ -121,8 +121,11 @@ gst_wl_window_finalize (GObject * gobject)
+@@ -148,8 +148,13 @@ gst_wl_window_finalize (GObject * gobject)
    if (self->shell_surface)
      wl_shell_surface_destroy (self->shell_surface);
  
@@ -228,12 +256,14 @@ index 573bd92..5767cbd 100644
 +  if (self->wp_video_viewport)
 +    wp_viewport_destroy (self->wp_video_viewport);
 +
++#ifdef __SCALER_PROTOCOL
 +  if (self->wl_video_viewport)
 +    wl_viewport_destroy (self->wl_video_viewport);
++#endif
  
    wl_subsurface_destroy (self->video_subsurface);
    wl_surface_destroy (self->video_surface);
-@@ -130,8 +133,11 @@ gst_wl_window_finalize (GObject * gobject)
+@@ -157,8 +162,13 @@ gst_wl_window_finalize (GObject * gobject)
    if (self->area_subsurface)
      wl_subsurface_destroy (self->area_subsurface);
  
@@ -242,12 +272,14 @@ index 573bd92..5767cbd 100644
 +  if (self->wp_area_viewport)
 +    wp_viewport_destroy (self->wp_area_viewport);
 +
++#ifdef __SCALER_PROTOCOL
 +  if (self->wl_area_viewport)
 +    wl_viewport_destroy (self->wl_area_viewport);
++#endif
  
    wl_surface_destroy (self->area_surface);
  
-@@ -164,9 +170,14 @@ gst_wl_window_new_internal (GstWlDisplay * display, GMutex * render_lock)
+@@ -194,10 +204,17 @@ gst_wl_window_new_internal (GstWlDisplay * display, GMutex * render_lock)
    wl_subsurface_set_desync (window->video_subsurface);
  
    if (display->viewporter) {
@@ -256,15 +288,18 @@ index 573bd92..5767cbd 100644
 +        window->area_surface);
 +    window->wp_video_viewport = wp_viewporter_get_viewport (display->viewporter,
 +        window->video_surface);
++#ifdef __SCALER_PROTOCOL
 +  } else if (display->scaler) {
 +    window->wl_area_viewport = wl_scaler_get_viewport (display->scaler,
          window->area_surface);
 -    window->video_viewport = wp_viewporter_get_viewport (display->viewporter,
 +    window->wl_video_viewport = wl_scaler_get_viewport (display->scaler,
          window->video_surface);
++#endif
    }
  
-@@ -204,10 +215,10 @@ gst_wl_window_ensure_fullscreen (GstWlWindow * window, gboolean fullscreen)
+   /* do not accept input */
+@@ -237,10 +254,10 @@ gst_wl_window_ensure_fullscreen (GstWlWindow * window, gboolean fullscreen)
  
  GstWlWindow *
  gst_wl_window_new_toplevel (GstWlDisplay * display, const GstVideoInfo * info,
@@ -277,7 +312,7 @@ index 573bd92..5767cbd 100644
  
    window = gst_wl_window_new_internal (display, render_lock);
  
-@@ -245,10 +256,21 @@ gst_wl_window_new_toplevel (GstWlDisplay * display, const GstVideoInfo * info,
+@@ -309,10 +326,27 @@ gst_wl_window_new_toplevel (GstWlDisplay * display, const GstVideoInfo * info,
      GST_INFO ("Using wl_shell_surface");
    }
  
@@ -288,22 +323,28 @@ index 573bd92..5767cbd 100644
 +  if ((rectangle->h != 0) && (rectangle->w != 0) && !fullscreen) {
 +    gst_wl_window_set_render_rectangle (window, 0, 0, rectangle->w,
 +         rectangle->h);
-+
-+    if (window->xdg_surface)
-+      xdg_surface_set_pos (window->xdg_surface, rectangle->x, rectangle->y);
++#ifdef __XDG_SHELL_PROTOCOL
++    if (window->xdg_surface && window->xdg_toplevel) {
++      zxdg_toplevel_v6_set_position(window->xdg_toplevel, rectangle->x,
++          rectangle->y);
++    }
++#endif
 +  } else {
 +    /* set the initial size to be the same as the reported video size */
 +    gint width = gst_util_uint64_scale_int_round (
 +        info->width, info->par_n, info->par_d);
 +    gst_wl_window_set_render_rectangle (window, 0, 0, width, info->height);
 +
-+    if (window->xdg_surface)
-+      xdg_surface_set_pos (window->xdg_surface, 0, 0);
++#ifdef __XDG_SHELL_PROTOCOL
++    if (window->xdg_surface && window->xdg_toplevel) {
++      zxdg_toplevel_v6_set_position(window->xdg_toplevel, 0, 0);
++    }
++#endif
 +  }
  
    return window;
  }
-@@ -306,9 +328,12 @@ gst_wl_window_resize_video_surface (GstWlWindow * window, gboolean commit)
+@@ -375,9 +409,14 @@ gst_wl_window_resize_video_surface (GstWlWindow * window, gboolean commit)
    dst.w = window->render_rectangle.w;
    dst.h = window->render_rectangle.h;
  
@@ -311,24 +352,28 @@ index 573bd92..5767cbd 100644
 +  if (window->wp_video_viewport) {
 +    gst_video_sink_center_rect (src, dst, &res, TRUE);
 +    wp_viewport_set_destination (window->wp_video_viewport, res.w, res.h);
++#ifdef __SCALER_PROTOCOL
 +  } else if (window->wl_video_viewport) {
      gst_video_sink_center_rect (src, dst, &res, TRUE);
 -    wp_viewport_set_destination (window->video_viewport, res.w, res.h);
 +    wl_viewport_set_destination (window->wl_video_viewport, res.w, res.h);
++#endif
    } else {
      gst_video_sink_center_rect (src, dst, &res, FALSE);
    }
-@@ -411,6 +436,9 @@ gst_wl_window_update_borders (GstWlWindow * window)
+@@ -480,6 +519,11 @@ gst_wl_window_update_borders (GstWlWindow * window)
    if (window->display->viewporter) {
      width = height = 1;
      window->no_border_update = TRUE;
++#ifdef __SCALER_PROTOCOL
 +  } else if (window->display->scaler) {
 +    width = height = 1;
 +    window->no_border_update = TRUE;
++#endif
    } else {
      width = window->render_rectangle.w;
      height = window->render_rectangle.h;
-@@ -458,8 +486,11 @@ gst_wl_window_set_render_rectangle (GstWlWindow * window, gint x, gint y,
+@@ -527,8 +571,13 @@ gst_wl_window_set_render_rectangle (GstWlWindow * window, gint x, gint y,
      wl_subsurface_set_position (window->area_subsurface, x, y);
  
    /* change the size of the area */
@@ -336,32 +381,36 @@ index 573bd92..5767cbd 100644
 -    wp_viewport_set_destination (window->area_viewport, w, h);
 +  if (window->wp_area_viewport) {
 +    wp_viewport_set_destination (window->wp_area_viewport, w, h);
++#ifdef __SCALER_PROTOCOL
 +  } else if (window->wl_area_viewport) {
 +    wl_viewport_set_destination (window->wl_area_viewport, w, h);
++#endif
 +  }
  
    gst_wl_window_update_borders (window);
  
 diff --git a/ext/wayland/wlwindow.h b/ext/wayland/wlwindow.h
-index 6a3eca9..9aecd6e 100644
+index 9305deb..d40f272 100644
 --- a/ext/wayland/wlwindow.h
 +++ b/ext/wayland/wlwindow.h
-@@ -46,10 +46,12 @@ struct _GstWlWindow
+@@ -46,10 +46,14 @@ struct _GstWlWindow
    GstWlDisplay *display;
    struct wl_surface *area_surface;
    struct wl_subsurface *area_subsurface;
 -  struct wp_viewport *area_viewport;
-+  struct wp_viewport *wp_area_viewport;
-+  struct wl_viewport *wl_area_viewport;
    struct wl_surface *video_surface;
    struct wl_subsurface *video_subsurface;
 -  struct wp_viewport *video_viewport;
++  struct wp_viewport *wp_area_viewport;
 +  struct wp_viewport *wp_video_viewport;
++#ifdef __SCALER_PROTOCOL
++  struct wl_viewport *wl_area_viewport;
 +  struct wl_viewport *wl_video_viewport;
++#endif
    struct wl_shell_surface *shell_surface;
-   struct xdg_surface *xdg_surface;
- 
-@@ -78,8 +80,8 @@ GType gst_wl_window_get_type (void);
+ #ifdef __XDG_SHELL_PROTOCOL
+   struct zxdg_surface_v6 *xdg_surface;
+@@ -84,8 +88,8 @@ GType gst_wl_window_get_type (void);
  void gst_wl_window_ensure_fullscreen (GstWlWindow * window,
          gboolean fullscreen);
  GstWlWindow *gst_wl_window_new_toplevel (GstWlDisplay * display,
@@ -373,5 +422,5 @@ index 6a3eca9..9aecd6e 100644
          struct wl_surface * parent, GMutex * render_lock);
  
 -- 
-1.9.1
+2.22.0
 

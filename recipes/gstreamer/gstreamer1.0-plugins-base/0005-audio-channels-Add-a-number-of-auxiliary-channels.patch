@@ -1,0 +1,247 @@
+From f61ae54e0ecea416b8f994b992d226aa74447da0 Mon Sep 17 00:00:00 2001
+From: Arun Raghavan <arunsr@codeaurora.org>
+Date: Thu, 10 Jan 2019 22:16:45 +0530
+Subject: [PATCH] audio-channels: Add a number of auxiliary channels
+
+The idea with these is that plugins can use them for whatever purpose
+they choose, rather than us having to define channel positions for each
+format or specification that defines specific channel positions that
+might not be in general use.
+---
+ gst-libs/gst/audio/audio-channels.c | 128 +++++++++++++++++++++-------
+ gst-libs/gst/audio/audio-channels.h |  66 +++++++++++++-
+ 2 files changed, 161 insertions(+), 33 deletions(-)
+
+diff --git a/gst-libs/gst/audio/audio-channels.c b/gst-libs/gst/audio/audio-channels.c
+index d00f0b972..46ef8f779 100644
+--- a/gst-libs/gst/audio/audio-channels.c
++++ b/gst-libs/gst/audio/audio-channels.c
+@@ -84,38 +84,38 @@ static const GstAudioChannelPosition default_channel_order[64] = {
+   GST_AUDIO_CHANNEL_POSITION_WIDE_RIGHT,
+   GST_AUDIO_CHANNEL_POSITION_SURROUND_LEFT,
+   GST_AUDIO_CHANNEL_POSITION_SURROUND_RIGHT,
+-  GST_AUDIO_CHANNEL_POSITION_INVALID,
+-  GST_AUDIO_CHANNEL_POSITION_INVALID,
+-  GST_AUDIO_CHANNEL_POSITION_INVALID,
+-  GST_AUDIO_CHANNEL_POSITION_INVALID,
+-  GST_AUDIO_CHANNEL_POSITION_INVALID,
+-  GST_AUDIO_CHANNEL_POSITION_INVALID,
+-  GST_AUDIO_CHANNEL_POSITION_INVALID,
+-  GST_AUDIO_CHANNEL_POSITION_INVALID,
+-  GST_AUDIO_CHANNEL_POSITION_INVALID,
+-  GST_AUDIO_CHANNEL_POSITION_INVALID,
+-  GST_AUDIO_CHANNEL_POSITION_INVALID,
+-  GST_AUDIO_CHANNEL_POSITION_INVALID,
+-  GST_AUDIO_CHANNEL_POSITION_INVALID,
+-  GST_AUDIO_CHANNEL_POSITION_INVALID,
+-  GST_AUDIO_CHANNEL_POSITION_INVALID,
+-  GST_AUDIO_CHANNEL_POSITION_INVALID,
+-  GST_AUDIO_CHANNEL_POSITION_INVALID,
+-  GST_AUDIO_CHANNEL_POSITION_INVALID,
+-  GST_AUDIO_CHANNEL_POSITION_INVALID,
+-  GST_AUDIO_CHANNEL_POSITION_INVALID,
+-  GST_AUDIO_CHANNEL_POSITION_INVALID,
+-  GST_AUDIO_CHANNEL_POSITION_INVALID,
+-  GST_AUDIO_CHANNEL_POSITION_INVALID,
+-  GST_AUDIO_CHANNEL_POSITION_INVALID,
+-  GST_AUDIO_CHANNEL_POSITION_INVALID,
+-  GST_AUDIO_CHANNEL_POSITION_INVALID,
+-  GST_AUDIO_CHANNEL_POSITION_INVALID,
+-  GST_AUDIO_CHANNEL_POSITION_INVALID,
+-  GST_AUDIO_CHANNEL_POSITION_INVALID,
+-  GST_AUDIO_CHANNEL_POSITION_INVALID,
+-  GST_AUDIO_CHANNEL_POSITION_INVALID,
+-  GST_AUDIO_CHANNEL_POSITION_INVALID,
++  GST_AUDIO_CHANNEL_POSITION_AUX0,
++  GST_AUDIO_CHANNEL_POSITION_AUX1,
++  GST_AUDIO_CHANNEL_POSITION_AUX2,
++  GST_AUDIO_CHANNEL_POSITION_AUX3,
++  GST_AUDIO_CHANNEL_POSITION_AUX4,
++  GST_AUDIO_CHANNEL_POSITION_AUX5,
++  GST_AUDIO_CHANNEL_POSITION_AUX6,
++  GST_AUDIO_CHANNEL_POSITION_AUX7,
++  GST_AUDIO_CHANNEL_POSITION_AUX8,
++  GST_AUDIO_CHANNEL_POSITION_AUX9,
++  GST_AUDIO_CHANNEL_POSITION_AUX10,
++  GST_AUDIO_CHANNEL_POSITION_AUX11,
++  GST_AUDIO_CHANNEL_POSITION_AUX12,
++  GST_AUDIO_CHANNEL_POSITION_AUX13,
++  GST_AUDIO_CHANNEL_POSITION_AUX14,
++  GST_AUDIO_CHANNEL_POSITION_AUX15,
++  GST_AUDIO_CHANNEL_POSITION_AUX16,
++  GST_AUDIO_CHANNEL_POSITION_AUX17,
++  GST_AUDIO_CHANNEL_POSITION_AUX18,
++  GST_AUDIO_CHANNEL_POSITION_AUX19,
++  GST_AUDIO_CHANNEL_POSITION_AUX20,
++  GST_AUDIO_CHANNEL_POSITION_AUX21,
++  GST_AUDIO_CHANNEL_POSITION_AUX22,
++  GST_AUDIO_CHANNEL_POSITION_AUX23,
++  GST_AUDIO_CHANNEL_POSITION_AUX24,
++  GST_AUDIO_CHANNEL_POSITION_AUX25,
++  GST_AUDIO_CHANNEL_POSITION_AUX26,
++  GST_AUDIO_CHANNEL_POSITION_AUX27,
++  GST_AUDIO_CHANNEL_POSITION_AUX28,
++  GST_AUDIO_CHANNEL_POSITION_AUX29,
++  GST_AUDIO_CHANNEL_POSITION_AUX30,
++  GST_AUDIO_CHANNEL_POSITION_AUX31,
+   GST_AUDIO_CHANNEL_POSITION_INVALID,
+   GST_AUDIO_CHANNEL_POSITION_INVALID,
+   GST_AUDIO_CHANNEL_POSITION_INVALID,
+@@ -622,6 +622,70 @@ position_to_string (GstAudioChannelPosition pos)
+       return "SL";
+     case GST_AUDIO_CHANNEL_POSITION_SURROUND_RIGHT:
+       return "SR";
++    case GST_AUDIO_CHANNEL_POSITION_AUX0:
++      return "AUX0";
++    case GST_AUDIO_CHANNEL_POSITION_AUX1:
++      return "AUX1";
++    case GST_AUDIO_CHANNEL_POSITION_AUX2:
++      return "AUX2";
++    case GST_AUDIO_CHANNEL_POSITION_AUX3:
++      return "AUX3";
++    case GST_AUDIO_CHANNEL_POSITION_AUX4:
++      return "AUX4";
++    case GST_AUDIO_CHANNEL_POSITION_AUX5:
++      return "AUX5";
++    case GST_AUDIO_CHANNEL_POSITION_AUX6:
++      return "AUX6";
++    case GST_AUDIO_CHANNEL_POSITION_AUX7:
++      return "AUX7";
++    case GST_AUDIO_CHANNEL_POSITION_AUX8:
++      return "AUX8";
++    case GST_AUDIO_CHANNEL_POSITION_AUX9:
++      return "AUX9";
++    case GST_AUDIO_CHANNEL_POSITION_AUX10:
++      return "AUX10";
++    case GST_AUDIO_CHANNEL_POSITION_AUX11:
++      return "AUX11";
++    case GST_AUDIO_CHANNEL_POSITION_AUX12:
++      return "AUX12";
++    case GST_AUDIO_CHANNEL_POSITION_AUX13:
++      return "AUX13";
++    case GST_AUDIO_CHANNEL_POSITION_AUX14:
++      return "AUX14";
++    case GST_AUDIO_CHANNEL_POSITION_AUX15:
++      return "AUX15";
++    case GST_AUDIO_CHANNEL_POSITION_AUX16:
++      return "AUX16";
++    case GST_AUDIO_CHANNEL_POSITION_AUX17:
++      return "AUX17";
++    case GST_AUDIO_CHANNEL_POSITION_AUX18:
++      return "AUX18";
++    case GST_AUDIO_CHANNEL_POSITION_AUX19:
++      return "AUX19";
++    case GST_AUDIO_CHANNEL_POSITION_AUX20:
++      return "AUX20";
++    case GST_AUDIO_CHANNEL_POSITION_AUX21:
++      return "AUX21";
++    case GST_AUDIO_CHANNEL_POSITION_AUX22:
++      return "AUX22";
++    case GST_AUDIO_CHANNEL_POSITION_AUX23:
++      return "AUX23";
++    case GST_AUDIO_CHANNEL_POSITION_AUX24:
++      return "AUX24";
++    case GST_AUDIO_CHANNEL_POSITION_AUX25:
++      return "AUX25";
++    case GST_AUDIO_CHANNEL_POSITION_AUX26:
++      return "AUX26";
++    case GST_AUDIO_CHANNEL_POSITION_AUX27:
++      return "AUX27";
++    case GST_AUDIO_CHANNEL_POSITION_AUX28:
++      return "AUX28";
++    case GST_AUDIO_CHANNEL_POSITION_AUX29:
++      return "AUX29";
++    case GST_AUDIO_CHANNEL_POSITION_AUX30:
++      return "AUX30";
++    case GST_AUDIO_CHANNEL_POSITION_AUX31:
++      return "AUX31";
+     default:
+       break;
+   }
+diff --git a/gst-libs/gst/audio/audio-channels.h b/gst-libs/gst/audio/audio-channels.h
+index cd57898e7..28ac2b735 100644
+--- a/gst-libs/gst/audio/audio-channels.h
++++ b/gst-libs/gst/audio/audio-channels.h
+@@ -60,6 +60,38 @@ G_BEGIN_DECLS
+  * @GST_AUDIO_CHANNEL_POSITION_WIDE_RIGHT: Wide right (between front right and side right)
+  * @GST_AUDIO_CHANNEL_POSITION_SURROUND_LEFT: Surround left (between rear left and side left)
+  * @GST_AUDIO_CHANNEL_POSITION_SURROUND_RIGHT: Surround right (between rear right and side right)
++ * @GST_AUDIO_CHANNEL_POSITION_AUX0: Auxiliary channel 0 (can be used for user-defined purposes)
++ * @GST_AUDIO_CHANNEL_POSITION_AUX1: Auxiliary channel 1 (can be used for user-defined purposes)
++ * @GST_AUDIO_CHANNEL_POSITION_AUX2: Auxiliary channel 2 (can be used for user-defined purposes)
++ * @GST_AUDIO_CHANNEL_POSITION_AUX3: Auxiliary channel 3 (can be used for user-defined purposes)
++ * @GST_AUDIO_CHANNEL_POSITION_AUX4: Auxiliary channel 4 (can be used for user-defined purposes)
++ * @GST_AUDIO_CHANNEL_POSITION_AUX5: Auxiliary channel 5 (can be used for user-defined purposes)
++ * @GST_AUDIO_CHANNEL_POSITION_AUX6: Auxiliary channel 6 (can be used for user-defined purposes)
++ * @GST_AUDIO_CHANNEL_POSITION_AUX7: Auxiliary channel 7 (can be used for user-defined purposes)
++ * @GST_AUDIO_CHANNEL_POSITION_AUX8: Auxiliary channel 8 (can be used for user-defined purposes)
++ * @GST_AUDIO_CHANNEL_POSITION_AUX9: Auxiliary channel 9 (can be used for user-defined purposes)
++ * @GST_AUDIO_CHANNEL_POSITION_AUX10: Auxiliary channel 10 (can be used for user-defined purposes)
++ * @GST_AUDIO_CHANNEL_POSITION_AUX11: Auxiliary channel 11 (can be used for user-defined purposes)
++ * @GST_AUDIO_CHANNEL_POSITION_AUX12: Auxiliary channel 12 (can be used for user-defined purposes)
++ * @GST_AUDIO_CHANNEL_POSITION_AUX13: Auxiliary channel 13 (can be used for user-defined purposes)
++ * @GST_AUDIO_CHANNEL_POSITION_AUX14: Auxiliary channel 14 (can be used for user-defined purposes)
++ * @GST_AUDIO_CHANNEL_POSITION_AUX15: Auxiliary channel 15 (can be used for user-defined purposes)
++ * @GST_AUDIO_CHANNEL_POSITION_AUX16: Auxiliary channel 16 (can be used for user-defined purposes)
++ * @GST_AUDIO_CHANNEL_POSITION_AUX17: Auxiliary channel 17 (can be used for user-defined purposes)
++ * @GST_AUDIO_CHANNEL_POSITION_AUX18: Auxiliary channel 18 (can be used for user-defined purposes)
++ * @GST_AUDIO_CHANNEL_POSITION_AUX19: Auxiliary channel 19 (can be used for user-defined purposes)
++ * @GST_AUDIO_CHANNEL_POSITION_AUX20: Auxiliary channel 20 (can be used for user-defined purposes)
++ * @GST_AUDIO_CHANNEL_POSITION_AUX21: Auxiliary channel 21 (can be used for user-defined purposes)
++ * @GST_AUDIO_CHANNEL_POSITION_AUX22: Auxiliary channel 22 (can be used for user-defined purposes)
++ * @GST_AUDIO_CHANNEL_POSITION_AUX23: Auxiliary channel 23 (can be used for user-defined purposes)
++ * @GST_AUDIO_CHANNEL_POSITION_AUX24: Auxiliary channel 24 (can be used for user-defined purposes)
++ * @GST_AUDIO_CHANNEL_POSITION_AUX25: Auxiliary channel 25 (can be used for user-defined purposes)
++ * @GST_AUDIO_CHANNEL_POSITION_AUX26: Auxiliary channel 26 (can be used for user-defined purposes)
++ * @GST_AUDIO_CHANNEL_POSITION_AUX27: Auxiliary channel 27 (can be used for user-defined purposes)
++ * @GST_AUDIO_CHANNEL_POSITION_AUX28: Auxiliary channel 28 (can be used for user-defined purposes)
++ * @GST_AUDIO_CHANNEL_POSITION_AUX29: Auxiliary channel 29 (can be used for user-defined purposes)
++ * @GST_AUDIO_CHANNEL_POSITION_AUX30: Auxiliary channel 30 (can be used for user-defined purposes)
++ * @GST_AUDIO_CHANNEL_POSITION_AUX31: Auxiliary channel 31 (can be used for user-defined purposes)
+  * @GST_AUDIO_CHANNEL_POSITION_NONE: used for position-less channels, e.g.
+  *     from a sound card that records 1024 channels; mutually exclusive with
+  *     any other channel position
+@@ -126,7 +158,39 @@ typedef enum {
+   GST_AUDIO_CHANNEL_POSITION_WIDE_LEFT,
+   GST_AUDIO_CHANNEL_POSITION_WIDE_RIGHT,
+   GST_AUDIO_CHANNEL_POSITION_SURROUND_LEFT,
+-  GST_AUDIO_CHANNEL_POSITION_SURROUND_RIGHT
++  GST_AUDIO_CHANNEL_POSITION_SURROUND_RIGHT,
++  GST_AUDIO_CHANNEL_POSITION_AUX0,
++  GST_AUDIO_CHANNEL_POSITION_AUX1,
++  GST_AUDIO_CHANNEL_POSITION_AUX2,
++  GST_AUDIO_CHANNEL_POSITION_AUX3,
++  GST_AUDIO_CHANNEL_POSITION_AUX4,
++  GST_AUDIO_CHANNEL_POSITION_AUX5,
++  GST_AUDIO_CHANNEL_POSITION_AUX6,
++  GST_AUDIO_CHANNEL_POSITION_AUX7,
++  GST_AUDIO_CHANNEL_POSITION_AUX8,
++  GST_AUDIO_CHANNEL_POSITION_AUX9,
++  GST_AUDIO_CHANNEL_POSITION_AUX10,
++  GST_AUDIO_CHANNEL_POSITION_AUX11,
++  GST_AUDIO_CHANNEL_POSITION_AUX12,
++  GST_AUDIO_CHANNEL_POSITION_AUX13,
++  GST_AUDIO_CHANNEL_POSITION_AUX14,
++  GST_AUDIO_CHANNEL_POSITION_AUX15,
++  GST_AUDIO_CHANNEL_POSITION_AUX16,
++  GST_AUDIO_CHANNEL_POSITION_AUX17,
++  GST_AUDIO_CHANNEL_POSITION_AUX18,
++  GST_AUDIO_CHANNEL_POSITION_AUX19,
++  GST_AUDIO_CHANNEL_POSITION_AUX20,
++  GST_AUDIO_CHANNEL_POSITION_AUX21,
++  GST_AUDIO_CHANNEL_POSITION_AUX22,
++  GST_AUDIO_CHANNEL_POSITION_AUX23,
++  GST_AUDIO_CHANNEL_POSITION_AUX24,
++  GST_AUDIO_CHANNEL_POSITION_AUX25,
++  GST_AUDIO_CHANNEL_POSITION_AUX26,
++  GST_AUDIO_CHANNEL_POSITION_AUX27,
++  GST_AUDIO_CHANNEL_POSITION_AUX28,
++  GST_AUDIO_CHANNEL_POSITION_AUX29,
++  GST_AUDIO_CHANNEL_POSITION_AUX30,
++  GST_AUDIO_CHANNEL_POSITION_AUX31,
+ } GstAudioChannelPosition;
+ 
+ #define GST_AUDIO_CHANNEL_POSITION_MASK(pos) (G_GUINT64_CONSTANT(1)<< GST_AUDIO_CHANNEL_POSITION_ ## pos)
+-- 
+2.20.1
+
