@@ -16,6 +16,7 @@ SRC_URI_append = " \
        file://0002-waylandsink-support-for-xdg-shell-protocol.patch \
        file://0003-waylandsink-support-for-scaler-protocol.patch \
        file://0004-waylandsink-support-gbm-buffer-backend-protocol.patch \
+       file://0005-waylandsink-Forcibly-release-pending-buffers-on-PAUS.patch \
 "
 
 do_pre_configure() {
