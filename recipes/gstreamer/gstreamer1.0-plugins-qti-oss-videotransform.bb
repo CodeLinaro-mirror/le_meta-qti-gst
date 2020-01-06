@@ -11,6 +11,8 @@ DEPENDS := "gstreamer1.0"
 DEPENDS += "gstreamer1.0-plugins-base"
 DEPENDS += "adreno"
 
+do_configure[depends] += "virtual/kernel:do_shared_workdir"
+
 FILESPATH =+ "${WORKSPACE}/vendor/qcom/opensource/gst-plugins-qti-oss/:"
 
 SRC_URI = "file://gst-plugin-videotransform/"
