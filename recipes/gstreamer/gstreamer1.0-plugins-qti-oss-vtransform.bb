@@ -9,14 +9,14 @@ LIC_FILES_CHKSUM = "file://${COMMON_LICENSE_DIR}/${LICENSE};md5=3775480a712fc46a
 # Dependencies.
 DEPENDS := "gstreamer1.0"
 DEPENDS += "gstreamer1.0-plugins-base"
-DEPENDS += "adreno"
+DEPENDS += "gstreamer1.0-plugins-qti-oss-base"
 
 do_configure[depends] += "virtual/kernel:do_shared_workdir"
 
 FILESPATH =+ "${WORKSPACE}/vendor/qcom/opensource/gst-plugins-qti-oss/:"
 
-SRC_URI = "file://gst-plugin-videotransform/"
-S = "${WORKDIR}/gst-plugin-videotransform"
+SRC_URI = "file://gst-plugin-vtransform/"
+S = "${WORKDIR}/gst-plugin-vtransform"
 
 # Install directries.
 INSTALL_BINDIR := "${bindir}"
