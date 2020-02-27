@@ -20,6 +20,7 @@ AUDIO_DECODE_ENABLE_LIBAV = " --enable-decoder=ape \
                               --enable-decoder=mp3 \
                               --enable-decoder=flac \
                               --enable-decoder=aac  \
+                              --enable-decoder=aac_latm  \
                               --enable-decoder=alac \
                               --enable-decoder=wmalossless \
                               --enable-decoder=wmapro  \
