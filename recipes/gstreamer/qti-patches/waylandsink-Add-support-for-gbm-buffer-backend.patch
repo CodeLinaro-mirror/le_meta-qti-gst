@@ -1,52 +1,52 @@
 
 ---
  configure.ac                 |   9 ++
- ext/wayland/Makefile.am      |  12 +-
- ext/wayland/gstwaylandsink.c | 305 ++++++++++++++++++++++++++++++++++++++++++-
+ ext/wayland/Makefile.am      |  13 +-
+ ext/wayland/gstwaylandsink.c | 302 ++++++++++++++++++++++++++++++++++++++++++-
  ext/wayland/gstwaylandsink.h |   4 +
  ext/wayland/wlbuffer.c       |  59 +++++++++
  ext/wayland/wlbuffer.h       |   6 +
  ext/wayland/wldisplay.c      |  32 ++++-
  ext/wayland/wldisplay.h      |   6 +
- gst-libs/gst/Makefile.am     |   4 +-
- 9 files changed, 425 insertions(+), 12 deletions(-)
+ gst-libs/gst/Makefile.am     |   7 +-
+ 9 files changed, 428 insertions(+), 10 deletions(-)
 
 diff --git a/configure.ac b/configure.ac
-index 30e26b8..7f62c05 100644
+index 943412c..9bba55d 100644
 --- a/configure.ac
 +++ b/configure.ac
-@@ -3505,6 +3505,13 @@ $MKDIR_P tests/check/orc
+@@ -2488,6 +2488,13 @@ $MKDIR_P tests/check/orc
 
  dnl po/Makefile.in
 
 +IONBUF_PC_FILES=
 +IONBUF_DIR=
 +AM_CONDITIONAL(USE_GSTIONBUF_META_H, [test "x$HAVE_GSTIONBUF_META_H" = "xyes"])
-+AM_COND_IF(USE_GSTIONBUF_META_H, IONBUF_FILES="pkgconfig/gstreamer-ionbuf.pc pkgconfig/gstreamer-ionbuf-uninstalled.pc" IONBUF_DIR=ionbuf)
++AM_COND_IF(USE_GSTIONBUF_META_H, IONBUF_PC_FILES="pkgconfig/gstreamer-ionbuf.pc pkgconfig/gstreamer-ionbuf-uninstalled.pc" IONBUF_DIR=ionbuf)
 +
 +AC_SUBST([IONBUF_DIR])
 +AC_SUBST([IONBUF_PC_FILES])
  AC_CONFIG_FILES(
  Makefile
  common/Makefile
-@@ -3597,6 +3604,7 @@ gst-libs/gst/base/Makefile
+@@ -2571,6 +2578,7 @@ gst-libs/gst/webrtc/Makefile
  gst-libs/gst/player/Makefile
  gst-libs/gst/video/Makefile
  gst-libs/gst/audio/Makefile
 +gst-libs/gst/ionbuf/Makefile
  gst-libs/gst/opencv/Makefile
- gst-libs/gst/allocators/Makefile
  sys/Makefile
-@@ -3751,6 +3759,7 @@ pkgconfig/gstreamer-bad-audio.pc
+ sys/dshowdecwrapper/Makefile
+@@ -2710,6 +2718,7 @@ pkgconfig/gstreamer-bad-video.pc
+ pkgconfig/gstreamer-bad-video-uninstalled.pc
+ pkgconfig/gstreamer-bad-audio.pc
  pkgconfig/gstreamer-bad-audio-uninstalled.pc
- pkgconfig/gstreamer-bad-allocators.pc
- pkgconfig/gstreamer-bad-allocators-uninstalled.pc
 +${IONBUF_PC_FILES}
  tools/Makefile
  m4/Makefile
  )
 diff --git a/ext/wayland/Makefile.am b/ext/wayland/Makefile.am
-index 8442dbd..11f11d8 100644
+index 387f84f..9c53c72 100644
 --- a/ext/wayland/Makefile.am
 +++ b/ext/wayland/Makefile.am
 @@ -4,7 +4,9 @@ BUILT_SOURCES = \
@@ -70,20 +70,20 @@ index 8442dbd..11f11d8 100644
 
  libgstwaylandsink_la_CFLAGS = \
  	$(GST_PLUGINS_BAD_CFLAGS) \
-@@ -33,6 +36,11 @@ libgstwaylandsink_la_LIBADD = \
+@@ -31,6 +34,11 @@ libgstwaylandsink_la_LIBADD = \
+	-lgstallocators-$(GST_API_VERSION) \
+	$(WAYLAND_LIBS)
  libgstwaylandsink_la_LDFLAGS = $(GST_PLUGIN_LDFLAGS)
- libgstwaylandsink_la_LIBTOOLFLAGS = $(GST_PLUGIN_LIBTOOLFLAGS)
-
++
 +if USE_GSTIONBUF_META_H
 +libgstwaylandsink_la_LIBADD += $(top_builddir)/gst-libs/gst/ionbuf/libgstionbuf-$(GST_API_VERSION).la
 +GST_PLUGINS_BAD_CFLAGS += -DGBM_BUFFER_BACKEND_PROTOCOL
 +endif
-+
+
  noinst_HEADERS = \
  	gstwaylandsink.h \
- 	wlshmallocator.h \
 diff --git a/ext/wayland/gstwaylandsink.c b/ext/wayland/gstwaylandsink.c
-index 46a710f..1e2c6f1 100644
+index ff08194..ef42c38 100644
 --- a/ext/wayland/gstwaylandsink.c
 +++ b/ext/wayland/gstwaylandsink.c
 @@ -49,6 +49,9 @@
@@ -145,10 +145,10 @@ index 46a710f..1e2c6f1 100644
 +  return GST_BASE_SINK_CLASS(parent_class)->event(bsink, event);
 +}
 +
- static void
- gst_wayland_sink_class_init (GstWaylandSinkClass * klass)
- {
-@@ -134,6 +175,8 @@ gst_wayland_sink_class_init (GstWaylandSinkClass * klass)
+ /* A tiny GstVideoBufferPool subclass that modify the options to remove
+  * VideoAlignment. To support VideoAlignment we would need to pass the padded
+  * width/height + stride and use the viewporter interface to crop, a bit like
+@@ -173,6 +214,8 @@ gst_wayland_sink_class_init (GstWaylandSinkClass * klass)
    gstbasesink_class = (GstBaseSinkClass *) klass;
    gstvideosink_class = (GstVideoSinkClass *) klass;
 
@@ -157,7 +157,7 @@ index 46a710f..1e2c6f1 100644
    gobject_class->set_property = gst_wayland_sink_set_property;
    gobject_class->get_property = gst_wayland_sink_get_property;
    gobject_class->finalize = GST_DEBUG_FUNCPTR (gst_wayland_sink_finalize);
-@@ -217,6 +260,10 @@ gst_wayland_sink_finalize (GObject * object)
+@@ -256,6 +299,10 @@ gst_wayland_sink_finalize (GObject * object)
 
    if (sink->last_buffer)
      gst_buffer_unref (sink->last_buffer);
@@ -168,7 +168,7 @@ index 46a710f..1e2c6f1 100644
    if (sink->display)
      g_object_unref (sink->display);
    if (sink->window)
-@@ -224,7 +271,8 @@ gst_wayland_sink_finalize (GObject * object)
+@@ -263,7 +310,8 @@ gst_wayland_sink_finalize (GObject * object)
    if (sink->pool)
      gst_object_unref (sink->pool);
 
@@ -178,7 +178,7 @@ index 46a710f..1e2c6f1 100644
 
    g_mutex_clear (&sink->display_lock);
    g_mutex_clear (&sink->render_lock);
-@@ -348,6 +396,11 @@ gst_wayland_sink_change_state (GstElement * element, GstStateChange transition)
+@@ -387,6 +435,11 @@ gst_wayland_sink_change_state (GstElement * element, GstStateChange transition)
         * restarted (GstVideoOverlay behaves like that in other sinks)
         */
        if (sink->display && !sink->window) {     /* -> the window was toplevel */
@@ -190,11 +190,10 @@ index 46a710f..1e2c6f1 100644
          g_clear_object (&sink->display);
          g_mutex_lock (&sink->render_lock);
          sink->redraw_pending = FALSE;
-@@ -404,11 +457,29 @@ gst_wayland_sink_get_caps (GstBaseSink * bsink, GstCaps * filter)
-     GArray *formats;
+@@ -444,10 +497,29 @@ gst_wayland_sink_get_caps (GstBaseSink * bsink, GstCaps * filter)
      gint i;
      guint fmt;
--
+
 -    g_value_init (&shm_list, GST_TYPE_LIST);
 +#if (defined (GBM_BUFFER_BACKEND_PROTOCOL))
 +	gint bHaveNV12 = FALSE;
@@ -222,16 +221,15 @@ index 46a710f..1e2c6f1 100644
      formats = sink->display->shm_formats;
      for (i = 0; i < formats->len; i++) {
        g_value_init (&value, G_TYPE_STRING);
-@@ -416,7 +487,7 @@ gst_wayland_sink_get_caps (GstBaseSink * bsink, GstCaps * filter)
-       g_value_set_static_string (&value, gst_wl_shm_format_to_string (fmt));
+@@ -456,6 +528,7 @@ gst_wayland_sink_get_caps (GstBaseSink * bsink, GstCaps * filter)
        gst_value_list_append_and_take_value (&shm_list, &value);
      }
--
+
 +#endif
      gst_structure_take_value (gst_caps_get_structure (caps, 0), "format",
          &shm_list);
- 
-@@ -497,6 +568,13 @@ gst_wayland_sink_set_caps (GstBaseSink * bsink, GstCaps * caps)
+
+@@ -538,6 +611,13 @@ gst_wayland_sink_set_caps (GstBaseSink * bsink, GstCaps * caps)
    use_dmabuf = gst_caps_features_contains (gst_caps_get_features (caps, 0),
        GST_CAPS_FEATURE_MEMORY_DMABUF);
 
@@ -245,7 +243,7 @@ index 46a710f..1e2c6f1 100644
    /* validate the format base on the memory type. */
    if (use_dmabuf) {
      if (!gst_wl_display_check_format_for_dmabuf (sink->display, format))
-@@ -506,6 +584,7 @@ gst_wayland_sink_set_caps (GstBaseSink * bsink, GstCaps * caps)
+@@ -547,6 +627,7 @@ gst_wayland_sink_set_caps (GstBaseSink * bsink, GstCaps * caps)
    }
 
    sink->use_dmabuf = use_dmabuf;
@@ -253,7 +251,7 @@ index 46a710f..1e2c6f1 100644
 
    return TRUE;
 
-@@ -573,6 +652,11 @@ render_last_buffer (GstWaylandSink * sink)
+@@ -616,6 +697,11 @@ render_last_buffer (GstWaylandSink * sink, gboolean redraw)
    const GstVideoInfo *info = NULL;
    struct wl_surface *surface;
    struct wl_callback *callback;
@@ -265,7 +263,7 @@ index 46a710f..1e2c6f1 100644
 
    wlbuffer = gst_buffer_get_wl_buffer (sink->last_buffer);
    surface = gst_wl_window_get_wl_surface (sink->window);
-@@ -585,9 +669,78 @@ render_last_buffer (GstWaylandSink * sink)
+@@ -628,9 +714,78 @@ render_last_buffer (GstWaylandSink * sink, gboolean redraw)
      info = &sink->video_info;
      sink->video_info_changed = FALSE;
    }
@@ -344,7 +342,7 @@ index 46a710f..1e2c6f1 100644
  static GstFlowReturn
  gst_wayland_sink_show_frame (GstVideoSink * vsink, GstBuffer * buffer)
  {
-@@ -601,6 +754,9 @@ gst_wayland_sink_show_frame (GstVideoSink * vsink, GstBuffer * buffer)
+@@ -645,6 +800,9 @@ gst_wayland_sink_show_frame (GstVideoSink * vsink, GstBuffer * buffer)
 
    GstFlowReturn ret = GST_FLOW_OK;
 
@@ -354,11 +352,10 @@ index 46a710f..1e2c6f1 100644
    g_mutex_lock (&sink->render_lock);
 
    GST_LOG_OBJECT (sink, "render buffer %p", buffer);
-@@ -618,7 +774,29 @@ gst_wayland_sink_show_frame (GstVideoSink * vsink, GstBuffer * buffer)
-           &sink->video_info, &sink->render_lock);
+@@ -663,6 +821,29 @@ gst_wayland_sink_show_frame (GstVideoSink * vsink, GstBuffer * buffer)
      }
    }
--
+
 +#if defined(GBM_BUFFER_BACKEND_PROTOCOL)
 +  if (sink->video_info_changed)
 +  {
@@ -385,7 +382,7 @@ index 46a710f..1e2c6f1 100644
    /* drop buffers until we get a frame callback */
    if (sink->redraw_pending) {
      GST_LOG_OBJECT (sink, "buffer %p dropped (redraw pending)", buffer);
-@@ -641,6 +819,12 @@ gst_wayland_sink_show_frame (GstVideoSink * vsink, GstBuffer * buffer)
+@@ -685,6 +866,12 @@ gst_wayland_sink_show_frame (GstVideoSink * vsink, GstBuffer * buffer)
    /* update video info from video meta */
    mem = gst_buffer_peek_memory (buffer, 0);
 
@@ -395,10 +392,10 @@ index 46a710f..1e2c6f1 100644
 +    ionBufFdMeta = gst_wayland_sink_read_ionbuffd(sink, buffer);
 +    if (!ionBufFdMeta) {
 +#endif
+   old_vinfo = sink->video_info;
    vmeta = gst_buffer_get_video_meta (buffer);
    if (vmeta) {
-     gint i;
-@@ -731,10 +915,119 @@ gst_wayland_sink_show_frame (GstVideoSink * vsink, GstBuffer * buffer)
+@@ -784,10 +971,119 @@ gst_wayland_sink_show_frame (GstVideoSink * vsink, GstBuffer * buffer)
 
        gst_video_frame_unmap (&src);
        gst_video_frame_unmap (&dst);
@@ -740,7 +737,7 @@ index 39782bc..a52796a 100644
  {
    GstWlDisplay *self = data;
 +  GST_LOG("In registry_handle_global");
- 
+
    if (g_strcmp0 (interface, "wl_compositor") == 0) {
      self->compositor = wl_registry_bind (registry, id, &wl_compositor_interface,
 @@ -236,6 +249,14 @@ registry_handle_global (void *data, struct wl_registry *registry,
@@ -772,7 +769,7 @@ index 39782bc..a52796a 100644
 
 +  GST_LOG("In gst_wl_display_new_existing");
    g_return_val_if_fail (display != NULL, NULL);
- 
+
    self = g_object_new (GST_TYPE_WL_DISPLAY, NULL);
 @@ -323,7 +346,12 @@ gst_wl_display_new_existing (struct wl_display * display,
        return NULL;
@@ -813,24 +810,31 @@ index 7c89212..3ed0242 100644
    /* private */
    gboolean own_display;
 diff --git a/gst-libs/gst/Makefile.am b/gst-libs/gst/Makefile.am
-index 338f708..5fbe7fc 100644
+index db67fc8..e46de32 100644
 --- a/gst-libs/gst/Makefile.am
 +++ b/gst-libs/gst/Makefile.am
-@@ -15,12 +15,12 @@ OPENCV_DIR=opencv
+@@ -7,18 +8,18 @@ OPENCV_DIR=opencv
  endif
 
  SUBDIRS = uridownloader adaptivedemux interfaces basecamerabinsrc codecparsers \
--	 insertbin mpegts base video audio player allocators $(GL_DIR) $(WAYLAND_DIR) \
-+	 insertbin mpegts base video audio player $(IONBUF_DIR) allocators $(GL_DIR) $(WAYLAND_DIR) \
+-	 insertbin mpegts video audio player isoff webrtc $(WAYLAND_DIR) \
++	 insertbin mpegts video audio player $(IONBUF_DIR) isoff webrtc $(WAYLAND_DIR) \
  	 $(OPENCV_DIR)
 
  noinst_HEADERS = gst-i18n-plugin.h gettext.h glib-compat-private.h
- DIST_SUBDIRS = uridownloader adaptivedemux interfaces gl basecamerabinsrc \
--	codecparsers insertbin mpegts wayland opencv base video audio player allocators
-+	codecparsers insertbin mpegts wayland opencv base video audio player $(IONBUF_DIR) allocators
+ DIST_SUBDIRS = uridownloader adaptivedemux interfaces basecamerabinsrc \
+-	codecparsers insertbin mpegts wayland opencv video audio player isoff webrtc
++	codecparsers insertbin mpegts wayland opencv video audio player ionbuf isoff webrtc
 
- #dependencies
- video, audio: base
+ adaptivedemux: uridownloader
+
+ INDEPENDENT_SUBDIRS = \
+	interfaces basecamerabinsrc codecparsers insertbin uridownloader \
+-	mpegts player isoff $(WAYLAND_DIR) $(OPENCV_DIR)
++	mpegts player $(IONBUF_DIR) isoff $(WAYLAND_DIR) $(OPENCV_DIR)
+
+ .PHONY: independent-subdirs $(INDEPENDENT_SUBDIRS)
+
 --
 1.9.1
 
