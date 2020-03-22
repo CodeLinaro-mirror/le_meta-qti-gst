@@ -220,6 +220,9 @@ copy_edge_gst_rpm() {
 	cp ${DEPLOY_DIR_RPM}/aarch64/libgstionbuf-1.0-0-1.14.4-r0.aarch64.rpm                             ${IMAGE_ROOTFS}/packages/aarch64/
 	cp ${DEPLOY_DIR_RPM}/aarch64/libgstrtsp-1.0-0-1.14.4-r0.aarch64.rpm                               ${IMAGE_ROOTFS}/packages/aarch64/
 	cp ${DEPLOY_DIR_RPM}/aarch64/libgstrtspserver-1.0-0-1.14.4-r0.aarch64.rpm                         ${IMAGE_ROOTFS}/packages/aarch64/
+	cp ${DEPLOY_DIR_RPM}/aarch64/gstreamer1.0-plugins-base-opengl-1.14.4-r0.aarch64.rpm               ${IMAGE_ROOTFS}/packages/aarch64/
+	cp ${DEPLOY_DIR_RPM}/aarch64/libgstgl-1.0-0-1.14.4-r0.aarch64.rpm                                 ${IMAGE_ROOTFS}/packages/aarch64/
+	cp ${DEPLOY_DIR_RPM}/aarch64/gstreamer1.0-plugins-bad-openglmixers-1.14.4-r0.aarch64.rpm          ${IMAGE_ROOTFS}/packages/aarch64/
 }
 
 ROOTFS_POSTPROCESS_COMMAND += "copy_edge_gst_rpm;"
