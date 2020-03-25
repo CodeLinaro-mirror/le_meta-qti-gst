@@ -1,6 +1,7 @@
 DEPENDS += "gobject-introspection gobject-introspection-native qemu-native"
 
 CPPFLAGS += " ${@bb.utils.contains('DISTRO_FEATURES', 'wayland', '-D__GBM__', '', d)} "
+CPPFLAGS += "-DUSE_GBM"
 
 DEPENDS_append_apq8098 = " wayland wayland-native libdrm weston"
 DEPENDS_append_sm8250 = " wayland wayland-native libdrm weston"
