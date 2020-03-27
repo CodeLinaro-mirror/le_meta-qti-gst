@@ -1,0 +1,57 @@
+From 5d6cc2b896819fa7f9b25e72cb7a67d6b90b48d6 Mon Sep 17 00:00:00 2001
+From: Jean Xiao <jianxiao@codeaurora.org>
+Date: Thu, 8 Aug 2019 16:21:38 +0800
+Subject: [PATCH] meta-qti-gst: fix gstomx PortSettingsChanged event
+
+---
+ omx/gstomx.c        | 8 ++++++++
+ omx/gstomx.h        | 1 +
+ omx/gstomxh265enc.c | 1 -
+ 3 files changed, 9 insertions(+), 1 deletion(-)
+
+diff --git a/omx/gstomx.c b/omx/gstomx.c
+index d7181bf..afeb730 100644
+--- a/omx/gstomx.c
++++ b/omx/gstomx.c
+@@ -569,6 +569,14 @@ EventHandler (OMX_HANDLETYPE hComponent, OMX_PTR pAppData, OMX_EVENTTYPE eEvent,
+     }
+     case OMX_EventPortSettingsChanged:
+     {
++      //gstomx only support OMX_IndexParamPortDefinition, ignore others 
++      if (nData2 == OMX_IndexConfigCommonOutputCrop ||
++          nData2 == OMX_QTIIndexConfigDescribeColorAspects) {
++          GST_DEBUG_OBJECT (comp->parent, "%s ignore OMX_EventPortSettingsChanged nData2 0x%08x (port index: %u)",
++                  comp->name, nData2, nData1);
++          break;
++      }
++
+       GstOMXMessage *msg = g_slice_new (GstOMXMessage);
+       OMX_U32 index;
+ 
+diff --git a/omx/gstomx.h b/omx/gstomx.h
+index a5330bd..f0c7a0a 100644
+--- a/omx/gstomx.h
++++ b/omx/gstomx.h
+@@ -60,6 +60,7 @@
+ 
+ #ifdef HAVE_VIDEO_EXT
+ #include <OMX_VideoExt.h>
++#include <OMX_QCOMExtns.h>
+ #endif
+ 
+ #ifdef HAVE_INDEX_EXT
+diff --git a/omx/gstomxh265enc.c b/omx/gstomxh265enc.c
+index c2d947c..18c7aff 100644
+--- a/omx/gstomxh265enc.c
++++ b/omx/gstomxh265enc.c
+@@ -23,7 +23,6 @@
+ #include "config.h"
+ #endif
+ 
+-#include <OMX_QCOMExtns.h>
+ #include <gst/gst.h>
+ 
+ #include "gstomxh265enc.h"
+-- 
+1.9.1
+
