@@ -1,0 +1,53 @@
+From 705f931581abc420292b17276fa11b77fc5d1914 Mon Sep 17 00:00:00 2001
+From: Lily Li <lali@codeaurora.org>
+Date: Thu, 4 Jul 2019 11:16:12 +0800
+Subject: [PATCH] gst-plugins-base: add NV12_UBWC and RGBA_UBWC
+
+Change-Id: I1bd908dd5e81cfd7e3f19ee1595633e39b011a12
+Signed-off-by: Lily Li <lali@codeaurora.org>
+
+---
+ gst-libs/gst/video/video-format.c | 4 ++++
+ gst-libs/gst/video/video-format.h | 6 +++++-
+ 2 files changed, 9 insertions(+), 1 deletion(-)
+
+diff --git a/gst-libs/gst/video/video-format.c b/gst-libs/gst/video/video-format.c
+index f2fa22b..17b6d31 100644
+--- a/gst-libs/gst/video/video-format.c
++++ b/gst-libs/gst/video/video-format.c
+@@ -5248,6 +5248,10 @@ static const VideoFormat formats[] = {
+   MAKE_YUV_C_LE_FORMAT (NV16_10LE32, "raw video",
+       GST_MAKE_FOURCC ('X', 'V', '2', '0'), DPTH10_10_10, PSTR0, PLANE011,
+       OFFS001, SUB422, PACK_NV16_10LE32),
++  MAKE_YUV_FORMAT (NV12_UBWC, "raw video", GST_MAKE_FOURCC ('N', 'V', '1', '2'),
++      DPTH888, PSTR122, PLANE011, OFFS001, SUB420, PACK_NV12),
++  MAKE_RGBA_FORMAT (RGBA_UBWC, "raw video", DPTH8888, PSTR4444, PLANE0, OFFS0123,
++      SUB4444, PACK_RGBA),
+ };
+
+ static GstVideoFormat
+diff --git a/gst-libs/gst/video/video-format.h b/gst-libs/gst/video/video-format.h
+index da4c390..536aacd 100644
+--- a/gst-libs/gst/video/video-format.h
++++ b/gst-libs/gst/video/video-format.h
+@@ -198,6 +198,8 @@ typedef enum {
+   GST_VIDEO_FORMAT_GRAY10_LE32,
+   GST_VIDEO_FORMAT_NV12_10LE32,
+   GST_VIDEO_FORMAT_NV16_10LE32,
++  GST_VIDEO_FORMAT_NV12_UBWC,
++  GST_VIDEO_FORMAT_RGBA_UBWC,
+ } GstVideoFormat;
+
+ #define GST_VIDEO_MAX_PLANES 4
+@@ -549,7 +551,7 @@ gconstpointer  gst_video_format_get_palette          (GstVideoFormat format, gsi
+   "A420_10LE, A422_10BE, A422_10LE, A444_10BE, A444_10LE, NV61, P010_10BE, " \
+   "P010_10LE, IYU2, VYUY, GBRA, GBRA_10BE, GBRA_10LE, GBR_12BE, GBR_12LE, " \
+   "GBRA_12BE, GBRA_12LE, I420_12BE, I420_12LE, I422_12BE, I422_12LE, " \
+-  "Y444_12BE, Y444_12LE, GRAY10_LE32, NV12_10LE32, NV16_10LE32 }"
++  "Y444_12BE, Y444_12LE, GRAY10_LE32, NV12_10LE32, NV16_10LE32, NV12_UBWC, RGBA_UBWC}"
+
+ /**
+  * GST_VIDEO_CAPS_MAKE:
+
+ --
+2.7.4

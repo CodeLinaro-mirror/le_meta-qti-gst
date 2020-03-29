@@ -7,6 +7,7 @@ DEPENDS += "libion libsync libcutils"
 
 SRC_URI += "\
             file://0001-Add-flac-wma-and-alac-support-in-audioringbuffer.patch \
+            file://0003-add-UBWC-format-for-gst-plugins-base.patch \
             "
 do_install_append_qcs40x() {
    if [ "${TARGET_ARCH}" = "aarch64" ];then
