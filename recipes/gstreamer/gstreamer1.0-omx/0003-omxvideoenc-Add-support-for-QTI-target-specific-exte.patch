@@ -1,4 +1,4 @@
-From 79b1ac116489014f942ce671d920688f25f081b4 Mon Sep 17 00:00:00 2001
+From 509eaa046ebacb285b1af0c0bf47ac0479fdee04 Mon Sep 17 00:00:00 2001
 From: "Petar G. Georgiev" <petarg@codeaurora.org>
 Date: Tue, 30 Jun 2020 18:51:59 +0300
 Subject: [PATCH] omxvideoenc: Add support for QTI target specific extensions
