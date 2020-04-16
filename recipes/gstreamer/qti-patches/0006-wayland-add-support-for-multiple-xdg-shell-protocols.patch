@@ -1,4 +1,4 @@
-From a951c777306bfa6ba17a6ce3262b857169d20c85 Mon Sep 17 00:00:00 2001
+From a0fa7d238d8e1e7f58ba536e88ad4667f488f7a8 Mon Sep 17 00:00:00 2001
 From: Amrutha Sai Gattu <agattu@codeaurora.org>
 Date: Thu, 6 Feb 2020 18:56:37 +0530
 Subject: [PATCH] wayland: add support for multiple xdg-shell protocols based
@@ -6,16 +6,16 @@ Subject: [PATCH] wayland: add support for multiple xdg-shell protocols based
 
 %% original patch: 0006-wayland-add-support-for-multiple-xdg-shell-protocols.patch
 ---
- configure.ac            |  8 ++---
- ext/wayland/Makefile.am | 11 ++++--
- ext/wayland/wldisplay.c | 15 ++++++---
- ext/wayland/wldisplay.h |  8 +++--
- ext/wayland/wlwindow.c  | 74 ++++++++++++++++++++++++++++++++++++-----
+ configure.ac            |  8 +++---
+ ext/wayland/Makefile.am | 11 ++++++--
+ ext/wayland/wldisplay.c | 15 +++++++---
+ ext/wayland/wldisplay.h |  8 ++++--
+ ext/wayland/wlwindow.c  | 75 +++++++++++++++++++++++++++++++++++++++++++------
  ext/wayland/wlwindow.h  |  4 ++-
- 6 files changed, 99 insertions(+), 21 deletions(-)
+ 6 files changed, 100 insertions(+), 21 deletions(-)
 
 diff --git a/configure.ac b/configure.ac
-index 9078fe6..8b175c8 100644
+index b046149..32c107b 100644
 --- a/configure.ac
 +++ b/configure.ac
 @@ -1344,10 +1344,10 @@ AG_GST_CHECK_FEATURE(WAYLAND, [wayland sink], wayland , [
@@ -139,7 +139,7 @@ index 313ed53..e774c45 100644
    struct wl_shm *shm;
    struct wp_viewporter *viewporter;
 diff --git a/ext/wayland/wlwindow.c b/ext/wayland/wlwindow.c
-index 54c8ac1..ea6ba2b 100644
+index 54c8ac1..d91dfd5 100644
 --- a/ext/wayland/wlwindow.c
 +++ b/ext/wayland/wlwindow.c
 @@ -35,7 +35,7 @@ G_DEFINE_TYPE (GstWlWindow, gst_wl_window, G_TYPE_OBJECT);
@@ -239,7 +239,7 @@ index 54c8ac1..ea6ba2b 100644
    gint64 timeout;
    if (xdgshell && display->xdgshell) {
      window->xdg_surface = zxdg_shell_v6_get_xdg_surface (display->xdgshell,
-@@ -301,6 +336,18 @@ gst_wl_window_new_toplevel (GstWlDisplay * display, const GstVideoInfo * info,
+@@ -301,6 +336,19 @@ gst_wl_window_new_toplevel (GstWlDisplay * display, const GstVideoInfo * info,
      gst_wl_window_ensure_fullscreen (window, fullscreen);
      GST_INFO ("Using xdg_shell_surface");
    } else
@@ -254,11 +254,12 @@ index 54c8ac1..ea6ba2b 100644
 +    }
 +    xdg_surface_add_listener (window->xdg_surface, &xdg_surface_listener,
 +      window);
++    gst_wl_window_ensure_fullscreen (window, fullscreen);
 +  } else
  #endif
    if (display->shell) {
      window->shell_surface = wl_shell_get_shell_surface (display->shell,
-@@ -323,11 +370,15 @@ gst_wl_window_new_toplevel (GstWlDisplay * display, const GstVideoInfo * info,
+@@ -323,11 +371,15 @@ gst_wl_window_new_toplevel (GstWlDisplay * display, const GstVideoInfo * info,
    if ((rectangle->h != 0) && (rectangle->w != 0) && !fullscreen) {
      gst_wl_window_set_render_rectangle (window, 0, 0, rectangle->w,
           rectangle->h);
@@ -275,7 +276,7 @@ index 54c8ac1..ea6ba2b 100644
  #endif
    } else {
      /* set the initial size to be the same as the reported video size */
-@@ -335,10 +386,14 @@ gst_wl_window_new_toplevel (GstWlDisplay * display, const GstVideoInfo * info,
+@@ -335,10 +387,14 @@ gst_wl_window_new_toplevel (GstWlDisplay * display, const GstVideoInfo * info,
          info->width, info->par_n, info->par_d);
      gst_wl_window_set_render_rectangle (window, 0, 0, width, info->height);
  
@@ -291,7 +292,7 @@ index 54c8ac1..ea6ba2b 100644
  #endif
    }
  
-@@ -383,9 +438,12 @@ gst_wl_window_is_toplevel (GstWlWindow * window)
+@@ -383,9 +439,12 @@ gst_wl_window_is_toplevel (GstWlWindow * window)
    g_return_val_if_fail (window != NULL, FALSE);
  
    gboolean ret = FALSE;
@@ -326,5 +327,5 @@ index d40f272..a9ab3e7 100644
  
    /* the size and position of the area_(sub)surface */
 -- 
-2.22.0
+2.7.4
 
