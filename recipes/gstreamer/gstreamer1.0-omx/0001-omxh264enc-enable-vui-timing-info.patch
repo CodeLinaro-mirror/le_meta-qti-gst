@@ -5,7 +5,7 @@ Subject: [PATCH] omxh264enc: enable vui timing info
 
 ---
  configure.ac        |  9 +++++++++
- omx/gstomxh264enc.c | 25 +++++++++++++++++++++++++
+ omx/gstomxh264enc.c | 27 +++++++++++++++++++++++++
  2 files changed, 34 insertions(+)
 
 diff --git a/configure.ac b/configure.ac
@@ -32,11 +32,12 @@ diff --git a/omx/gstomxh264enc.c b/omx/gstomxh264enc.c
 index e46593a..fe55d4f 100644
 --- a/omx/gstomxh264enc.c
 +++ b/omx/gstomxh264enc.c
-@@ -74,6 +74,15 @@ enum
+@@ -74,6 +74,17 @@ enum
  #define GST_OMX_H264_VIDEO_ENC_CONSTRAINED_INTRA_PREDICTION_DEFAULT (FALSE)
  #define GST_OMX_H264_VIDEO_ENC_LOOP_FILTER_MODE_DEFAULT (0xffffffff)
  
 +#ifdef ENABLE_VUI_TIMING_INFO
++#ifndef __OMX_QCOM_EXTENSIONS_H__
 +#define OMX_QcomIndexParamH264VUITimingInfo 0x7F000039
 +typedef struct OMX_QCOM_VIDEO_PARAM_VUI_TIMING_INFO
 +{
@@ -45,10 +46,11 @@ index e46593a..fe55d4f 100644
 +  OMX_BOOL bEnable;         /** Enable/disable the setting */
 +} OMX_QCOM_VIDEO_PARAM_VUI_TIMING_INFO;
 +#endif
++#endif
  
  /* class initialization */
  
-@@ -593,6 +602,22 @@ gst_omx_h264_enc_set_format (GstOMXVideoEnc * enc, GstOMXPort * port,
+@@ -593,6 +604,22 @@ gst_omx_h264_enc_set_format (GstOMXVideoEnc * enc, GstOMXPort * port,
    OMX_VIDEO_AVCPROFILETYPE profile = OMX_VIDEO_AVCProfileMax;
    OMX_VIDEO_AVCLEVELTYPE level = OMX_VIDEO_AVCLevelMax;
  

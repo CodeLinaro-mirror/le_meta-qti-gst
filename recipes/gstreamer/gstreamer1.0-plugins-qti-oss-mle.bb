@@ -45,6 +45,8 @@ EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_ORIGIN=${HOMEPAGE}"
 EXTRA_OECMAKE += "-DSNPE_ENABLE=${@bb.utils.contains('DISTRO_FEATURES','snpe-enable', 'true', 'false', d)}"
 EXTRA_OECMAKE += "-DSNPE_INCLUDE_DIR=${@bb.utils.contains('DISTRO_FEATURES','snpe-enable', '${SNPE_ROOT}/include/zdl', '', d)}"
 EXTRA_OECMAKE += "-DSNPE_LIB_DIR=${@bb.utils.contains('DISTRO_FEATURES','snpe-enable', '${SNPE_ROOT}/lib/${SNPE_LIB_DIR}', '', d)}"
+EXTRA_OECMAKE += "${@bb.utils.contains('MACHINE_FEATURES','qti-tflite-delegate', '-DDELEGATE_SUPPORT=true','-DDELEGATE_SUPPORT=false', d)}"
+EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES','tensorflow-lite', '-DTFLITE_ENABLE=true','-DTFLITE_ENABLE=false', d)}"
 
 FILES_${PN} += "${INSTALL_BINDIR}"
 FILES_${PN} += "${INSTALL_LIBDIR}"

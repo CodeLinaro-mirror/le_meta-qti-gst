@@ -1,0 +1,25 @@
+From 3235898ad2d8f53ffbea70dd67dfd516c7e0bb08 Mon Sep 17 00:00:00 2001
+From: Jean Xiao <jianxiao@codeaurora.org>
+Date: Fri, 13 Mar 2020 08:02:21 +0800
+Subject: [PATCH] meta-qti-gst: gstomxh264enc support 8K resolution
+
+---
+ omx/gstomxh264enc.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/omx/gstomxh264enc.c b/omx/gstomxh264enc.c
+index e46593a..042223a 100644
+--- a/omx/gstomxh264enc.c
++++ b/omx/gstomxh264enc.c
+@@ -214,7 +214,7 @@ gst_omx_h264_enc_class_init (GstOMXH264EncClass * klass)
+   basevideoenc_class->stop = gst_omx_h264_enc_stop;
+ 
+   videoenc_class->cdata.default_src_template_caps = "video/x-h264, "
+-      "width=(int) [ 16, 4096 ], " "height=(int) [ 16, 4096 ]";
++      "width=(int) [ 16, MAX ], " "height=(int) [ 16, MAX ]";
+   videoenc_class->handle_output_frame =
+       GST_DEBUG_FUNCPTR (gst_omx_h264_enc_handle_output_frame);
+ 
+-- 
+2.17.1
+
