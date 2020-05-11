@@ -16,6 +16,8 @@ DEPENDS += "util-linux"
 DEPENDS += "jsoncpp"
 DEPENDS += "fastcv-noship"
 DEPENDS += "libion"
+DEPENDS += "liblog"
+DEPENDS += "libutils"
 
 FILESPATH =+ "${WORKSPACE}/vendor/qcom/opensource/gst-plugins-qti-oss/:"
 
