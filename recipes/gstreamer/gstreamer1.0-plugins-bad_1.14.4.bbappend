@@ -9,7 +9,7 @@ DEPENDS_append_sm8250 = " wayland wayland-native libdrm weston"
 PACKAGECONFIG_remove_sm8250 += " rsvg "
 
 PACKAGECONFIG_append_apq8098 = "wayland"
-PACKAGECONFIG_append_sm8250 = " wayland gl "
+PACKAGECONFIG_append_sm8250 = " wayland gl opencv "
 
 FILESEXTRAPATHS_prepend_apq8098 := "${THISDIR}/qti-patches:"
 SRC_URI_append_apq8098 = " \
