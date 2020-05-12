@@ -22,6 +22,8 @@ SRC_URI_append_sm8250 = " \
        file://waylandsink-Add-support-for-gbm-buffer-backend.patch \
        file://gst-bad-plugins-h264-h265-zero-copy-support-for-qtivdec.patch \
        file://waylandsink-Add-fullscreen-support.patch \
+       file://0001-add-format-transform.patch \
+       file://0001-fix-play-videotestsrc.patch \
 "
 
 python do_after_patch_apq8098 () {

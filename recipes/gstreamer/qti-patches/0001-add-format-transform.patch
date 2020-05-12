@@ -1,0 +1,34 @@
+From fc6997ec03b5a80734cc02a7f8521037c6516285 Mon Sep 17 00:00:00 2001
+From: Xujun Zhang <c_xujuzh@codeaurora.org>
+Date: Thu, 7 May 2020 14:46:31 +0800
+Subject: [PATCH] add format transform
+
+---
+ ext/wayland/gstwaylandsink.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/ext/wayland/gstwaylandsink.c b/ext/wayland/gstwaylandsink.c
+index 6a1fd7f..cb4656d 100644
+--- a/ext/wayland/gstwaylandsink.c
++++ b/ext/wayland/gstwaylandsink.c
+@@ -767,6 +767,7 @@ static struct GstWlBuffer*
+ gst_wayland_sink_create_wl_buffer_gbm (GstWaylandSink *sink, GstIonBufFdMeta *ionBufFdMeta)
+ {
+   GstWlBuffer * self;
++  guint32 format = 0;
+   int i=0;
+   self = g_object_new (GST_TYPE_WL_BUFFER, NULL);
+   GST_LOG("In gst_wayland_sink_create_wl_buffer_gbm");
+@@ -774,7 +775,8 @@ gst_wayland_sink_create_wl_buffer_gbm (GstWaylandSink *sink, GstIonBufFdMeta *io
+   {
+     struct gbm_buffer_params *params = gbm_buffer_backend_create_params(sink->display->gbmbuf);
+     gbm_buffer_params_add_listener(params, &gbmbuf_params_listener, self);
+-    gbm_buffer_params_create(params, ionBufFdMeta->fd, ionBufFdMeta->meta_fd, sink->video_info.width, sink->video_info.height,ionBufFdMeta->format, 0);
++    format = gst_video_format_to_fourcc (sink->video_info.finfo->format);
++    gbm_buffer_params_create(params, ionBufFdMeta->fd, ionBufFdMeta->meta_fd, sink->video_info.width, sink->video_info.height,format, 0);
+   }
+ 
+   if (wl_display_roundtrip (sink->display->display) < 0) {
+-- 
+2.7.4
+

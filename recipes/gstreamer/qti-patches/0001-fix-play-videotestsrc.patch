@@ -1,0 +1,45 @@
+From 0db2d4ed14d5275ff91e25a3b237261d47e9713e Mon Sep 17 00:00:00 2001
+From: Xujun Zhang <c_xujuzh@codeaurora.org>
+Date: Thu, 7 May 2020 15:11:23 +0800
+Subject: [PATCH] fix play videotestsrc
+
+---
+ ext/wayland/gstwaylandsink.c | 7 ++++---
+ 1 file changed, 4 insertions(+), 3 deletions(-)
+
+diff --git a/ext/wayland/gstwaylandsink.c b/ext/wayland/gstwaylandsink.c
+index cb4656d..efc41ae 100644
+--- a/ext/wayland/gstwaylandsink.c
++++ b/ext/wayland/gstwaylandsink.c
+@@ -988,6 +988,7 @@ gst_wayland_sink_show_frame (GstVideoSink * vsink, GstBuffer * buffer)
+ 
+       gst_video_frame_unmap (&src);
+       gst_video_frame_unmap (&dst);
++      goto render;
+ 		}
+   }
+ #ifdef GBM_BUFFER_BACKEND_PROTOCOL
+@@ -1025,9 +1026,10 @@ gst_wayland_sink_show_frame (GstVideoSink * vsink, GstBuffer * buffer)
+       /* update userdata */
+       gst_buffer_set_gbm_wl_buffer(gstwlbuf,buffer);
+     }
+-    if (gstwlbuf)
++    if (gstwlbuf) {
+       to_render = buffer;
+-    else {
++      goto render;
++    } else {
+       /* update video info from video meta */
+       vmeta = gst_buffer_get_video_meta (buffer);
+       if (vmeta) {
+@@ -1100,7 +1102,6 @@ gst_wayland_sink_show_frame (GstVideoSink * vsink, GstBuffer * buffer)
+     }
+   }
+ #endif
+-      goto render;
+ 
+   if (!wbuf)
+     goto no_wl_buffer;
+-- 
+2.7.4
+
