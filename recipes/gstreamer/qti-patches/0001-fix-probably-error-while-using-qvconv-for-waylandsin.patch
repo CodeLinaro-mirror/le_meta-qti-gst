@@ -1,0 +1,32 @@
+From a385f68f2bed7513f8e3b22c51219f6b8f832f89 Mon Sep 17 00:00:00 2001
+From: Xujun Zhang <c_xujuzh@codeaurora.org>
+Date: Wed, 13 May 2020 09:51:58 +0800
+Subject: [PATCH] fix probably error while using qvconv for waylandsink
+
+---
+ ext/wayland/gstwaylandsink.c | 9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+diff --git a/ext/wayland/gstwaylandsink.c b/ext/wayland/gstwaylandsink.c
+index efc41ae..5f9fa89 100644
+--- a/ext/wayland/gstwaylandsink.c
++++ b/ext/wayland/gstwaylandsink.c
+@@ -783,6 +783,15 @@ gst_wayland_sink_create_wl_buffer_gbm (GstWaylandSink *sink, GstIonBufFdMeta *io
+     GST_LOG("gst_wayland_sink_create_wl_buffer_gbm::Failed at wl_display_roundtrip\n");
+     return NULL;
+   }
++  while((self->wlbuffer == NULL) && i < 6) {
++    usleep(5000);
++    i++;
++  }
++
++  if (self->wlbuffer == NULL) {
++    GST_WARNING_OBJECT(self, "time out while waiting for wlbuffer being created for gbm backend ");
++    return NULL;
++  }
+ 
+   for (i = 0; i < 2; i++) {
+     if (gst_wl_display_roundtrip (sink->display->display) < 0) {
+-- 
+2.7.4
+

@@ -24,6 +24,7 @@ SRC_URI_append_sm8250 = " \
        file://waylandsink-Add-fullscreen-support.patch \
        file://0001-add-format-transform.patch \
        file://0001-fix-play-videotestsrc.patch \
+       file://0001-fix-probably-error-while-using-qvconv-for-waylandsin.patch \
 "
 
 python do_after_patch_apq8098 () {
