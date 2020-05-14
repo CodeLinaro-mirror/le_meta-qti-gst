@@ -1,38 +1,51 @@
-From a0fa7d238d8e1e7f58ba536e88ad4667f488f7a8 Mon Sep 17 00:00:00 2001
+From 888fe53e244f39d89c346dbba696204a022853ae Mon Sep 17 00:00:00 2001
 From: Amrutha Sai Gattu <agattu@codeaurora.org>
 Date: Thu, 6 Feb 2020 18:56:37 +0530
 Subject: [PATCH] wayland: add support for multiple xdg-shell protocols based
  on weston version
 
-%% original patch: 0006-wayland-add-support-for-multiple-xdg-shell-protocols.patch
 ---
- configure.ac            |  8 +++---
- ext/wayland/Makefile.am | 11 ++++++--
- ext/wayland/wldisplay.c | 15 +++++++---
- ext/wayland/wldisplay.h |  8 ++++--
- ext/wayland/wlwindow.c  | 75 +++++++++++++++++++++++++++++++++++++++++++------
+ configure.ac            | 15 +++------
+ ext/wayland/Makefile.am | 11 ++++--
+ ext/wayland/wldisplay.c | 15 ++++++---
+ ext/wayland/wldisplay.h |  8 +++--
+ ext/wayland/wlwindow.c  | 75 ++++++++++++++++++++++++++++++++++++-----
  ext/wayland/wlwindow.h  |  4 ++-
- 6 files changed, 100 insertions(+), 21 deletions(-)
+ 6 files changed, 100 insertions(+), 28 deletions(-)
 
 diff --git a/configure.ac b/configure.ac
-index b046149..32c107b 100644
+index b046149..8ad591b 100644
 --- a/configure.ac
 +++ b/configure.ac
-@@ -1344,10 +1344,10 @@ AG_GST_CHECK_FEATURE(WAYLAND, [wayland sink], wayland , [
+@@ -1331,6 +1331,7 @@ translit(dnm, m, l) AM_CONDITIONAL(USE_WAYLAND, true)
+ AC_PATH_PROG([wayland_scanner], [wayland-scanner])
+ AG_GST_CHECK_FEATURE(WAYLAND, [wayland sink], wayland , [
+   PKG_CHECK_MODULES(WAYLAND, wayland-client >= 1.4.0 libdrm >= 2.4.55 wayland-protocols >= 1.7, [
++    PKG_CHECK_MODULES(PROTOCOL, wayland-protocols < 1.12, [HAVE_SCALER=1 HAVE_XDG_V2=1], [HAVE_XDG_V1=1])
+     if test "x$wayland_scanner" != "x"; then
+       HAVE_WAYLAND="yes"
+       AC_SUBST(WAYLAND_PROTOCOLS_DATADIR, `$PKG_CONFIG --variable=pkgdatadir wayland-protocols`)
+@@ -1343,17 +1344,9 @@ AG_GST_CHECK_FEATURE(WAYLAND, [wayland sink], wayland , [
+   ])
  ])
  
- AC_ARG_ENABLE([xdg-shell-protocol],
+-AC_ARG_ENABLE([xdg-shell-protocol],
 -   AC_HELP_STRING([--enable-xdg-shell-protocol],
 -      [Use xdg shell protocol [default=no]]),
 -      [use_xdg_shell_protocol="${enableval}"])
 -AM_CONDITIONAL([XDG_SHELL_PROTOCOL], [test "x${use_xdg_shell_protocol}" = "xyes"])
-+   AC_HELP_STRING([--with-xdg-shell-protocol],
-+      [Use xdg shell protocol [default=no]]))
-+AM_CONDITIONAL([XDG_SHELL_PROTOCOL_V1], [test "x${with_xdg_shell_protocol}" = "xv1"])
-+AM_CONDITIONAL([XDG_SHELL_PROTOCOL_V2], [test "x${with_xdg_shell_protocol}" = "xv2"])
+-
+-AC_ARG_ENABLE([scaler-protocol],
+-   AC_HELP_STRING([--enable-scaler-protocol],
+-      [Use scaler protocol [default=no]]),
+-      [use_scaler_protocol="${enableval}"])
+-AM_CONDITIONAL([SCALER_PROTOCOL], [test "x${use_scaler_protocol}" = "xyes"])
++AM_CONDITIONAL([XDG_SHELL_PROTOCOL_V1], [test "x$HAVE_XDG_V1" = x1])
++AM_CONDITIONAL([XDG_SHELL_PROTOCOL_V2], [test "x$HAVE_XDG_V2" = x1])
++AM_CONDITIONAL([SCALER_PROTOCOL], [test "x$HAVE_SCALER" = x1])
  
- AC_ARG_ENABLE([scaler-protocol],
-    AC_HELP_STRING([--enable-scaler-protocol],
+ AC_ARG_ENABLE([drm-compositor],
+    AC_HELP_STRING([--enable-drm-compositor],
 diff --git a/ext/wayland/Makefile.am b/ext/wayland/Makefile.am
 index 428b0f8..50d9486 100644
 --- a/ext/wayland/Makefile.am
@@ -327,5 +340,5 @@ index d40f272..a9ab3e7 100644
  
    /* the size and position of the area_(sub)surface */
 -- 
-2.7.4
+2.17.1
 
