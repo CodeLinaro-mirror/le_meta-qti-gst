@@ -11,13 +11,22 @@ LIC_FILES_CHKSUM = "file://${COMMON_LICENSE_DIR}/${LICENSE};md5=3775480a712fc46a
 DEPENDS := "gstreamer1.0"
 DEPENDS += "gstreamer1.0-plugins-base"
 DEPENDS += "gstreamer1.0-plugins-qti-oss-mlmeta"
-DEPENDS += "tensorflow-lite"
 DEPENDS += "util-linux"
 DEPENDS += "jsoncpp"
 DEPENDS += "fastcv-noship"
 DEPENDS += "libion"
 DEPENDS += "liblog"
 DEPENDS += "libutils"
+
+PACKAGECONFIG ??= " \
+  ${@bb.utils.contains('DISTRO_FEATURES', 'tensorflow-lite', 'tensorflow-lite', '', d)} \
+  ${@bb.utils.contains('DISTRO_FEATURES', 'qti-snpe', 'snpe', '', d)} \
+  ${@bb.utils.contains('MACHINE_FEATURES','qti-tflite-delegate', 'delegate', '', d)} \
+"
+
+PACKAGECONFIG[tensorflow-lite] = " -DTFLITE_ENABLE=true, -DTFLITE_ENABLE=false, tensorflow-lite,"
+PACKAGECONFIG[snpe] = " -DSNPE_ENABLE=true, -DSNPE_ENABLE=false, snpe,"
+PACKAGECONFIG[delegate] = " -DDELEGATE_SUPPORT=true, -DDELEGATE_SUPPORT=false,,"
 
 FILESPATH =+ "${WORKSPACE}/vendor/qcom/opensource/gst-plugins-qti-oss/:"
 
@@ -27,9 +36,6 @@ S = "${WORKDIR}/gst-plugin-mle"
 # Install directries.
 INSTALL_BINDIR := "${bindir}"
 INSTALL_LIBDIR := "${libdir}"
-
-SNPE_ROOT := "Please specify workspace location"
-SNPE_LIB_DIR="arm-oe-linux-gcc8.2hf"
 
 EXTRA_OECMAKE += "-DGST_VERSION_REQUIRED=1.14.4"
 EXTRA_OECMAKE += "-DSYSROOT_INCDIR=${STAGING_INCDIR}"
@@ -43,12 +49,6 @@ EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_VERSION=${PV}"
 EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_PACKAGE=${PN}"
 EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_SUMMARY="${SUMMARY}""
 EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_ORIGIN=${HOMEPAGE}"
-
-EXTRA_OECMAKE += "-DSNPE_ENABLE=${@bb.utils.contains('DISTRO_FEATURES','snpe-enable', 'true', 'false', d)}"
-EXTRA_OECMAKE += "-DSNPE_INCLUDE_DIR=${@bb.utils.contains('DISTRO_FEATURES','snpe-enable', '${SNPE_ROOT}/include/zdl', '', d)}"
-EXTRA_OECMAKE += "-DSNPE_LIB_DIR=${@bb.utils.contains('DISTRO_FEATURES','snpe-enable', '${SNPE_ROOT}/lib/${SNPE_LIB_DIR}', '', d)}"
-EXTRA_OECMAKE += "${@bb.utils.contains('MACHINE_FEATURES','qti-tflite-delegate', '-DDELEGATE_SUPPORT=true','-DDELEGATE_SUPPORT=false', d)}"
-EXTRA_OECMAKE += "${@bb.utils.contains('DISTRO_FEATURES','tensorflow-lite', '-DTFLITE_ENABLE=true','-DTFLITE_ENABLE=false', d)}"
 
 FILES_${PN} += "${INSTALL_BINDIR}"
 FILES_${PN} += "${INSTALL_LIBDIR}"
