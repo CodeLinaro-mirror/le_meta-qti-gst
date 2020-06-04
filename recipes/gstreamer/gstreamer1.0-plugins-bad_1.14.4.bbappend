@@ -11,7 +11,6 @@ PACKAGECONFIG_remove = " \
 FILESEXTRAPATHS_prepend := "${THISDIR}/qti-patches:"
 
 SRC_URI_append = " \
-       file://gst-bad-plugins-h264-h265-zero-copy-support-for-qtivdec.patch \
        file://0001-waylandsink-support-fullscreen.patch \
        file://0002-waylandsink-support-for-xdg-shell-protocol.patch \
        file://0003-waylandsink-support-for-scaler-protocol.patch \
@@ -26,17 +25,18 @@ do_gbm_configure() {
 }
 
 do_xdg_scaler_configure () {
-  install -d ${STAGING_DIR_HOST}${datadir}/wayland-protocols/stable/scaler/
-  cp ${WORKSPACE}/display/weston/protocol/scaler.xml ${STAGING_DIR_HOST}${datadir}/wayland-protocols/stable/scaler
-
-  install -d ${STAGING_DIR_HOST}${datadir}/wayland-protocols/stable/xdg-shell/
-  cp ${WORKSPACE}/display/weston/protocol/xdg-shell.xml ${STAGING_DIR_HOST}${datadir}/wayland-protocols/stable/xdg-shell
+  if [ -f ${WORKSPACE}/display/weston/protocol/scaler.xml ]; then
+    install -d ${STAGING_DIR_HOST}${datadir}/wayland-protocols/stable/scaler/
+    cp ${WORKSPACE}/display/weston/protocol/scaler.xml ${STAGING_DIR_HOST}${datadir}/wayland-protocols/stable/scaler
+  fi
+  if [ -f ${WORKSPACE}/display/weston/protocol/xdg-shell.xml ]; then
+    install -d ${STAGING_DIR_HOST}${datadir}/wayland-protocols/stable/xdg-shell/
+    cp ${WORKSPACE}/display/weston/protocol/xdg-shell.xml ${STAGING_DIR_HOST}${datadir}/wayland-protocols/stable/xdg-shell
+  fi
 }
 
-EXTRA_OECONF += "${@bb.utils.contains('COMBINED_FEATURES', 'fbdev', '--with-xdg-shell-protocol=v1', '--with-xdg-shell-protocol=v2', d)}"
-EXTRA_OECONF += "${@bb.utils.contains('COMBINED_FEATURES', 'drm', '--enable-scaler-protocol', '', d)}"
-EXTRA_OECONF += "${@bb.utils.contains('COMBINED_FEATURES', 'fbdev', '--enable-fbdev-compositor', '--enable-drm-compositor', d)}"
+EXTRA_OECONF += "${@bb.utils.contains('COMBINED_FEATURES', 'fbdev', '--enable-fbdev-compositor', '', d)}"
+EXTRA_OECONF += "${@bb.utils.contains('COMBINED_FEATURES', 'drm', '--enable-drm-compositor', '', d)}"
 EXTRA_OEMAKE += "WAYLAND_PROTOCOLS_DATADIR=${STAGING_DATADIR}/wayland-protocols"
-
 do_configure[prefuncs] += "${@bb.utils.contains('DISTRO_FEATURES', 'wayland', 'do_gbm_configure', '', d)}"
 do_configure[prefuncs] += "${@bb.utils.contains('DISTRO_FEATURES', 'wayland', bb.utils.contains('COMBINED_FEATURES', 'drm', 'do_xdg_scaler_configure', '', d), '', d)}"
