@@ -20,7 +20,7 @@ S = "${WORKDIR}/gst-plugin-overlay"
 
 # Install directries.
 INSTALL_BINDIR := "${bindir}"
-INSTALL_LIBDIR := "${libdir}/gstreamer-1.0"
+INSTALL_LIBDIR := "${libdir}"
 
 EXTRA_OECMAKE += "-DGST_VERSION_REQUIRED=1.14.4"
 EXTRA_OECMAKE += "-DSYSROOT_INCDIR=${STAGING_INCDIR}"
