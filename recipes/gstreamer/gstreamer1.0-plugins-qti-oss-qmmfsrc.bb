@@ -18,7 +18,7 @@ S = "${WORKDIR}/gst-plugin-qmmfsrc/"
 
 # Install directries.
 INSTALL_BINDIR := "${bindir}"
-INSTALL_LIBDIR := "${libdir}/gstreamer-1.0"
+INSTALL_LIBDIR := "${libdir}"
 
 # Default platform definitions.
 VIDEO_MAX_WIDTH   := "3840"
