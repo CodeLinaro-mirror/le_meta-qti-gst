@@ -1,4 +1,4 @@
-From 3530b1a490580dca75938876dcbef1984eefdbb4 Mon Sep 17 00:00:00 2001
+From 1713e75d1fe2c9a6f92e232d2345c73e2baeeec4 Mon Sep 17 00:00:00 2001
 From: "Petar G. Georgiev" <petarg@codeaurora.org>
 Date: Wed, 1 Apr 2020 14:05:58 +0100
 Subject: [PATCH] omx: Add support for QTI target
@@ -13,8 +13,10 @@ Subject: [PATCH] omx: Add support for QTI target
  meson.build             |  2 ++
  meson_options.txt       |  2 +-
  omx/gstomx.h            | 22 +++++++++++++
+ omx/gstomxh265enc.c     |  2 ++
+ omx/gstomxh265utils.c   |  2 ++
  tests/check/Makefile.am |  3 ++
- 10 files changed, 117 insertions(+), 5 deletions(-)
+ 12 files changed, 121 insertions(+), 5 deletions(-)
  create mode 100644 config/qti/Makefile.am
  create mode 100644 config/qti/gstomx.conf
  create mode 100644 config/qti/meson.build
@@ -255,6 +257,38 @@ index a5330bd..d29bed5 100644
  
  #ifdef OMX_SKIP64BIT
  #define GST_OMX_GET_TICKS(ticks) ((((guint64) (ticks).nHighPart) << 32) | ((ticks).nLowPart))
+diff --git a/omx/gstomxh265enc.c b/omx/gstomxh265enc.c
+index 6076435..4849c62 100644
+--- a/omx/gstomxh265enc.c
++++ b/omx/gstomxh265enc.c
+@@ -661,10 +661,12 @@ gst_omx_h265_enc_get_caps (GstOMXVideoEnc * enc, GstOMXPort * port,
+         tier = "high";
+         level = "6.1";
+         break;
++#if ! defined(USE_OMX_TARGET_QTI)
+       case OMX_VIDEO_HEVCHighTierLevel62:
+         tier = "high";
+         level = "6.2";
+         break;
++#endif
+       default:
+         g_assert_not_reached ();
+         gst_caps_unref (caps);
+diff --git a/omx/gstomxh265utils.c b/omx/gstomxh265utils.c
+index 5141bc4..ce387f0 100644
+--- a/omx/gstomxh265utils.c
++++ b/omx/gstomxh265utils.c
+@@ -90,8 +90,10 @@ gst_omx_h265_utils_get_level_from_str (const gchar * level, const gchar * tier)
+       return OMX_VIDEO_HEVCHighTierLevel6;
+     else if (g_str_equal (level, "6.1"))
+       return OMX_VIDEO_HEVCHighTierLevel61;
++#if ! defined(USE_OMX_TARGET_QTI)
+     else if (g_str_equal (level, "6.2"))
+       return OMX_VIDEO_HEVCHighTierLevel62;
++#endif
+   }
+ 
+   return OMX_VIDEO_HEVCLevelUnknown;
 diff --git a/tests/check/Makefile.am b/tests/check/Makefile.am
 index 6b0ffe8..df3a64f 100644
 --- a/tests/check/Makefile.am
