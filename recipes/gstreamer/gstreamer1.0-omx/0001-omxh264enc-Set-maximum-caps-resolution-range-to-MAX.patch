@@ -1,7 +1,7 @@
-From 3235898ad2d8f53ffbea70dd67dfd516c7e0bb08 Mon Sep 17 00:00:00 2001
+From 733c46ed86cc8971618e2f19208025f5f16a3bbe Mon Sep 17 00:00:00 2001
 From: Jean Xiao <jianxiao@codeaurora.org>
 Date: Fri, 13 Mar 2020 08:02:21 +0800
-Subject: [PATCH] meta-qti-gst: gstomxh264enc support 8K resolution
+Subject: [PATCH] omxh264enc: Set maximum caps resolution range to MAX
 
 ---
  omx/gstomxh264enc.c | 2 +-
