@@ -7,6 +7,7 @@ SRC_URI += "file://0002-omx-Fix-PortSettingsChanged-event.patch"
 SRC_URI += "file://0002-omxvideo-Add-support-for-GBM-memory.patch"
 SRC_URI += "file://0002-omxh264enc-Add-support-for-VUI-timing-info.patch"
 SRC_URI += "file://0002-omxh265enc-Add-support-for-prepending-SPSPPS-to-IDR-.patch"
+SRC_URI += "file://0003-omxaacdec-set-audio-DualMono-config.patch"
 
 #Including media dependency as we need libOmxCore.so
 DEPENDS += "media gbm"
