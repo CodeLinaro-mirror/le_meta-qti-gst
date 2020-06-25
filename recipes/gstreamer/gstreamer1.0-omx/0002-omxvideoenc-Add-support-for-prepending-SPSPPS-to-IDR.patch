@@ -1,0 +1,52 @@
+From 4be35cf77c0910fdb03f43f917bc78e5e3f7d482 Mon Sep 17 00:00:00 2001
+From: "Petar G. Georgiev" <petarg@codeaurora.org>
+Date: Fri, 15 May 2020 07:46:24 +0100
+Subject: [PATCH] omxvideoenc: Add support for prepending SPSPPS to IDR frames
+
+---
+ omx/gstomxvideoenc.c | 29 +++++++++++++++++++++++++++++
+ 1 file changed, 29 insertions(+)
+
+diff --git a/omx/gstomxvideoenc.c b/omx/gstomxvideoenc.c
+index 2079bba..f8ad06a 100644
+--- a/omx/gstomxvideoenc.c
++++ b/omx/gstomxvideoenc.c
+@@ -2194,6 +2194,35 @@ gst_omx_video_enc_set_format (GstVideoEncoder * encoder,
+   }
+ #endif // USE_OMX_TARGET_RPI
+ 
++#ifdef USE_OMX_TARGET_QTI
++  {
++    OMX_ERRORTYPE err;
++    // TODO Should be PrependSPSPPSToIDRFramesParams but the struct is defined
++    // in HardwareAPI.h which is C++ header and can not be included here.
++    OMX_CONFIG_BOOLEANTYPE prepend_sps_pps_headers;
++
++    GST_OMX_INIT_STRUCT(&prepend_sps_pps_headers);
++    prepend_sps_pps_headers.bEnabled = TRUE;
++
++    err =
++        gst_omx_component_set_parameter (self->enc,
++        OMX_QcomIndexParamSequenceHeaderWithIDR, &prepend_sps_pps_headers);
++
++    if (err == OMX_ErrorUnsupportedIndex) {
++      GST_WARNING_OBJECT (self,
++          "Index OMX_QcomIndexParamSequenceHeaderWithIDR not supported by the component");
++    } else if (err == OMX_ErrorUnsupportedSetting) {
++      GST_WARNING_OBJECT (self,
++          "Setting prepend SPS/PPS headers to IDR frames not supported by the component");
++    } else if (err != OMX_ErrorNone) {
++      GST_ERROR_OBJECT (self,
++          "can't set OMX_QcomIndexParamSequenceHeaderWithIDR %s (0x%08x)",
++          gst_omx_error_to_string (err), err);
++      return FALSE;
++    }
++  }
++#endif // USE_OMX_TARGET_QTI
++
+   if (klass->set_format) {
+     if (!klass->set_format (self, self->enc_in_port, state)) {
+       GST_ERROR_OBJECT (self, "Subclass failed to set the new format");
+-- 
+2.17.1
+
