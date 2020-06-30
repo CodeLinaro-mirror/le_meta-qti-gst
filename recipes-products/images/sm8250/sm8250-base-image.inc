@@ -225,6 +225,9 @@ copy_edge_gst_rpm() {
 	cp ${DEPLOY_DIR_RPM}/aarch64/gstreamer1.0-plugins-bad-openglmixers-1.14.4-r0.aarch64.rpm          ${IMAGE_ROOTFS}/packages/aarch64/
 	cp ${DEPLOY_DIR_RPM}/aarch64/gstreamer1.0-plugins-bad-opencv-1.14.4-r0.aarch64.rpm                ${IMAGE_ROOTFS}/packages/aarch64/
 	cp ${DEPLOY_DIR_RPM}/aarch64/libgstopencv-1.0-0-1.14.4-r0.aarch64.rpm                             ${IMAGE_ROOTFS}/packages/aarch64/
+	cp ${DEPLOY_DIR_RPM}/aarch64/gstreamer1.0-dev-1.14.4-r0.aarch64.rpm                               ${IMAGE_ROOTFS}/packages/aarch64/
+	cp ${DEPLOY_DIR_RPM}/aarch64/gstreamer1.0-plugins-bad-dev-1.14.4-r0.aarch64.rpm                   ${IMAGE_ROOTFS}/packages/aarch64/
+	cp ${DEPLOY_DIR_RPM}/aarch64/gstreamer1.0-plugins-base-dev-1.14.4-r0.aarch64.rpm                  ${IMAGE_ROOTFS}/packages/aarch64/
 }
 
 ROOTFS_POSTPROCESS_COMMAND += "copy_edge_gst_rpm;"
