@@ -5,8 +5,7 @@ SRC_URI += "file://0001-omxh264enc-Set-maximum-caps-resolution-range-to-MAX.patc
 SRC_URI += "file://0001-omx-Add-support-for-QTI-target.patch"
 SRC_URI += "file://0002-omx-Fix-PortSettingsChanged-event.patch"
 SRC_URI += "file://0002-omxvideo-Add-support-for-GBM-memory.patch"
-SRC_URI += "file://0002-omxvideoenc-Add-support-for-prepending-SPSPPS-to-IDR.patch"
-SRC_URI += "file://0002-omxh264enc-Add-support-for-VUI-timing-info.patch"
+SRC_URI += "file://0003-omxvideoenc-Add-support-for-QTI-target-specific-exte.patch"
 SRC_URI += "file://0003-omxaacdec-set-audio-DualMono-config.patch"
 
 #Including media dependency as we need libOmxCore.so
