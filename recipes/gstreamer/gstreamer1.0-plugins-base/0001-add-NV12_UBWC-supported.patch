@@ -1,0 +1,66 @@
+From eb8c02c993293c88335f3f1f2cdafd581284efb8 Mon Sep 17 00:00:00 2001
+From: Zhenlin Lian <lianzhenlin@codeaurora.org>
+Date: Tue, 15 Sep 2020 16:24:34 +0800
+Subject: [PATCH] add NV12_UBWC supported
+
+Signed-off-by: Zhenlin Lian <lianzhenlin@codeaurora.org>
+---
+ gst-libs/gst/video/video-format.c |  4 +++-
+ gst-libs/gst/video/video-info.c   | 12 ++++++++++++
+ 2 files changed, 15 insertions(+), 1 deletion(-)
+
+diff --git a/gst-libs/gst/video/video-format.c b/gst-libs/gst/video/video-format.c
+index 17b6d31..0246630 100644
+--- a/gst-libs/gst/video/video-format.c
++++ b/gst-libs/gst/video/video-format.c
+@@ -5248,7 +5248,7 @@ static const VideoFormat formats[] = {
+   MAKE_YUV_C_LE_FORMAT (NV16_10LE32, "raw video",
+       GST_MAKE_FOURCC ('X', 'V', '2', '0'), DPTH10_10_10, PSTR0, PLANE011,
+       OFFS001, SUB422, PACK_NV16_10LE32),
+-  MAKE_YUV_FORMAT (NV12_UBWC, "raw video", GST_MAKE_FOURCC ('N', 'V', '1', '2'),
++  MAKE_YUV_FORMAT (NV12_UBWC, "raw video", GST_MAKE_FOURCC ('Q', '1', '2', '8'),
+       DPTH888, PSTR122, PLANE011, OFFS001, SUB420, PACK_NV12),
+   MAKE_RGBA_FORMAT (RGBA_UBWC, "raw video", DPTH8888, PSTR4444, PLANE0, OFFS0123,
+       SUB4444, PACK_RGBA),
+@@ -5454,6 +5454,8 @@ gst_video_format_from_fourcc (guint32 fourcc)
+       return GST_VIDEO_FORMAT_v216;
+     case GST_MAKE_FOURCC ('N', 'V', '1', '2'):
+       return GST_VIDEO_FORMAT_NV12;
++    case GST_MAKE_FOURCC ('Q', '1', '2', '8'):
++      return GST_VIDEO_FORMAT_NV12_UBWC;
+     case GST_MAKE_FOURCC ('N', 'V', '2', '1'):
+       return GST_VIDEO_FORMAT_NV21;
+     case GST_MAKE_FOURCC ('N', 'V', '1', '6'):
+diff --git a/gst-libs/gst/video/video-info.c b/gst-libs/gst/video/video-info.c
+index 25f7027..0e108ec 100644
+--- a/gst-libs/gst/video/video-info.c
++++ b/gst-libs/gst/video/video-info.c
+@@ -29,6 +29,8 @@
+ #include "video-info.h"
+ #include "video-tile.h"
+ 
++#include "media/msm_media_info.h"
++
+ #ifndef GST_DISABLE_GST_DEBUG
+ #define GST_CAT_DEFAULT ensure_debug_category()
+ static GstDebugCategory *
+@@ -844,6 +846,16 @@ fill_planes (GstVideoInfo * info)
+         cr_h = GST_ROUND_UP_2 (cr_h);
+       info->size = info->offset[1] + info->stride[0] * cr_h;
+       break;
++    case GST_VIDEO_FORMAT_NV12_UBWC:
++      info->stride[0] = GST_ROUND_UP_16 (width);
++      info->stride[1] = info->stride[0];
++      info->offset[0] = 0;
++      info->offset[1] = info->stride[0] * GST_ROUND_UP_16 (height);
++      cr_h = GST_ROUND_UP_16 (height) / 2;
++      if (GST_VIDEO_INFO_IS_INTERLACED (info))
++        cr_h = GST_ROUND_UP_16 (cr_h);
++      info->size = VENUS_BUFFER_SIZE_USED(COLOR_FMT_NV12_UBWC, width, height, 0);
++      break;
+     case GST_VIDEO_FORMAT_NV16:
+     case GST_VIDEO_FORMAT_NV61:
+       info->stride[0] = GST_ROUND_UP_4 (width);
+-- 
+2.7.4
+

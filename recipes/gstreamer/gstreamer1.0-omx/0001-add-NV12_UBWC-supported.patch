@@ -1,0 +1,190 @@
+From 0d1cb5b64bdfcf9144b31efc49bd7d64def74feb Mon Sep 17 00:00:00 2001
+From: Zhenlin Lian <lianzhenlin@codeaurora.org>
+Date: Tue, 15 Sep 2020 16:18:19 +0800
+Subject: [PATCH] add NV12_UBWC supported
+
+Signed-off-by: Zhenlin Lian <lianzhenlin@codeaurora.org>
+---
+ omx/gstomxbufferpool.c |  2 ++
+ omx/gstomxvideo.c      | 16 +++++++++++-----
+ omx/gstomxvideodec.c   | 15 +++++++++++++++
+ omx/gstomxvideoenc.c   | 34 ++++++++++++++++++++++++++++++++--
+ 4 files changed, 60 insertions(+), 7 deletions(-)
+
+diff --git a/omx/gstomxbufferpool.c b/omx/gstomxbufferpool.c
+index 2d6923e..1f5f80f 100644
+--- a/omx/gstomxbufferpool.c
++++ b/omx/gstomxbufferpool.c
+@@ -431,6 +431,7 @@ gst_omx_buffer_pool_alloc_buffer (GstBufferPool * bpool,
+       case GST_VIDEO_FORMAT_UYVY:
+       case GST_VIDEO_FORMAT_YVYU:
+       case GST_VIDEO_FORMAT_GRAY8:
++      case GST_VIDEO_FORMAT_RGBA_UBWC:
+         break;
+       case GST_VIDEO_FORMAT_I420:
+         stride[1] = nstride / 2;
+@@ -442,6 +443,7 @@ gst_omx_buffer_pool_alloc_buffer (GstBufferPool * bpool,
+       case GST_VIDEO_FORMAT_NV12_10LE32:
+       case GST_VIDEO_FORMAT_NV16:
+       case GST_VIDEO_FORMAT_NV16_10LE32:
++      case GST_VIDEO_FORMAT_NV12_UBWC:
+         stride[1] = nstride;
+         offset[1] = offset[0] + stride[0] * nslice;
+         break;
+diff --git a/omx/gstomxvideo.c b/omx/gstomxvideo.c
+index 151b3b4..9191857 100644
+--- a/omx/gstomxvideo.c
++++ b/omx/gstomxvideo.c
+@@ -25,7 +25,7 @@
+ #ifdef HAVE_CONFIG_H
+ #include "config.h"
+ #endif
+-
++#include "OMX_QCOMExtns.h"
+ #include "gstomxvideo.h"
+ 
+ #include <math.h>
+@@ -93,6 +93,12 @@ gst_omx_video_get_format_from_omx (OMX_COLOR_FORMATTYPE omx_colorformat)
+       break;
+ #pragma GCC diagnostic pop
+ #endif
++    case QOMX_COLOR_FORMATYUV420PackedSemiPlanar32mCompressed:
++      format = GST_VIDEO_FORMAT_NV12_UBWC;
++      break;
++    case QOMX_COLOR_Format32bitRGBA8888Compressed:
++      format = GST_VIDEO_FORMAT_RGBA_UBWC;
++      break;
+     default:
+       format = GST_VIDEO_FORMAT_UNKNOWN;
+       break;
+@@ -141,13 +147,13 @@ gst_omx_video_get_supported_colorformats (GstOMXPort * port,
+         m->type = param.eColorFormat;
+         negotiation_map = g_list_append (negotiation_map, m);
+         GST_DEBUG_OBJECT (comp->parent,
+-            "Component supports %s (%d) at index %u",
++            "Component port %d supports %s (%d) at index %u format = %d", port->index,
+             gst_video_format_to_string (f), param.eColorFormat,
+-            (guint) param.nIndex);
++            (guint) param.nIndex, f);
+       } else {
+         GST_DEBUG_OBJECT (comp->parent,
+-            "Component supports unsupported color format %d at index %u",
+-            param.eColorFormat, (guint) param.nIndex);
++            "Component port %d supports unsupported color format %d at index %u",
++            port->index, param.eColorFormat, (guint) param.nIndex);
+       }
+     }
+     old_index = param.nIndex++;
+diff --git a/omx/gstomxvideodec.c b/omx/gstomxvideodec.c
+index 812eb29..76c2839 100644
+--- a/omx/gstomxvideodec.c
++++ b/omx/gstomxvideodec.c
+@@ -51,6 +51,9 @@
+ #include "gstomxbufferpool.h"
+ #include "gstomxvideo.h"
+ #include "gstomxvideodec.h"
++#include "OMX_QCOMExtns.h"
++
++#include <media/msm_media_info.h>
+ 
+ GST_DEBUG_CATEGORY_STATIC (gst_omx_video_dec_debug_category);
+ #define GST_CAT_DEFAULT gst_omx_video_dec_debug_category
+@@ -621,6 +624,16 @@ gst_omx_video_dec_fill_buffer (GstOMXVideoDec * self,
+         dst_width[1] = GST_VIDEO_INFO_WIDTH (vinfo);
+         dst_height[1] = GST_VIDEO_INFO_HEIGHT (vinfo) / 2;
+         break;
++      case GST_VIDEO_FORMAT_NV12_UBWC: //prepare to modify
++        dst_width[0] = GST_VIDEO_INFO_WIDTH (vinfo);
++        src_stride[1] = nstride;
++        src_size[1] = src_stride[1] * nslice / 2;
++        dst_width[1] = GST_VIDEO_INFO_WIDTH (vinfo);
++        dst_height[1] = GST_VIDEO_INFO_HEIGHT (vinfo) / 2;
++        break;
++      case GST_VIDEO_FORMAT_RGBA_UBWC: //prepare to modify
++        dst_width[0] = GST_VIDEO_INFO_WIDTH (vinfo) * 4;
++        break;
+       case GST_VIDEO_FORMAT_NV16:
+         dst_width[0] = GST_VIDEO_INFO_WIDTH (vinfo);
+         src_stride[1] = nstride;
+@@ -2093,6 +2106,8 @@ gst_omx_video_dec_negotiate (GstOMXVideoDec * self)
+     GstOMXVideoNegotiationMap *m = l->data;
+ 
+     if (m->format == format) {
++    GST_ERROR_OBJECT (self, "Failed to get video port format: %s (0x%08x)",
++        gst_omx_error_to_string (err), err);
+       param.eColorFormat = m->type;
+       break;
+     }
+diff --git a/omx/gstomxvideoenc.c b/omx/gstomxvideoenc.c
+index 2079bba..6e98661 100644
+--- a/omx/gstomxvideoenc.c
++++ b/omx/gstomxvideoenc.c
+@@ -25,11 +25,12 @@
+ #include <gst/gst.h>
+ #include <gst/video/gstvideometa.h>
+ #include <gst/allocators/gstdmabuf.h>
+-
++#include <media/msm_media_info.h>
+ #include <string.h>
+ 
+ #include "gstomxvideo.h"
+ #include "gstomxvideoenc.h"
++#include "OMX_QCOMExtns.h"
+ 
+ #ifdef USE_OMX_TARGET_RPI
+ #include <OMX_Broadcom.h>
+@@ -1834,7 +1835,16 @@ gst_omx_video_enc_configure_input_buffer (GstOMXVideoEnc * self,
+           2 * (port_def.format.video.nStride *
+           ((port_def.format.video.nFrameHeight + 1) / 2));
+       break;
+-
++    case QOMX_COLOR_FORMATYUV420PackedSemiPlanar32mCompressed:
++      port_def.nBufferSize = VENUS_BUFFER_SIZE(COLOR_FMT_NV12_UBWC,
++          port_def.format.video.nFrameWidth,
++          port_def.format.video.nFrameHeight);
++      break;
++    case QOMX_COLOR_Format32bitRGBA8888Compressed:
++      port_def.nBufferSize = VENUS_BUFFER_SIZE(COLOR_FMT_RGBA8888_UBWC,
++          port_def.format.video.nFrameWidth,
++          port_def.format.video.nFrameHeight);
++      break;
+     default:
+       GST_ERROR_OBJECT (self, "Unsupported port format %x",
+           port_def.format.video.eColorFormat);
+@@ -2116,6 +2126,15 @@ gst_omx_video_enc_set_format (GstVideoEncoder * encoder,
+       case GST_VIDEO_FORMAT_NV12:
+         port_def.format.video.eColorFormat = OMX_COLOR_FormatYUV420SemiPlanar;
+         break;
++      case GST_VIDEO_FORMAT_NV12_UBWC:
++        port_def.format.video.eColorFormat = QOMX_COLOR_FORMATYUV420PackedSemiPlanar32mCompressed;
++        break;
++      case GST_VIDEO_FORMAT_RGBA_UBWC:
++        port_def.format.video.eColorFormat = QOMX_COLOR_Format32bitRGBA8888Compressed;
++        break;
++      case GST_VIDEO_FORMAT_NV16:
++        port_def.format.video.eColorFormat = OMX_COLOR_FormatYUV422SemiPlanar;
++        break;
+       case GST_VIDEO_FORMAT_ABGR:
+         port_def.format.video.eColorFormat = OMX_COLOR_Format32bitARGB8888;
+         break;
+@@ -2466,6 +2485,17 @@ gst_omx_video_enc_fill_buffer (GstOMXVideoEnc * self, GstBuffer * inbuf,
+     case GST_VIDEO_FORMAT_NV12:
+       ret = gst_omx_video_enc_nv12_manual_copy (self, inbuf, outbuf, FALSE);
+       break;
++    case GST_VIDEO_FORMAT_RGBA_UBWC:
++    case GST_VIDEO_FORMAT_NV12_UBWC:
++    {
++      outbuf->omx_buf->nFilledLen = gst_buffer_get_size (inbuf);
++
++      gst_buffer_extract (inbuf, 0,
++          outbuf->omx_buf->pBuffer + outbuf->omx_buf->nOffset,
++          outbuf->omx_buf->nFilledLen);
++      ret = TRUE;
++      break;
++    }
+     case GST_VIDEO_FORMAT_NV12_10LE32:
+     case GST_VIDEO_FORMAT_NV16_10LE32:
+       ret = gst_omx_video_enc_nv12_manual_copy (self, inbuf, outbuf, TRUE);
+-- 
+2.7.4
+
