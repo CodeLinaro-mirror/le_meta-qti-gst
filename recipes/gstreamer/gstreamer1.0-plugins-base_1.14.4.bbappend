@@ -12,5 +12,5 @@ SRC_URI += "\
   file://0001-Adding-DSD-codec-type-in-GST_AUDIO_RING_BUFFER.patch \
 "
 
-SRC_URI[he-aac-rate-fix.md5sum] = "6d6171657a4163081d3bd0ffe6d6968b"
-SRC_URI[he-aac-rate-fix.sha256sum] = "0b57468c8179705782419a98ca3ba6cdb49f48c26859295a35e811aaae881dfe"
+SRC_URI[he-aac-rate-fix.md5sum] = "204111a4f2a5cfd5c36bdb65ceeb14c0"
+SRC_URI[he-aac-rate-fix.sha256sum] = "f6a22569f460a9efcc67822a5078f32cdbf89cd76e58026b85be185398ca798f"
