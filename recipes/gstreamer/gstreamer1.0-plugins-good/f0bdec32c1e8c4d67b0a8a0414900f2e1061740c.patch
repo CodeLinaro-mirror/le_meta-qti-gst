@@ -1,0 +1,31 @@
+From f0bdec32c1e8c4d67b0a8a0414900f2e1061740c Mon Sep 17 00:00:00 2001
+From: Arun Raghavan <arunsr@codeaurora.org>
+Date: Wed, 6 Feb 2019 14:43:18 +0530
+Subject: pulsesink: Deal with not being able to convert a format to caps
+
+It is possible that PulseAudio adds formats that are not yet supported
+in pulsesink, and in those cases, we want to gracefully skip them rather
+than cause an assert on a NULL caps.
+---
+ ext/pulse/pulsesink.c | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/ext/pulse/pulsesink.c b/ext/pulse/pulsesink.c
+index 42330a4..ca75915 100644
+--- a/ext/pulse/pulsesink.c
++++ b/ext/pulse/pulsesink.c
+@@ -2183,8 +2183,9 @@ gst_pulsesink_query_getcaps (GstPulseSink * psink, GstCaps * filter)
+   }
+ 
+   for (i = g_list_first (device_info.formats); i; i = g_list_next (i)) {
+-    gst_caps_append (ret,
+-        gst_pulse_format_info_to_caps ((pa_format_info *) i->data));
++    GstCaps *caps = gst_pulse_format_info_to_caps ((pa_format_info *) i->data);
++    if (caps)
++      gst_caps_append (ret, caps);
+   }
+ 
+ unlock:
+-- 
+cgit v1.1
+
