@@ -1,23 +1,22 @@
-From fddc50fe43d0bd1ceae26a120c1828b93425e867 Mon Sep 17 00:00:00 2001
-From: Jeremy Hao <jinghao@codeaurora.org>
-Date: Wed, 21 Oct 2020 14:32:52 +0530
-Subject: [PATCH] omx: Add support for QTI target for 1.16.2
+From c56a94b8d21e4c7dc6f2b0af07c47221a14f6612 Mon Sep 17 00:00:00 2001
+From: "Petar G. Georgiev" <petarg@codeaurora.org>
+Date: Wed, 1 Apr 2020 14:05:58 +0100
+Subject: [PATCH] omx: Add support for QTI target
 
-Signed-off-by: Jeremy Hao <jinghao@codeaurora.org>
 ---
  config/Makefile.am      |  2 +-
  config/meson.build      |  2 ++
- config/qti/Makefile.am  |  7 +++++
- config/qti/gstomx.conf  | 71 +++++++++++++++++++++++++++++++++++++++++++++++++
+ config/qti/Makefile.am  |  6 ++++
+ config/qti/gstomx.conf  | 71 +++++++++++++++++++++++++++++++++++++++++
  config/qti/meson.build  |  1 +
- configure.ac            | 11 +++++---
+ configure.ac            | 11 +++++--
  meson.build             |  2 ++
  meson_options.txt       |  2 +-
- omx/gstomx.h            | 22 +++++++++++++++
+ omx/gstomx.h            | 22 +++++++++++++
  omx/gstomxh265enc.c     |  2 ++
  omx/gstomxh265utils.c   |  2 ++
- tests/check/Makefile.am |  3 +++
- 12 files changed, 122 insertions(+), 5 deletions(-)
+ tests/check/Makefile.am |  3 ++
+ 12 files changed, 121 insertions(+), 5 deletions(-)
  create mode 100644 config/qti/Makefile.am
  create mode 100644 config/qti/gstomx.conf
  create mode 100644 config/qti/meson.build
@@ -44,17 +43,16 @@ index 1068c6d..2169358 100644
    sub = ''
 diff --git a/config/qti/Makefile.am b/config/qti/Makefile.am
 new file mode 100644
-index 0000000..a5623e2
+index 0000000..515f251
 --- /dev/null
 +++ b/config/qti/Makefile.am
-@@ -0,0 +1,7 @@
+@@ -0,0 +1,6 @@
 +EXTRA_DIST = gstomx.conf
 +
 +if USE_OMX_TARGET_QTI
 +configdir = $(sysconfdir)/xdg
 +config_DATA = gstomx.conf
 +endif
-+
 diff --git a/config/qti/gstomx.conf b/config/qti/gstomx.conf
 new file mode 100644
 index 0000000..2213a60
@@ -140,7 +138,7 @@ index 0000000..dc99c08
 @@ -0,0 +1 @@
 +install_data (['gstomx.conf'], install_dir : omx_conf_dir)
 diff --git a/configure.ac b/configure.ac
-index d767764..f42913a 100644
+index 0d29ee4..3b6c89b 100644
 --- a/configure.ac
 +++ b/configure.ac
 @@ -200,7 +200,7 @@ AC_ARG_ENABLE(Bsymbolic,
@@ -173,7 +171,7 @@ index d767764..f42913a 100644
  
  AC_ARG_WITH([omx-struct-packing],
          AS_HELP_STRING([--with-omx-struct-packing],[Force OpenMAX struct packing, (default is none)]),
-@@ -282,7 +286,7 @@ HAVE_IMAGE_EXT=no
+@@ -278,7 +282,7 @@ HAVE_IMAGE_EXT=no
  HAVE_OTHER_EXT=no
  if test "x$HAVE_EXTERNAL_OMX" = "xyes"; then
      AC_CHECK_HEADER([OMX_VideoExt.h], [HAVE_VIDEO_EXT=yes], [HAVE_VIDEO_EXT=no], [AC_INCLUDES_DEFAULT])
@@ -182,7 +180,7 @@ index d767764..f42913a 100644
      AC_CHECK_HEADER([OMX_ComponentExt.h], [HAVE_COMPONENT_EXT=yes], [HAVE_COMPONENT_EXT=no], [AC_INCLUDES_DEFAULT])
      AC_CHECK_HEADER([OMX_CoreExt.h], [HAVE_CORE_EXT=yes], [HAVE_CORE_EXT=no], [AC_INCLUDES_DEFAULT])
      AC_CHECK_HEADER([OMX_AudioExt.h], [HAVE_AUDIO_EXT=yes], [HAVE_AUDIO_EXT=no], [AC_INCLUDES_DEFAULT])
-@@ -466,6 +470,7 @@ config/rpi/Makefile
+@@ -462,6 +466,7 @@ config/rpi/Makefile
  config/tizonia/gstomx.conf
  config/tizonia/Makefile
  config/zynqultrascaleplus/Makefile
@@ -191,33 +189,29 @@ index d767764..f42913a 100644
  examples/egl/Makefile
  m4/Makefile
 diff --git a/meson.build b/meson.build
-index cdd6d17..5267824 100644
+index 9e53c3b..f67c9eb 100644
 --- a/meson.build
 +++ b/meson.build
-@@ -212,6 +212,8 @@ elif omx_target == 'tizonia'
+@@ -213,6 +213,8 @@ elif omx_target == 'tizonia'
    cdata.set('TIZONIA_LIBDIR', tizil_dep.get_pkgconfig_variable('libdir'))
    tizil_includedir = tizil_dep.get_pkgconfig_variable('includedir')
    gst_omx_args += ['-I' + tizil_includedir + '/tizonia']
 +elif omx_target == 'qti'
 +  cdata.set('USE_OMX_TARGET_QTI', 1)
  else
-   error ('Unsupported omx target specified. Use the -Dtarget option')
+   error ('Unsupported omx target specified. Use the -Dwith_omx_target option')
  endif
 diff --git a/meson_options.txt b/meson_options.txt
-index 75985ce..2cce5bb 100644
+index a5a0c40..88ba256 100644
 --- a/meson_options.txt
 +++ b/meson_options.txt
-@@ -1,7 +1,7 @@
- option('header_path', type : 'string', value : '',
-     description : 'An extra include directory to find the OpenMax headers')
- option('target', type : 'combo',
--    choices : ['none', 'generic', 'rpi', 'bellagio', 'tizonia', 'zynqultrascaleplus'], value : 'none',
-+    choices : ['none', 'generic', 'rpi', 'bellagio', 'tizonia', 'zynqultrascaleplus', 'qti'], value : 'none',
-     description : 'The OMX platform to target')
- option('struct_packing', type : 'combo',
-     choices : ['0', '1', '2', '4', '8'], value : '0',
+@@ -1,3 +1,3 @@
+ option('with_omx_header_path', type : 'string', value : '', description : 'An extra include directory to find the OpenMax headers')
+-option('with_omx_target', type : 'combo', choices : ['none', 'generic', 'rpi', 'bellagio', 'tizonia', 'zynqultrascaleplus'], value : 'none', description : 'The OMX platform to target')
++option('with_omx_target', type : 'combo', choices : ['none', 'generic', 'rpi', 'bellagio', 'tizonia', 'zynqultrascaleplus', 'qti'], value : 'none', description : 'The OMX platform to target')
+ option('with_omx_struct_packing', type : 'combo', choices : ['0', '1', '2', '4', '8'], value : '0', description : 'Force OpenMAX struct packing')
 diff --git a/omx/gstomx.h b/omx/gstomx.h
-index 4b61343..14f47dd 100644
+index a5330bd..d29bed5 100644
 --- a/omx/gstomx.h
 +++ b/omx/gstomx.h
 @@ -58,6 +58,10 @@
@@ -264,10 +258,10 @@ index 4b61343..14f47dd 100644
  #ifdef OMX_SKIP64BIT
  #define GST_OMX_GET_TICKS(ticks) ((((guint64) (ticks).nHighPart) << 32) | ((ticks).nLowPart))
 diff --git a/omx/gstomxh265enc.c b/omx/gstomxh265enc.c
-index ea14ca7..9989420 100644
+index 6076435..4849c62 100644
 --- a/omx/gstomxh265enc.c
 +++ b/omx/gstomxh265enc.c
-@@ -631,10 +631,12 @@ gst_omx_h265_enc_get_caps (GstOMXVideoEnc * enc, GstOMXPort * port,
+@@ -661,10 +661,12 @@ gst_omx_h265_enc_get_caps (GstOMXVideoEnc * enc, GstOMXPort * port,
          tier = "high";
          level = "6.1";
          break;
@@ -281,10 +275,10 @@ index ea14ca7..9989420 100644
          g_assert_not_reached ();
          gst_caps_unref (caps);
 diff --git a/omx/gstomxh265utils.c b/omx/gstomxh265utils.c
-index 8bf81da..630bc95 100644
+index 5141bc4..ce387f0 100644
 --- a/omx/gstomxh265utils.c
 +++ b/omx/gstomxh265utils.c
-@@ -130,8 +130,10 @@ gst_omx_h265_utils_get_level_from_str (const gchar * level, const gchar * tier)
+@@ -90,8 +90,10 @@ gst_omx_h265_utils_get_level_from_str (const gchar * level, const gchar * tier)
        return OMX_VIDEO_HEVCHighTierLevel6;
      else if (g_str_equal (level, "6.1"))
        return OMX_VIDEO_HEVCHighTierLevel61;
@@ -310,5 +304,5 @@ index 6b0ffe8..df3a64f 100644
  AM_TESTS_ENVIRONMENT += \
  	$(REGISTRY_ENVIRONMENT)					\
 -- 
-2.7.4
+2.17.1
 
