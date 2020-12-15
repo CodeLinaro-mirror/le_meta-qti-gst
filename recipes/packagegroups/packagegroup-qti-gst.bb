@@ -19,6 +19,7 @@ RDEPENDS_packagegroup-qti-gst = " \
       gstreamer1.0-rtsp-server \
       gstreamer1.0-plugins-qti-oss-mlmeta \
       gstreamer1.0-plugins-qti-oss-tools \
+      gstreamer1.0-plugins-qti-oss-overlay \
       ${@bb.utils.contains_any("COMBINED_FEATURES", "qti-video qti-audio", "gstreamer1.0-omx", "", d)} \
       ${@bb.utils.contains_any("COMBINED_FEATURES", "qti-video qti-audio", "gstreamer1.0-libav", "", d)} \
       ${@bb.utils.contains("COMBINED_FEATURES", "qti-cdsp", "gstreamer1.0-plugins-qti-oss-hexagon-nn", "", d)} \
@@ -26,6 +27,5 @@ RDEPENDS_packagegroup-qti-gst = " \
       ${@bb.utils.contains("DISTRO_FEATURES", "qti-qmmf", "gstreamer1.0-plugins-qti-oss-vtransform", "", d)} \
       ${@bb.utils.contains("DISTRO_FEATURES", "qti-qmmf", "gstreamer1.0-plugins-qti-oss-vcomposer", "", d)} \
       ${@bb.utils.contains("DISTRO_FEATURES", "qti-qmmf", "gstreamer1.0-plugins-qti-oss-qmmfsrc", "", d)} \
-      ${@bb.utils.contains("DISTRO_FEATURES", "qti-qmmf", "gstreamer1.0-plugins-qti-oss-overlay", "", d)} \
       ${@bb.utils.contains_any("DISTRO_FEATURES", "tensorflow-lite qti-snpe", "gstreamer1.0-plugins-qti-oss-mle", "", d)} \
     "
