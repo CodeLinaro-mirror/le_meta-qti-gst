@@ -1,4 +1,4 @@
-FILESEXTRAPATHS_prepend := "${THISDIR}/gstreamer1.0-omx:"
+FILESEXTRAPATHS_prepend := "${THISDIR}/gstreamer1.0-omx:${THISDIR}/gstreamer1.0-omx/1.14.4:"
 
 SRC_URI += "file://0001-omxaacenc-fix-samples-per-buffer-calculation.patch"
 SRC_URI += "file://0001-omxh264enc-Set-maximum-caps-resolution-range-to-MAX.patch"
