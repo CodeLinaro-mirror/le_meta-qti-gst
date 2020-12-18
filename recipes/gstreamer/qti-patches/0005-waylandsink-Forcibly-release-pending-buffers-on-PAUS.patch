@@ -1,4 +1,4 @@
-From e1d4dda8a8478db3789d92c5e3d18eb4f3f77da5 Mon Sep 17 00:00:00 2001
+From 7cf2a45396798561ae336cd60a923aca5ae353b5 Mon Sep 17 00:00:00 2001
 From: "Petar G. Georgiev" <petarg@codeaurora.org>
 Date: Fri, 29 Nov 2019 14:56:55 +0200
 Subject: [CHANGE 5/5] waylandsink: Forcibly release pending buffers on PAUSED
@@ -10,24 +10,15 @@ PAUSED. This is needed because some live sources may require
 all buffers to be returned when transitioning between those 2
 states.
 ---
- ext/wayland/gstwaylandsink.c |  3 ++-
+ ext/wayland/gstwaylandsink.c |  1 +
  ext/wayland/wldisplay.c      | 14 ++++++++++++++
  ext/wayland/wldisplay.h      |  1 +
- 3 files changed, 17 insertions(+), 1 deletion(-)
+ 3 files changed, 16 insertions(+)
 
 diff --git a/ext/wayland/gstwaylandsink.c b/ext/wayland/gstwaylandsink.c
-index 9bf51b3..0c75926 100644
+index 9bf51b3..6bfe6be 100644
 --- a/ext/wayland/gstwaylandsink.c
 +++ b/ext/wayland/gstwaylandsink.c
-@@ -460,7 +460,7 @@ gst_wayland_sink_change_state (GstElement * element, GstStateChange transition)
-     return ret;
- 
-   switch (transition) {
--    case GST_STATE_CHANGE_PAUSED_TO_READY:
-+    case GST_STATE_CHANGE_PLAYING_TO_PAUSED:
-       gst_buffer_replace (&sink->last_buffer, NULL);
-       if (sink->window) {
-         if (gst_wl_window_is_toplevel (sink->window)) {
 @@ -470,6 +470,7 @@ gst_wayland_sink_change_state (GstElement * element, GstStateChange transition)
            gst_wl_window_render (sink->window, NULL, NULL);
          }
