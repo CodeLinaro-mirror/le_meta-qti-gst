@@ -1,18 +1,18 @@
-From 12067a09f49adeb190507cb3a2510d3604c14b77 Mon Sep 17 00:00:00 2001
+From ac160b3f36391868e3adfd9897c69fbdcc7b8013 Mon Sep 17 00:00:00 2001
 From: "Petar G. Georgiev" <petarg@codeaurora.org>
 Date: Wed, 4 Sep 2019 12:32:10 +0300
-Subject: [CHANGE 1/4] waylandsink: support fullscreen
+Subject: [PATCH] waylandsink: support fullscreen
 
 Add fullscreen property that makes the sink displayed all across the output.
 ---
- ext/wayland/gstwaylandsink.c | 20 ++++++++++++++++++--
+ ext/wayland/gstwaylandsink.c | 35 +++++++++++++++++++++++++++++++++--
  ext/wayland/gstwaylandsink.h |  1 +
  ext/wayland/wlwindow.c       | 17 +++++++++++++++--
  ext/wayland/wlwindow.h       |  4 +++-
- 4 files changed, 37 insertions(+), 5 deletions(-)
+ 4 files changed, 52 insertions(+), 5 deletions(-)
 
 diff --git a/ext/wayland/gstwaylandsink.c b/ext/wayland/gstwaylandsink.c
-index ff08194..d06ff99 100644
+index ff0819452..de889df08 100644
 --- a/ext/wayland/gstwaylandsink.c
 +++ b/ext/wayland/gstwaylandsink.c
 @@ -61,7 +61,8 @@ enum
@@ -25,7 +25,7 @@ index ff08194..d06ff99 100644
  };
  
  GST_DEBUG_CATEGORY (gstwayland_debug);
-@@ -202,6 +203,11 @@ gst_wayland_sink_class_init (GstWaylandSinkClass * klass)
+@@ -202,6 +203,12 @@ gst_wayland_sink_class_init (GstWaylandSinkClass * klass)
        g_param_spec_string ("display", "Wayland Display name", "Wayland "
            "display name to connect to, if not supplied via the GstContext",
            NULL, G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
@@ -33,11 +33,33 @@ index ff08194..d06ff99 100644
 +  g_object_class_install_property (gobject_class, PROP_FULLSCREEN,
 +      g_param_spec_boolean ("fullscreen", "Fullscreen",
 +          "Whether the surface should be made fullscreen ", FALSE,
-+          G_PARAM_READWRITE | G_PARAM_CONSTRUCT | G_PARAM_STATIC_STRINGS));
++          G_PARAM_READWRITE | G_PARAM_CONSTRUCT | G_PARAM_STATIC_STRINGS |
++          GST_PARAM_MUTABLE_PLAYING));
  }
  
  static void
-@@ -223,6 +229,11 @@ gst_wayland_sink_get_property (GObject * object,
+@@ -211,6 +218,20 @@ gst_wayland_sink_init (GstWaylandSink * sink)
+   g_mutex_init (&sink->render_lock);
+ }
+ 
++static void
++gst_wayland_sink_set_fullscreen (GstWaylandSink * sink, gboolean fullscreen)
++{
++  if (fullscreen == sink->fullscreen)
++    return;
++
++  g_mutex_lock (&sink->render_lock);
++
++  sink->fullscreen = fullscreen;
++  gst_wl_window_ensure_fullscreen (sink->window, fullscreen);
++
++  g_mutex_unlock (&sink->render_lock);
++}
++
+ static void
+ gst_wayland_sink_get_property (GObject * object,
+     guint prop_id, GValue * value, GParamSpec * pspec)
+@@ -223,6 +244,11 @@ gst_wayland_sink_get_property (GObject * object,
        g_value_set_string (value, sink->display_name);
        GST_OBJECT_UNLOCK (sink);
        break;
@@ -49,19 +71,19 @@ index ff08194..d06ff99 100644
      default:
        G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
        break;
-@@ -241,6 +252,11 @@ gst_wayland_sink_set_property (GObject * object,
+@@ -241,6 +267,11 @@ gst_wayland_sink_set_property (GObject * object,
        sink->display_name = g_value_dup_string (value);
        GST_OBJECT_UNLOCK (sink);
        break;
 +    case PROP_FULLSCREEN:
 +      GST_OBJECT_LOCK (sink);
-+      sink->fullscreen = g_value_get_boolean (value);
++      gst_wayland_sink_set_fullscreen (sink, g_value_get_boolean (value));
 +      GST_OBJECT_UNLOCK (sink);
 +      break;
      default:
        G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
        break;
-@@ -659,7 +675,7 @@ gst_wayland_sink_show_frame (GstVideoSink * vsink, GstBuffer * buffer)
+@@ -659,7 +690,7 @@ gst_wayland_sink_show_frame (GstVideoSink * vsink, GstBuffer * buffer)
      if (!sink->window) {
        /* if we were not provided a window, create one ourselves */
        sink->window = gst_wl_window_new_toplevel (sink->display,
@@ -71,7 +93,7 @@ index ff08194..d06ff99 100644
    }
  
 diff --git a/ext/wayland/gstwaylandsink.h b/ext/wayland/gstwaylandsink.h
-index 2704d00..be92fe7 100644
+index 2704d00f2..be92fe7f2 100644
 --- a/ext/wayland/gstwaylandsink.h
 +++ b/ext/wayland/gstwaylandsink.h
 @@ -60,6 +60,7 @@ struct _GstWaylandSink
@@ -83,7 +105,7 @@ index 2704d00..be92fe7 100644
    gchar *display_name;
  
 diff --git a/ext/wayland/wlwindow.c b/ext/wayland/wlwindow.c
-index c64c77a..9ef8c32 100644
+index c64c77a0d..9ef8c3229 100644
 --- a/ext/wayland/wlwindow.c
 +++ b/ext/wayland/wlwindow.c
 @@ -150,9 +150,22 @@ gst_wl_window_new_internal (GstWlDisplay * display, GMutex * render_lock)
@@ -120,7 +142,7 @@ index c64c77a..9ef8c32 100644
      GST_ERROR ("Unable to get wl_shell_surface");
  
 diff --git a/ext/wayland/wlwindow.h b/ext/wayland/wlwindow.h
-index e247b4e..10b49fd 100644
+index e247b4e23..10b49fd67 100644
 --- a/ext/wayland/wlwindow.h
 +++ b/ext/wayland/wlwindow.h
 @@ -74,8 +74,10 @@ struct _GstWlWindowClass
@@ -136,5 +158,5 @@ index e247b4e..10b49fd 100644
          struct wl_surface * parent, GMutex * render_lock);
  
 -- 
-1.9.1
+2.17.1
 

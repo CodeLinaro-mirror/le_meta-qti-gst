@@ -1,4 +1,4 @@
-From 056eec0fac1fe905cb2ae140db1402cee12977d4 Mon Sep 17 00:00:00 2001
+From 70bcb97e4a60c1955f9a7019cb127c212d1780f0 Mon Sep 17 00:00:00 2001
 From: Amrutha Sai Gattu <agattu@codeaurora.org>
 Date: Fri, 1 Nov 2019 10:23:01 +0530
 Subject: [PATCH] waylandsink: support gbm buffer backend protocol
@@ -110,7 +110,7 @@ index eb328daae..428b0f82c 100644
  	wldisplay.h \
  	wlwindow.h \
 diff --git a/ext/wayland/gstwaylandsink.c b/ext/wayland/gstwaylandsink.c
-index 553a3b4ef..6c244c94c 100644
+index 9394672f6..7875c26b5 100644
 --- a/ext/wayland/gstwaylandsink.c
 +++ b/ext/wayland/gstwaylandsink.c
 @@ -46,6 +46,7 @@
@@ -130,7 +130,7 @@ index 553a3b4ef..6c244c94c 100644
              WL_VIDEO_FORMATS))
      );
  
-@@ -533,19 +536,20 @@ gst_wayland_sink_get_caps (GstBaseSink * bsink, GstCaps * filter)
+@@ -588,19 +591,20 @@ gst_wayland_sink_get_caps (GstBaseSink * bsink, GstCaps * filter)
  
    if (sink->display) {
      GValue shm_list = G_VALUE_INIT, dmabuf_list = G_VALUE_INIT;
@@ -153,7 +153,7 @@ index 553a3b4ef..6c244c94c 100644
        g_value_set_static_string (&value, gst_wl_shm_format_to_string (fmt));
        gst_value_list_append_and_take_value (&shm_list, &value);
      }
-@@ -557,7 +561,7 @@ gst_wayland_sink_get_caps (GstBaseSink * bsink, GstCaps * filter)
+@@ -612,7 +616,7 @@ gst_wayland_sink_get_caps (GstBaseSink * bsink, GstCaps * filter)
      formats = sink->display->dmabuf_formats;
      for (i = 0; i < formats->len; i++) {
        g_value_init (&value, G_TYPE_STRING);
@@ -162,7 +162,7 @@ index 553a3b4ef..6c244c94c 100644
        g_value_set_static_string (&value, gst_wl_dmabuf_format_to_string (fmt));
        gst_value_list_append_and_take_value (&dmabuf_list, &value);
      }
-@@ -565,6 +569,17 @@ gst_wayland_sink_get_caps (GstBaseSink * bsink, GstCaps * filter)
+@@ -620,6 +624,17 @@ gst_wayland_sink_get_caps (GstBaseSink * bsink, GstCaps * filter)
      gst_structure_take_value (gst_caps_get_structure (caps, 1), "format",
          &dmabuf_list);
  
@@ -180,7 +180,7 @@ index 553a3b4ef..6c244c94c 100644
      GST_DEBUG_OBJECT (sink, "display caps: %" GST_PTR_FORMAT, caps);
    }
  
-@@ -610,7 +625,8 @@ static gboolean
+@@ -665,7 +680,8 @@ static gboolean
  gst_wayland_sink_set_caps (GstBaseSink * bsink, GstCaps * caps)
  {
    GstWaylandSink *sink;
@@ -190,7 +190,7 @@ index 553a3b4ef..6c244c94c 100644
    GstVideoFormat format;
  
    sink = GST_WAYLAND_SINK (bsink);
-@@ -632,15 +648,31 @@ gst_wayland_sink_set_caps (GstBaseSink * bsink, GstCaps * caps)
+@@ -687,15 +703,31 @@ gst_wayland_sink_set_caps (GstBaseSink * bsink, GstCaps * caps)
    use_dmabuf = gst_caps_features_contains (gst_caps_get_features (caps, 0),
        GST_CAPS_FEATURE_MEMORY_DMABUF);
  
@@ -222,7 +222,7 @@ index 553a3b4ef..6c244c94c 100644
  
    return TRUE;
  
-@@ -685,7 +717,7 @@ gst_wayland_sink_propose_allocation (GstBaseSink * bsink, GstQuery * query)
+@@ -740,7 +772,7 @@ gst_wayland_sink_propose_allocation (GstBaseSink * bsink, GstQuery * query)
  }
  
  static void
@@ -231,7 +231,7 @@ index 553a3b4ef..6c244c94c 100644
  {
    GstWaylandSink *sink = data;
  
-@@ -722,6 +754,7 @@ render_last_buffer (GstWaylandSink * sink, gboolean redraw)
+@@ -777,6 +809,7 @@ render_last_buffer (GstWaylandSink * sink, gboolean redraw)
      info = &sink->video_info;
      sink->video_info_changed = FALSE;
    }
@@ -239,7 +239,7 @@ index 553a3b4ef..6c244c94c 100644
    gst_wl_window_render (sink->window, wlbuffer, info);
  }
  
-@@ -806,6 +839,10 @@ gst_wayland_sink_show_frame (GstVideoSink * vsink, GstBuffer * buffer)
+@@ -861,6 +894,10 @@ gst_wayland_sink_show_frame (GstVideoSink * vsink, GstBuffer * buffer)
      if (nb_dmabuf && (nb_dmabuf == gst_buffer_n_memory (buffer)))
        wbuf = gst_wl_linux_dmabuf_construct_wl_buffer (buffer, sink->display,
            &sink->video_info);
@@ -250,7 +250,7 @@ index 553a3b4ef..6c244c94c 100644
    }
  
    if (!wbuf && gst_wl_display_check_format_for_shm (sink->display, format)) {
-@@ -902,6 +939,7 @@ render:
+@@ -957,6 +994,7 @@ render:
  
    if (buffer != to_render)
      gst_buffer_unref (to_render);
@@ -286,7 +286,7 @@ index 654a644b0..49cd2c72a 100644
      protocols_files = []
  
 diff --git a/ext/wayland/wldisplay.c b/ext/wayland/wldisplay.c
-index b9feb42d8..e3194eda1 100644
+index b9c9d248b..a1ec31940 100644
 --- a/ext/wayland/wldisplay.c
 +++ b/ext/wayland/wldisplay.c
 @@ -27,6 +27,8 @@
@@ -383,7 +383,7 @@ index b9feb42d8..e3194eda1 100644
 +
  #ifdef __XDG_SHELL_PROTOCOL
  static void
- xdg_shell_ping(void *data, struct zxdg_shell_v6 *shell, uint32_t serial)
+ xdg_shell_ping (void *data, struct zxdg_shell_v6 *shell, uint32_t serial)
 @@ -235,7 +270,7 @@ static const struct zxdg_shell_v6_listener xdg_shell_listener = {
  
  static void
@@ -827,19 +827,19 @@ index 331f582b1..bcf3835e1 100644
  G_END_DECLS
  
 diff --git a/ext/wayland/wlwindow.c b/ext/wayland/wlwindow.c
-index bd58f4b5a..54c8ac147 100644
+index 5540e9248..742a97ab1 100644
 --- a/ext/wayland/wlwindow.c
 +++ b/ext/wayland/wlwindow.c
-@@ -71,8 +71,6 @@ handle_xdg_toplevel_configure(void *data, struct zxdg_toplevel_v6 *toplevel,
+@@ -73,8 +73,6 @@ handle_xdg_toplevel_configure (void *data, struct zxdg_toplevel_v6 *toplevel,
  static void
- handle_xdg_toplevel_close(void *data, struct zxdg_toplevel_v6 *xdg_toplevel)
+ handle_xdg_toplevel_close (void *data, struct zxdg_toplevel_v6 *xdg_toplevel)
  {
 -  GstWlWindow *window = data;
 -
    GST_DEBUG ("XDG toplevel got a \"close\" event.");
  }
  
-@@ -126,11 +124,6 @@ gst_wl_window_class_init (GstWlWindowClass * klass)
+@@ -128,11 +126,6 @@ gst_wl_window_class_init (GstWlWindowClass * klass)
  static void
  gst_wl_window_init (GstWlWindow * self)
  {
@@ -851,7 +851,7 @@ index bd58f4b5a..54c8ac147 100644
  }
  
  static void
-@@ -188,6 +181,7 @@ gst_wl_window_new_internal (GstWlDisplay * display, GMutex * render_lock)
+@@ -191,6 +184,7 @@ gst_wl_window_new_internal (GstWlDisplay * display, GMutex * render_lock)
    window->render_lock = render_lock;
  #ifdef __XDG_SHELL_PROTOCOL
    g_cond_init (&window->configure_cond);
