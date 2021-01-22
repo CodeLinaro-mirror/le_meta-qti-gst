@@ -8,6 +8,7 @@ SRC_URI += "file://0001-omx-Add-support-for-QTI-target.patch"
 SRC_URI += "file://0002-omxvideo-Add-support-for-GBM-memory.patch"
 SRC_URI += "file://0002-omx-Fix-PortSettingsChanged-event.patch"
 SRC_URI += "file://0003-omxvideoenc-Add-support-for-QTI-target-specific-exte.patch"
+SRC_URI += "file://0003-omxaacdec-set-audio-DualMono-config.patch"
 
 DEPENDS += "media gbm"
 RDEPENDS_${PN} = "media gbm"
