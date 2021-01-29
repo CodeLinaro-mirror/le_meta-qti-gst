@@ -1,4 +1,4 @@
-From 840704d7334318defaa8d4b8b5ea6076e8d9a198 Mon Sep 17 00:00:00 2001
+From f3cbd9b8e716e49021715673af675daedbdec023 Mon Sep 17 00:00:00 2001
 From: Amrutha Sai Gattu <agattu@codeaurora.org>
 Date: Tue, 3 Sep 2019 18:22:02 +0300
 Subject: [PATCH] waylandsink: support for xdg-shell protocol
@@ -6,19 +6,19 @@ Subject: [PATCH] waylandsink: support for xdg-shell protocol
 ---
  configure.ac                 |   8 +-
  ext/wayland/Makefile.am      |   9 +-
- ext/wayland/gstwaylandsink.c |  19 ++++-
+ ext/wayland/gstwaylandsink.c |  19 +++-
  ext/wayland/gstwaylandsink.h |   1 +
  ext/wayland/wldisplay.c      |  35 +++++++-
  ext/wayland/wldisplay.h      |   6 ++
- ext/wayland/wlwindow.c       | 161 +++++++++++++++++++++++++++++++----
+ ext/wayland/wlwindow.c       | 165 +++++++++++++++++++++++++++++++----
  ext/wayland/wlwindow.h       |  10 ++-
- 8 files changed, 225 insertions(+), 24 deletions(-)
+ 8 files changed, 229 insertions(+), 24 deletions(-)
 
 diff --git a/configure.ac b/configure.ac
-index 2cbf48a..6243909 100644
+index 943412cfb..a9d7efe2d 100644
 --- a/configure.ac
 +++ b/configure.ac
-@@ -1330,7 +1330,7 @@ dnl **** Wayland ****
+@@ -1319,7 +1319,7 @@ dnl **** Wayland ****
  translit(dnm, m, l) AM_CONDITIONAL(USE_WAYLAND, true)
  AC_PATH_PROG([wayland_scanner], [wayland-scanner])
  AG_GST_CHECK_FEATURE(WAYLAND, [wayland sink], wayland , [
@@ -27,7 +27,7 @@ index 2cbf48a..6243909 100644
      if test "x$wayland_scanner" != "x"; then
        HAVE_WAYLAND="yes"
        AC_SUBST(WAYLAND_PROTOCOLS_DATADIR, `$PKG_CONFIG --variable=pkgdatadir wayland-protocols`)
-@@ -1343,6 +1343,12 @@ AG_GST_CHECK_FEATURE(WAYLAND, [wayland sink], wayland , [
+@@ -1332,6 +1332,12 @@ AG_GST_CHECK_FEATURE(WAYLAND, [wayland sink], wayland , [
    ])
  ])
  
@@ -41,7 +41,7 @@ index 2cbf48a..6243909 100644
  translit(dnm, m, l) AM_CONDITIONAL(USE_WEBP, true)
  AG_GST_CHECK_FEATURE(WEBP, [WebP], webp , [
 diff --git a/ext/wayland/Makefile.am b/ext/wayland/Makefile.am
-index 387f84f..6d93c19 100644
+index 387f84fc7..6d93c190b 100644
 --- a/ext/wayland/Makefile.am
 +++ b/ext/wayland/Makefile.am
 @@ -17,7 +17,7 @@ libgstwaylandsink_la_SOURCES =  \
@@ -68,7 +68,7 @@ index 387f84f..6d93c19 100644
  	gstwaylandsink.h \
  	wlshmallocator.h \
 diff --git a/ext/wayland/gstwaylandsink.c b/ext/wayland/gstwaylandsink.c
-index d06ff99..377034f 100644
+index de889df08..d6dd450d6 100644
 --- a/ext/wayland/gstwaylandsink.c
 +++ b/ext/wayland/gstwaylandsink.c
 @@ -62,6 +62,7 @@ enum
@@ -91,7 +91,7 @@ index d06ff99..377034f 100644
    g_object_class_install_property (gobject_class, PROP_FULLSCREEN,
        g_param_spec_boolean ("fullscreen", "Fullscreen",
            "Whether the surface should be made fullscreen ", FALSE,
-@@ -229,6 +235,11 @@ gst_wayland_sink_get_property (GObject * object,
+@@ -244,6 +250,11 @@ gst_wayland_sink_get_property (GObject * object,
        g_value_set_string (value, sink->display_name);
        GST_OBJECT_UNLOCK (sink);
        break;
@@ -103,7 +103,7 @@ index d06ff99..377034f 100644
      case PROP_FULLSCREEN:
        GST_OBJECT_LOCK (sink);
        g_value_set_boolean (value, sink->fullscreen);
-@@ -252,6 +263,11 @@ gst_wayland_sink_set_property (GObject * object,
+@@ -267,6 +278,11 @@ gst_wayland_sink_set_property (GObject * object,
        sink->display_name = g_value_dup_string (value);
        GST_OBJECT_UNLOCK (sink);
        break;
@@ -114,8 +114,8 @@ index d06ff99..377034f 100644
 +      break;
      case PROP_FULLSCREEN:
        GST_OBJECT_LOCK (sink);
-       sink->fullscreen = g_value_get_boolean (value);
-@@ -675,7 +691,8 @@ gst_wayland_sink_show_frame (GstVideoSink * vsink, GstBuffer * buffer)
+       gst_wayland_sink_set_fullscreen (sink, g_value_get_boolean (value));
+@@ -690,7 +706,8 @@ gst_wayland_sink_show_frame (GstVideoSink * vsink, GstBuffer * buffer)
      if (!sink->window) {
        /* if we were not provided a window, create one ourselves */
        sink->window = gst_wl_window_new_toplevel (sink->display,
@@ -126,7 +126,7 @@ index d06ff99..377034f 100644
    }
  
 diff --git a/ext/wayland/gstwaylandsink.h b/ext/wayland/gstwaylandsink.h
-index be92fe7..e29b508 100644
+index be92fe7f2..e29b5087b 100644
 --- a/ext/wayland/gstwaylandsink.h
 +++ b/ext/wayland/gstwaylandsink.h
 @@ -62,6 +62,7 @@ struct _GstWaylandSink
@@ -138,7 +138,7 @@ index be92fe7..e29b508 100644
  
    gboolean redraw_pending;
 diff --git a/ext/wayland/wldisplay.c b/ext/wayland/wldisplay.c
-index 39782bc..50100da 100644
+index 39782bca5..a29952fe6 100644
 --- a/ext/wayland/wldisplay.c
 +++ b/ext/wayland/wldisplay.c
 @@ -90,6 +90,11 @@ gst_wl_display_finalize (GObject * gobject)
@@ -146,8 +146,8 @@ index 39782bc..50100da 100644
      wl_shell_destroy (self->shell);
  
 +#ifdef __XDG_SHELL_PROTOCOL
-+  if(self->xdgshell)
-+    zxdg_shell_v6_destroy(self->xdgshell);
++  if (self->xdgshell)
++    zxdg_shell_v6_destroy (self->xdgshell);
 +#endif
 +
    if (self->compositor)
@@ -177,9 +177,9 @@ index 39782bc..50100da 100644
  
 +#ifdef __XDG_SHELL_PROTOCOL
 +static void
-+xdg_shell_ping(void *data, struct zxdg_shell_v6 *shell, uint32_t serial)
++xdg_shell_ping (void *data, struct zxdg_shell_v6 *shell, uint32_t serial)
 +{
-+  zxdg_shell_v6_pong(shell, serial);
++  zxdg_shell_v6_pong (shell, serial);
 +}
 +
 +static const struct zxdg_shell_v6_listener xdg_shell_listener = {
@@ -199,9 +199,9 @@ index 39782bc..50100da 100644
    } else if (g_strcmp0 (interface, "wl_shell") == 0) {
      self->shell = wl_registry_bind (registry, id, &wl_shell_interface, 1);
 +#ifdef __XDG_SHELL_PROTOCOL
-+  } else if (g_strcmp0(interface, "zxdg_shell_v6") == 0) {
-+    self->xdgshell = wl_registry_bind(registry, id, &zxdg_shell_v6_interface, 1);
-+    zxdg_shell_v6_add_listener(self->xdgshell, &xdg_shell_listener, self);
++  } else if (g_strcmp0 (interface, "zxdg_shell_v6") == 0) {
++    self->xdgshell = wl_registry_bind (registry, id, &zxdg_shell_v6_interface, 1);
++    zxdg_shell_v6_add_listener (self->xdgshell, &xdg_shell_listener, self);
 +#endif
    } else if (g_strcmp0 (interface, "wl_shm") == 0) {
      self->shm = wl_registry_bind (registry, id, &wl_shm_interface, 1);
@@ -221,7 +221,7 @@ index 39782bc..50100da 100644
        self, &err);
    if (err) {
 diff --git a/ext/wayland/wldisplay.h b/ext/wayland/wldisplay.h
-index 7c89212..816c37d 100644
+index 7c892123f..816c37d5a 100644
 --- a/ext/wayland/wldisplay.h
 +++ b/ext/wayland/wldisplay.h
 @@ -26,6 +26,9 @@
@@ -245,25 +245,27 @@ index 7c89212..816c37d 100644
    struct wp_viewporter *viewporter;
    struct zwp_linux_dmabuf_v1 *dmabuf;
 diff --git a/ext/wayland/wlwindow.c b/ext/wayland/wlwindow.c
-index 9ef8c32..345e877 100644
+index 9ef8c3229..6305e4d0f 100644
 --- a/ext/wayland/wlwindow.c
 +++ b/ext/wayland/wlwindow.c
-@@ -35,16 +35,63 @@ G_DEFINE_TYPE (GstWlWindow, gst_wl_window, G_TYPE_OBJECT);
+@@ -35,16 +35,65 @@ G_DEFINE_TYPE (GstWlWindow, gst_wl_window, G_TYPE_OBJECT);
  
  static void gst_wl_window_finalize (GObject * gobject);
  
 +#ifdef __XDG_SHELL_PROTOCOL
  static void
 -handle_ping (void *data, struct wl_shell_surface *shell_surface,
-+handle_xdg_surface_configure(void *data, struct zxdg_surface_v6 *surface,
++handle_xdg_surface_configure (void *data, struct zxdg_surface_v6 *surface,
      uint32_t serial)
 +{
 +  GstWlWindow *window = data;
-+  zxdg_surface_v6_ack_configure(surface, serial);
++  zxdg_surface_v6_ack_configure (surface, serial);
 +
 +  g_mutex_lock (&window->configure_mutex);
++
 +  window->configured = TRUE;
 +  g_cond_signal (&window->configure_cond);
++
 +  g_mutex_unlock (&window->configure_mutex);
 +}
 +
@@ -272,7 +274,7 @@ index 9ef8c32..345e877 100644
 +};
 +
 +static void
-+handle_xdg_toplevel_configure(void *data, struct zxdg_toplevel_v6 *toplevel,
++handle_xdg_toplevel_configure (void *data, struct zxdg_toplevel_v6 *toplevel,
 +		int32_t width, int32_t height, struct wl_array *states)
 +{
 +  GstWlWindow *window = data;
@@ -287,7 +289,7 @@ index 9ef8c32..345e877 100644
 +}
 +
 +static void
-+handle_xdg_toplevel_close(void *data, struct zxdg_toplevel_v6 *xdg_toplevel)
++handle_xdg_toplevel_close (void *data, struct zxdg_toplevel_v6 *xdg_toplevel)
 +{
 +  GstWlWindow *window = data;
 +
@@ -314,7 +316,7 @@ index 9ef8c32..345e877 100644
  {
    GstWlWindow *window = data;
  
-@@ -79,6 +126,11 @@ gst_wl_window_class_init (GstWlWindowClass * klass)
+@@ -79,6 +128,11 @@ gst_wl_window_class_init (GstWlWindowClass * klass)
  static void
  gst_wl_window_init (GstWlWindow * self)
  {
@@ -326,13 +328,14 @@ index 9ef8c32..345e877 100644
  }
  
  static void
-@@ -86,6 +138,13 @@ gst_wl_window_finalize (GObject * gobject)
+@@ -86,6 +140,14 @@ gst_wl_window_finalize (GObject * gobject)
  {
    GstWlWindow *self = GST_WL_WINDOW (gobject);
  
 +#ifdef __XDG_SHELL_PROTOCOL
 +  if (self->xdg_toplevel)
-+    zxdg_toplevel_v6_destroy(self->xdg_toplevel);
++    zxdg_toplevel_v6_destroy (self->xdg_toplevel);
++
 +  if (self->xdg_surface)
 +    zxdg_surface_v6_destroy (self->xdg_surface);
 +#endif
@@ -340,7 +343,7 @@ index 9ef8c32..345e877 100644
    if (self->shell_surface)
      wl_shell_surface_destroy (self->shell_surface);
  
-@@ -117,6 +176,9 @@ gst_wl_window_new_internal (GstWlDisplay * display, GMutex * render_lock)
+@@ -117,6 +179,9 @@ gst_wl_window_new_internal (GstWlDisplay * display, GMutex * render_lock)
    window = g_object_new (GST_TYPE_WL_WINDOW, NULL);
    window->display = g_object_ref (display);
    window->render_lock = render_lock;
@@ -350,7 +353,7 @@ index 9ef8c32..345e877 100644
  
    window->area_surface = wl_compositor_create_surface (display->compositor);
    window->video_surface = wl_compositor_create_surface (display->compositor);
-@@ -156,35 +218,95 @@ gst_wl_window_ensure_fullscreen (GstWlWindow * window, gboolean fullscreen)
+@@ -156,35 +221,96 @@ gst_wl_window_ensure_fullscreen (GstWlWindow * window, gboolean fullscreen)
    if (!window)
      return;
  
@@ -390,8 +393,9 @@ index 9ef8c32..345e877 100644
 -  window->shell_surface = wl_shell_get_shell_surface (display->shell,
 -      window->area_surface);
 +#ifdef __XDG_SHELL_PROTOCOL
-+  gint64 timeout;
 +  if (xdgshell && display->xdgshell) {
++    gint64 timeout = 0;
++
 +    window->xdg_surface = zxdg_shell_v6_get_xdg_surface (display->xdgshell,
 +        window->area_surface);
 +
@@ -460,7 +464,7 @@ index 9ef8c32..345e877 100644
    }
  
    /* set the initial size to be the same as the reported video size */
-@@ -232,7 +354,12 @@ gst_wl_window_is_toplevel (GstWlWindow * window)
+@@ -232,7 +358,12 @@ gst_wl_window_is_toplevel (GstWlWindow * window)
  {
    g_return_val_if_fail (window != NULL, FALSE);
  
@@ -475,7 +479,7 @@ index 9ef8c32..345e877 100644
  
  static void
 diff --git a/ext/wayland/wlwindow.h b/ext/wayland/wlwindow.h
-index 10b49fd..9305deb 100644
+index 10b49fd67..9305deba4 100644
 --- a/ext/wayland/wlwindow.h
 +++ b/ext/wayland/wlwindow.h
 @@ -51,6 +51,13 @@ struct _GstWlWindow
@@ -503,5 +507,5 @@ index 10b49fd..9305deb 100644
          struct wl_surface * parent, GMutex * render_lock);
  
 -- 
-2.22.0
+2.17.1
 
