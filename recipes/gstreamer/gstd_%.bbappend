@@ -1,0 +1,50 @@
+FILESEXTRAPATHS_prepend := "${THISDIR}/${BPN}:"
+
+SRCREV = "d924fcbc2123dcfcb35242ecf5dc2fc3049004b3"
+
+SRC_URI += "\
+           file://gstd.service \
+           file://0001-Unblock-GSTD-pipeline-if-a-plugin-refuses-to-change-.patch \
+           "
+
+SRC_URI_remove = "\
+           file://0001-gstd-yocto-compatibility.patch \
+           file://0001-Look-for-gtk-doc.make-in-builddir.patch \
+           "
+
+SRC_URI_append_qti-distro-perf = "\
+           file://0001-Disable-logging-on-perf-builds.patch \
+           "
+
+DEPENDS += "libsoup-2.4 jansson"
+
+inherit systemd
+
+EXTRA_OECONF = "--with-gstd-runstatedir=/run \
+                --with-gstd-logstatedir=${localstatedir}/log/ \
+                "
+
+do_configure_prepend() {
+        echo -n "" > ${WORKDIR}/git/libgstc/python/Makefile.am
+}
+
+do_install_append() {
+        install -d ${D}${sysconfdir}/default
+        echo "OPTARGS=\"-a 172.17.0.1\"" >> ${D}${sysconfdir}/default/gstd
+        echo "XDG_RUNTIME_DIR=/dev/socket/weston" >> ${D}${sysconfdir}/default/gstd
+        echo "GST_REGISTRY=${sysconfdir}/gstreamer1.0/.cache/registry.${TUNE_ARCH}.bin" >> \
+        ${D}${sysconfdir}/default/gstd
+
+        install -d ${D}${systemd_system_unitdir}
+        install -m 644 ${WORKDIR}/gstd.service ${D}${systemd_system_unitdir}
+
+        install -d ${D}/run
+        install -d ${D}${localstatedir}/log
+        rm -rf ${D}${localstatedir}/run
+}
+
+SYSTEMD_SERVICE_${PN} = "gstd.service"
+
+FILES_${PN} += "/run \
+                ${localstatedir}/log \
+               "
