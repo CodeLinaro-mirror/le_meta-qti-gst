@@ -11,6 +11,8 @@ DEPENDS := "gstreamer1.0"
 DEPENDS += "gstreamer1.0-plugins-qti-oss-mlmeta"
 DEPENDS += "qti-umd-gadget"
 
+RDEPENDS_${PN} := "qti-umd-gadget"
+
 FILESPATH =+ "${WORKSPACE}/vendor/qcom/opensource/gst-plugins-qti-oss/:"
 SRC_URI = "file://gst-umd-daemon/"
 S = "${WORKDIR}/gst-umd-daemon/"
