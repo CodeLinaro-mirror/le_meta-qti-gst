@@ -1,6 +1,6 @@
 inherit cmake
 
-SUMMARY = "Generic examples for GStreamer pipelines."
+SUMMARY = "GStreamer based daemon utilizing QTI UMD gadget library"
 SECTION = "multimedia"
 
 LICENSE = "BSD"
@@ -9,11 +9,11 @@ LIC_FILES_CHKSUM = "file://${COMMON_LICENSE_DIR}/${LICENSE};md5=3775480a712fc46a
 # Dependencies.
 DEPENDS := "gstreamer1.0"
 DEPENDS += "gstreamer1.0-plugins-qti-oss-mlmeta"
-DEPENDS += "qti-auto-framing-stabilization"
+DEPENDS += "qti-umd-gadget"
 
 FILESPATH =+ "${WORKSPACE}/vendor/qcom/opensource/gst-plugins-qti-oss/:"
-SRC_URI = "file://gst-plugin-examples/"
-S = "${WORKDIR}/gst-plugin-examples/"
+SRC_URI = "file://gst-umd-daemon/"
+S = "${WORKDIR}/gst-umd-daemon/"
 
 # Install directries.
 INSTALL_BINDIR := "${bindir}"
