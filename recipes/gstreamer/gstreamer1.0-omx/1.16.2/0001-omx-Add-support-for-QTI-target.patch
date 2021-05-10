@@ -1,4 +1,4 @@
-From e5219008031cef519080c52aece11d51b3fe2c60 Mon Sep 17 00:00:00 2001
+From af72015ca5d264950dee9b73fe309723f6183b48 Mon Sep 17 00:00:00 2001
 From: Jeremy Hao <jinghao@codeaurora.org>
 Date: Wed, 21 Oct 2020 14:32:52 +0530
 Subject: [PATCH] omx: Add support for QTI target
@@ -10,14 +10,14 @@ Signed-off-by: Jeremy Hao <jinghao@codeaurora.org>
  config/qti/Makefile.am  |  7 ++++
  config/qti/gstomx.conf  | 71 +++++++++++++++++++++++++++++++++++++++++
  config/qti/meson.build  |  1 +
- configure.ac            | 11 +++++--
- meson.build             |  2 ++
+ configure.ac            | 28 ++++++++++++++--
+ meson.build             | 14 ++++++++
  meson_options.txt       |  2 +-
- omx/gstomx.h            | 22 +++++++++++++
+ omx/gstomx.h            | 39 ++++++++++++++++++++++
  omx/gstomxh265enc.c     |  2 ++
  omx/gstomxh265utils.c   |  2 ++
  tests/check/Makefile.am |  3 ++
- 12 files changed, 122 insertions(+), 5 deletions(-)
+ 12 files changed, 168 insertions(+), 5 deletions(-)
  create mode 100644 config/qti/Makefile.am
  create mode 100644 config/qti/gstomx.conf
  create mode 100644 config/qti/meson.build
@@ -140,7 +140,7 @@ index 0000000..dc99c08
 @@ -0,0 +1 @@
 +install_data (['gstomx.conf'], install_dir : omx_conf_dir)
 diff --git a/configure.ac b/configure.ac
-index d767764..f42913a 100644
+index d767764..219cecf 100644
 --- a/configure.ac
 +++ b/configure.ac
 @@ -200,7 +200,7 @@ AC_ARG_ENABLE(Bsymbolic,
@@ -182,7 +182,38 @@ index d767764..f42913a 100644
      AC_CHECK_HEADER([OMX_ComponentExt.h], [HAVE_COMPONENT_EXT=yes], [HAVE_COMPONENT_EXT=no], [AC_INCLUDES_DEFAULT])
      AC_CHECK_HEADER([OMX_CoreExt.h], [HAVE_CORE_EXT=yes], [HAVE_CORE_EXT=no], [AC_INCLUDES_DEFAULT])
      AC_CHECK_HEADER([OMX_AudioExt.h], [HAVE_AUDIO_EXT=yes], [HAVE_AUDIO_EXT=no], [AC_INCLUDES_DEFAULT])
-@@ -466,6 +470,7 @@ config/rpi/Makefile
+@@ -291,6 +295,15 @@ if test "x$HAVE_EXTERNAL_OMX" = "xyes"; then
+     AC_CHECK_HEADER([OMX_OtherExt.h], [HAVE_OTHER_EXT=yes], [HAVE_OTHER_EXT=no], [AC_INCLUDES_DEFAULT])
+ fi
+ 
++dnl OMX QTI defines 2 header files to contain extensions:
++dnl QOMX_AudioExtensions.h, QOMX_AudioIndexExtensions.h
++HAVE_QTI_AUDIO_EXT=no
++HAVE_QTI_AUDIO_INDEX_EXT=no
++if test "x$HAVE_EXTERNAL_OMX" = "xyes"; then
++    AC_CHECK_HEADER([QOMX_AudioExtensions.h], [HAVE_QTI_AUDIO_EXT=yes], [HAVE_QTI_AUDIO_EXT=no], [AC_INCLUDES_DEFAULT])
++    AC_CHECK_HEADER([QOMX_AudioIndexExtensions.h], [HAVE_QTI_AUDIO_INDEX_EXT=yes], [HAVE_QTI_AUDIO_INDEX_EXT=no], [AC_INCLUDES_DEFAULT])
++fi
++
+ VIDEO_HEADERS="#include <OMX_Video.h>"
+ if test "x$HAVE_VIDEO_EXT" = "xyes"; then
+     AC_DEFINE(HAVE_VIDEO_EXT, 1, [OpenMAX IL has OMX_VideoExt.h header])
+@@ -327,6 +340,14 @@ if test "x$HAVE_OTHER_EXT" = "xyes"; then
+     AC_DEFINE(HAVE_OTHER_EXT, 1, [OpenMAX IL has OMX_OtherExt.h header])
+ fi
+ 
++if test "x$HAVE_QTI_AUDIO_EXT" = "xyes"; then
++    AC_DEFINE(HAVE_QTI_AUDIO_EXT, 1, [OpenMAX QTI has QOMX_AudioExtensions.h header])
++fi
++
++if test "x$HAVE_QTI_AUDIO_INDEX_EXT" = "xyes"; then
++    AC_DEFINE(HAVE_QTI_AUDIO_INDEX_EXT, 1, [OpenMAX QTI has QOMX_AudioIndexExtensions.h header])
++fi
++
+ AC_CHECK_DECLS([OMX_VIDEO_CodingVP8],
+   [
+     AC_DEFINE(HAVE_VP8, 1, [OpenMAX IL has VP8 support])
+@@ -466,6 +487,7 @@ config/rpi/Makefile
  config/tizonia/gstomx.conf
  config/tizonia/Makefile
  config/zynqultrascaleplus/Makefile
@@ -191,7 +222,7 @@ index d767764..f42913a 100644
  examples/egl/Makefile
  m4/Makefile
 diff --git a/meson.build b/meson.build
-index cdd6d17..5267824 100644
+index cdd6d17..53e14e0 100644
 --- a/meson.build
 +++ b/meson.build
 @@ -212,6 +212,8 @@ elif omx_target == 'tizonia'
@@ -203,6 +234,25 @@ index cdd6d17..5267824 100644
  else
    error ('Unsupported omx target specified. Use the -Dtarget option')
  endif
+@@ -272,6 +274,18 @@ if cc.has_header (
+   cdata.set ('HAVE_OTHER_EXT', 1)
+ endif
+ 
++if cc.has_header (
++    'QOMX_AudioExtensions.h',
++    args : gst_omx_args)
++  cdata.set ('HAVE_QTI_AUDIO_EXT', 1)
++endif
++
++if cc.has_header (
++    'QOMX_AudioIndexExtensions.h',
++    args : gst_omx_args)
++  cdata.set ('HAVE_QTI_AUDIO_INDEX_EXT', 1)
++endif
++
+ have_omx_vp8 = cc.has_header_symbol(
+     'OMX_Video.h',
+     'OMX_VIDEO_CodingVP8',
 diff --git a/meson_options.txt b/meson_options.txt
 index 75985ce..2cce5bb 100644
 --- a/meson_options.txt
@@ -217,7 +267,7 @@ index 75985ce..2cce5bb 100644
  option('struct_packing', type : 'combo',
      choices : ['0', '1', '2', '4', '8'], value : '0',
 diff --git a/omx/gstomx.h b/omx/gstomx.h
-index 4b61343..14f47dd 100644
+index 4b61343..cb62760 100644
 --- a/omx/gstomx.h
 +++ b/omx/gstomx.h
 @@ -58,6 +58,10 @@
@@ -231,7 +281,21 @@ index 4b61343..14f47dd 100644
  #ifdef HAVE_VIDEO_EXT
  #include <OMX_VideoExt.h>
  #endif
-@@ -96,6 +100,23 @@
+@@ -90,12 +94,46 @@
+ #include <OMX_OtherExt.h>
+ #endif
+ 
++#ifdef HAVE_QTI_AUDIO_EXT
++#include <QOMX_AudioExtensions.h>
++#endif
++
++#ifdef HAVE_QTI_AUDIO_INDEX_EXT
++#include <QOMX_AudioIndexExtensions.h>
++#endif
++
+ #ifdef GST_OMX_STRUCT_PACKING
+ #pragma pack()
+ #endif
  
  G_BEGIN_DECLS
  
@@ -247,15 +311,24 @@ index 4b61343..14f47dd 100644
 +} G_STMT_END
 +
 +// Define missing OMX version definitions
++#ifndef OMX_VERSION_MAJOR
 +#define OMX_VERSION_MAJOR    1
-+#define OMX_VERSION_MINOR    0
-+#define OMX_VERSION_REVISION 0
++#endif
++#ifndef OMX_VERSION_MINOR
++#define OMX_VERSION_MINOR    1
++#endif
++#ifndef OMX_VERSION_REVISION
++#define OMX_VERSION_REVISION 2
++#endif
++#ifndef OMX_VERSION_STEP
 +#define OMX_VERSION_STEP     0
++#endif
++
 +#else
  #define GST_OMX_INIT_STRUCT(st) G_STMT_START { \
    memset ((st), 0, sizeof (*(st))); \
    (st)->nSize = sizeof (*(st)); \
-@@ -104,6 +125,7 @@ G_BEGIN_DECLS
+@@ -104,6 +142,7 @@ G_BEGIN_DECLS
    (st)->nVersion.s.nRevision = OMX_VERSION_REVISION; \
    (st)->nVersion.s.nStep = OMX_VERSION_STEP; \
  } G_STMT_END
