@@ -1,13 +1,13 @@
-From 94d9525ea02f07b5fa3e0b8f92da2f27a117d180 Mon Sep 17 00:00:00 2001
+From 509eaa046ebacb285b1af0c0bf47ac0479fdee04 Mon Sep 17 00:00:00 2001
 From: "Petar G. Georgiev" <petarg@codeaurora.org>
 Date: Tue, 30 Jun 2020 18:51:59 +0300
 Subject: [PATCH] omxvideoenc: Add support for QTI target specific extensions
 
 ---
  omx/gstomxh264enc.c  |  16 +++
- omx/gstomxvideoenc.c | 331 +++++++++++++++++++++++++++++++++++++++++++
+ omx/gstomxvideoenc.c | 330 +++++++++++++++++++++++++++++++++++++++++++
  omx/gstomxvideoenc.h |  11 ++
- 3 files changed, 358 insertions(+)
+ 3 files changed, 357 insertions(+)
 
 diff --git a/omx/gstomxh264enc.c b/omx/gstomxh264enc.c
 index e46593a..838ddbf 100644
@@ -37,7 +37,7 @@ index e46593a..838ddbf 100644
    if (self->periodicty_idr !=
        GST_OMX_H264_VIDEO_ENC_PERIODICITY_OF_IDR_FRAMES_DEFAULT
 diff --git a/omx/gstomxvideoenc.c b/omx/gstomxvideoenc.c
-index d88e342..f7b98dd 100644
+index 87ab6fe..9f8ecc2 100644
 --- a/omx/gstomxvideoenc.c
 +++ b/omx/gstomxvideoenc.c
 @@ -50,10 +50,17 @@ gst_omx_video_enc_control_rate_get_type (void)
@@ -205,7 +205,7 @@ index d88e342..f7b98dd 100644
  #ifdef USE_OMX_TARGET_ZYNQ_USCALE_PLUS
    self->qp_mode = GST_OMX_VIDEO_ENC_QP_MODE_DEFAULT;
    self->min_qp = GST_OMX_VIDEO_ENC_MIN_QP_DEFAULT;
-@@ -890,6 +1009,160 @@ gst_omx_video_enc_open (GstVideoEncoder * encoder)
+@@ -890,6 +1009,159 @@ gst_omx_video_enc_open (GstVideoEncoder * encoder)
        }
      }
    }
@@ -218,7 +218,7 @@ index d88e342..f7b98dd 100644
 +    OMX_QCOM_VIDEO_CONFIG_AUD audelimiter;
 +    OMX_QCOM_VIDEO_PARAM_IPB_QPRANGETYPE qprange;
 +
-+    GST_OMX_INIT_STRUCT(&prepend_sps_pps_headers);
++    GST_OMX_INIT_STRUCT (&prepend_sps_pps_headers);
 +    prepend_sps_pps_headers.bEnabled = OMX_TRUE;
 +
 +    err =
@@ -237,7 +237,7 @@ index d88e342..f7b98dd 100644
 +      return FALSE;
 +    }
 +
-+    GST_OMX_INIT_STRUCT(&audelimiter);
++    GST_OMX_INIT_STRUCT (&audelimiter);
 +    audelimiter.bEnable = OMX_TRUE;
 +
 +    err =
@@ -256,7 +256,7 @@ index d88e342..f7b98dd 100644
 +      return FALSE;
 +    }
 +
-+    GST_OMX_INIT_STRUCT(&qprange);
++    GST_OMX_INIT_STRUCT (&qprange);
 +    qprange.nPortIndex = self->enc_out_port->index;
 +
 +    qprange.minIQP = self->min_quant_i_frames;
@@ -285,7 +285,7 @@ index d88e342..f7b98dd 100644
 +    if (self->num_ltr_frames != 0xffffffff) {
 +      QOMX_VIDEO_PARAM_LTRCOUNT_TYPE ltrframes;
 +
-+      GST_OMX_INIT_STRUCT(&ltrframes);
++      GST_OMX_INIT_STRUCT (&ltrframes);
 +      ltrframes.nPortIndex = self->enc_out_port->index;
 +
 +      err =
@@ -319,11 +319,10 @@ index d88e342..f7b98dd 100644
 +      }
 +    }
 +
-+    if (self->hier_coding != 0xffffffff ||
-+        self->num_hier_layers != 0xffffffff) {
++    if (self->hier_coding != 0xffffffff || self->num_hier_layers != 0xffffffff) {
 +      QOMX_VIDEO_HIERARCHICALLAYERS hierlayers;
 +
-+      GST_OMX_INIT_STRUCT(&hierlayers);
++      GST_OMX_INIT_STRUCT (&hierlayers);
 +      hierlayers.nPortIndex = self->enc_out_port->index;
 +
 +      err =
@@ -366,7 +365,7 @@ index d88e342..f7b98dd 100644
  #ifdef USE_OMX_TARGET_ZYNQ_USCALE_PLUS
    if (!set_zynqultrascaleplus_props (self))
      return FALSE;
-@@ -996,6 +1269,35 @@ gst_omx_video_enc_set_property (GObject * object, guint prop_id,
+@@ -996,6 +1268,35 @@ gst_omx_video_enc_set_property (GObject * object, guint prop_id,
      case PROP_QUANT_B_FRAMES:
        self->quant_b_frames = g_value_get_uint (value);
        break;
@@ -402,7 +401,7 @@ index d88e342..f7b98dd 100644
  #ifdef USE_OMX_TARGET_ZYNQ_USCALE_PLUS
      case PROP_QP_MODE:
        self->qp_mode = g_value_get_enum (value);
-@@ -1076,6 +1378,35 @@ gst_omx_video_enc_get_property (GObject * object, guint prop_id, GValue * value,
+@@ -1076,6 +1377,35 @@ gst_omx_video_enc_get_property (GObject * object, guint prop_id, GValue * value,
      case PROP_QUANT_B_FRAMES:
        g_value_set_uint (value, self->quant_b_frames);
        break;
