@@ -10,7 +10,8 @@ LIC_FILES_CHKSUM = "file://${COMMON_LICENSE_DIR}/${LICENSE};md5=3775480a712fc46a
 DEPENDS := "gstreamer1.0"
 DEPENDS += "gstreamer1.0-plugins-base"
 DEPENDS += "gstreamer1.0-plugins-qti-oss-base"
-DEPENDS += "fastcv-noship"
+DEPENDS += "gstreamer1.0-plugins-qti-oss-mlmeta"
+DEPENDS += "cvp-noship"
 
 do_configure[depends] += "virtual/kernel:do_shared_workdir"
 
