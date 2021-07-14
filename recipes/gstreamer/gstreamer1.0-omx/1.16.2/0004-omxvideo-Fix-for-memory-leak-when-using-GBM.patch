@@ -1,0 +1,49 @@
+From df3776832adaf84c5095f83ca184199cd6eca0ee Mon Sep 17 00:00:00 2001
+From: Nikolay Hristozov <nhrist@codeaurora.org>
+Date: Wed, 23 Jun 2021 17:01:09 +0300
+Subject: [PATCH] omxvideo: Fix for memory leak when using GBM
+
+---
+ omx/gstomx.c | 6 ++++++
+ omx/gstomx.h | 1 +
+ 2 files changed, 7 insertions(+)
+
+diff --git a/omx/gstomx.c b/omx/gstomx.c
+index 78288fc..488cf03
+--- a/omx/gstomx.c
++++ b/omx/gstomx.c
+@@ -141,6 +141,8 @@ gst_omx_open_gbm_module (void)
+       module->libhandle, "gbm_device_destroy");
+   success &= gst_omx_load_symbol ((gpointer *) & module->bo_import,
+       module->libhandle, "gbm_bo_import");
++  success &= gst_omx_load_symbol ((gpointer *) & module->bo_destroy,
++      module->libhandle, "gbm_bo_destroy");
+   success &= gst_omx_load_symbol ((gpointer *) & module->perform,
+       module->libhandle, "gbm_perform");
+
+@@ -938,6 +940,10 @@ gst_omx_buffer_unmap (GstOMXBuffer * buffer)
+       gst_buffer_unmap (buffer->input_buffer, &buffer->map);
+     buffer->input_buffer_mapped = FALSE;
+     g_clear_pointer (&buffer->input_buffer, gst_buffer_unref);
++
++    struct VideoGrallocMetadata *meta =
++      (struct VideoGrallocMetadata *) buffer->omx_buf->pBuffer;
++    buffer->port->comp->gbm->bo_destroy (meta->pHandle);
+   }
+ }
+
+diff --git a/omx/gstomx.h b/omx/gstomx.h
+index 936e36b..35ae2b0
+--- a/omx/gstomx.h
++++ b/omx/gstomx.h
+@@ -266,6 +266,7 @@ struct _GstOMXGBMModule {
+   void (*device_destroy)(struct gbm_device * gbm);
+   struct gbm_bo * (*bo_import) (struct gbm_device *gbm, guint type,
+                                 void *buffer, guint usage);
++  void (*bo_destroy) (struct gbm_bo * handle);
+     gint (*perform) (int operation,...);
+
+ };
+--
+2.17.1
+
