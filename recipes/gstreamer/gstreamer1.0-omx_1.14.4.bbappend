@@ -8,7 +8,7 @@ SRC_URI += "file://0002-omxvideo-Add-support-for-GBM-memory.patch"
 SRC_URI += "file://0003-omxvideoenc-Add-support-for-QTI-target-specific-exte.patch"
 SRC_URI += "file://0003-omxaacdec-set-audio-DualMono-config.patch"
 SRC_URI += "file://0004-omxvideoenc-Add-support-for-ROI-encoding-on-QTI-targ.patch"
-SRC_URI += "file://0005-omxvideo-Fix-for-memory-leak-when-using-GBM.patch"
+SRC_URI += "file://0004-omxvideo-Fix-for-memory-leak-when-using-GBM.patch"
 
 # Including media dependency as we need libOmxCore.so
 DEPENDS += "media gbm"
