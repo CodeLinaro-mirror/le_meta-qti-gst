@@ -26,14 +26,12 @@ IMAGE_MAX_HEIGHT        := "4096"
 VIDEO_MAX_WIDTH         := "4096"
 VIDEO_MAX_HEIGHT        := "4096"
 VIDEO_MAX_FPS           := "120/1"
-VIDEO_H265_ENABLE       := "TRUE"
 CAMERA_METADATA_VERSION := "1.0"
 
 # Overwrite the default platform definitions for 8009.
 VIDEO_MAX_WIDTH_apq8009   := "1920"
 VIDEO_MAX_HEIGHT_apq8009  := "1080"
 VIDEO_MAX_FPS_apq8009     := "30/1"
-VIDEO_H265_ENABLE_apq8009 := "FALSE"
 
 # Overwrite the default platform definitions for qrb5165.
 IMAGE_MAX_WIDTH_qrb5165         := "8000"
