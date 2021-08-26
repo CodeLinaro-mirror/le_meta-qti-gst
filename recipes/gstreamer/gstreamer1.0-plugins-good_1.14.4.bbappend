@@ -16,6 +16,7 @@ SRC_URI += "\
   file://0001-gstreamer1.0-plugins-good-Adding-dsd-compressed-playback.patch \
   file://0001-pulse-Add-a-pulsedirectsrc-without-audioringbuffer.patch \
 "
+PACKAGECONFIG[v4l2] = "--enable-gst_v4l2,--disable-gst_v4l2"
 
 SRC_URI[pulsesink-null-caps.md5] = "9db41a6c98cb66a040bcbc5400beb94e"
 SRC_URI[pulsesink-null-caps.sha256sum] = "0f3843f44389579121f1516d5c1b62a4665124531685cf853a978a155ffb7f12"
