@@ -1,6 +1,6 @@
 inherit cmake
 
-SUMMARY = "QTI open-source GStreamer Plug-in for Machine Learning using TFLite"
+SUMMARY = "QTI open-source GStreamer Plug-in for Machine Learning using SNPE"
 SECTION = "multimedia"
 
 LICENSE = "BSD"
@@ -17,7 +17,7 @@ FILESPATH =+ "${WORKSPACE}/vendor/qcom/opensource/gst-plugins-qti-oss/:"
 SRC_URI = "file://gst-plugin-mlsnpe/"
 S = "${WORKDIR}/gst-plugin-mlsnpe"
 
-# Install directries.
+# Install directories.
 INSTALL_BINDIR := "${bindir}"
 INSTALL_LIBDIR := "${libdir}"
 

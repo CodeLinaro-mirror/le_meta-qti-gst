@@ -17,7 +17,7 @@ FILESPATH =+ "${WORKSPACE}/vendor/qcom/opensource/gst-plugins-qti-oss/:"
 SRC_URI = "file://gst-plugin-mltflite/"
 S = "${WORKDIR}/gst-plugin-mltflite"
 
-# Install directries.
+# Install directories.
 INSTALL_BINDIR := "${bindir}"
 INSTALL_LIBDIR := "${libdir}"
 

@@ -17,7 +17,7 @@ FILESPATH =+ "${WORKSPACE}/vendor/qcom/opensource/gst-plugins-qti-oss/:"
 SRC_URI = "file://gst-plugin-mlvclassification/"
 S = "${WORKDIR}/gst-plugin-mlvclassification"
 
-# Install directries.
+# Install directories.
 INSTALL_INCDIR := "${includedir}"
 INSTALL_BINDIR := "${bindir}"
 INSTALL_LIBDIR := "${libdir}"

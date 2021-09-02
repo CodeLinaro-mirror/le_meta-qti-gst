@@ -16,7 +16,7 @@ FILESPATH =+ "${WORKSPACE}/vendor/qcom/opensource/gst-plugins-qti-oss/:"
 SRC_URI = "file://gst-plugin-mlvconverter/"
 S = "${WORKDIR}/gst-plugin-mlvconverter"
 
-# Install directries.
+# Install directories.
 INSTALL_BINDIR := "${bindir}"
 INSTALL_LIBDIR := "${libdir}"
 
