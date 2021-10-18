@@ -1,6 +1,6 @@
 inherit cmake
 
-SUMMARY = "QTI open-source GStreamer Plug-in for mux roi metadata"
+SUMMARY = "QTI open-source GStreamer Plug-in for ML image categorization"
 SECTION = "multimedia"
 
 LICENSE = "BSD"
@@ -10,16 +10,15 @@ LIC_FILES_CHKSUM = "file://${COMMON_LICENSE_DIR}/${LICENSE};md5=3775480a712fc46a
 DEPENDS := "gstreamer1.0"
 DEPENDS += "gstreamer1.0-plugins-base"
 DEPENDS += "gstreamer1.0-plugins-qti-oss-base"
-DEPENDS += "gstreamer1.0-plugins-qti-oss-mlmeta"
-
-do_configure[depends] += "virtual/kernel:do_shared_workdir"
+DEPENDS += "cairo"
 
 FILESPATH =+ "${WORKSPACE}/vendor/qcom/opensource/gst-plugins-qti-oss/:"
 
-SRC_URI = "file://gst-plugin-roimux/"
-S = "${WORKDIR}/gst-plugin-roimux"
+SRC_URI = "file://gst-plugin-mlvclassification/"
+S = "${WORKDIR}/gst-plugin-mlvclassification"
 
-# Install directries.
+# Install directories.
+INSTALL_INCDIR := "${includedir}"
 INSTALL_BINDIR := "${bindir}"
 INSTALL_LIBDIR := "${libdir}"
 
@@ -27,6 +26,7 @@ EXTRA_OECMAKE += "-DGST_VERSION_REQUIRED=1.14.4"
 EXTRA_OECMAKE += "-DSYSROOT_INCDIR=${STAGING_INCDIR}"
 EXTRA_OECMAKE += "-DSYSROOT_LIBDIR=${STAGING_LIBDIR}"
 EXTRA_OECMAKE += "-DKERNEL_BUILDDIR=${STAGING_KERNEL_BUILDDIR}"
+EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_INSTALL_INCDIR=${INSTALL_INCDIR}"
 EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_INSTALL_BINDIR=${INSTALL_BINDIR}"
 EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_INSTALL_LIBDIR=${INSTALL_LIBDIR}"
 
