@@ -1,6 +1,6 @@
 FILESEXTRAPATHS_prepend := "${THISDIR}/${BPN}:"
 
-SRC_URI_append = "  file://set_gst_env.sh"
+SRC_URI_append = "  file://0001-change-registry-path-to-conf-directory.patch"
 
 DEPENDS += "gobject-introspection gobject-introspection-native qemu-native"
 
@@ -10,9 +10,6 @@ EXTRA_OECONF = "--libexecdir=${libdir}/${BPN}"
 do_install_append () {
     install -d ${D}/${sysconfdir}/${BPN}
     install -d ${D}/${sysconfdir}/${BPN}/.cache
-    sed -i "s#@registry@#${sysconfdir}/${BPN}/.cache/registry.${TUNE_ARCH}.bin#g" \
-            ${WORKDIR}/set_gst_env.sh
-    install -m 0644 ${WORKDIR}/set_gst_env.sh ${D}/${sysconfdir}/${BPN}/set_gst_env.sh
 }
 
 
