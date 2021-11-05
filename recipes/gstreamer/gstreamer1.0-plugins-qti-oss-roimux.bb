@@ -11,7 +11,6 @@ DEPENDS := "gstreamer1.0"
 DEPENDS += "gstreamer1.0-plugins-base"
 DEPENDS += "gstreamer1.0-plugins-qti-oss-base"
 DEPENDS += "gstreamer1.0-plugins-qti-oss-mlmeta"
-DEPENDS += "cvp-noship"
 
 do_configure[depends] += "virtual/kernel:do_shared_workdir"
 
