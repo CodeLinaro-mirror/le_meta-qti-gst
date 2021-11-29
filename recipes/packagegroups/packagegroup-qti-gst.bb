@@ -41,3 +41,6 @@ RDEPENDS_packagegroup-qti-gst = " \
       ${@bb.utils.contains_any("DISTRO_FEATURES", "tensorflow-lite qti-snpe", "gstreamer1.0-plugins-qti-oss-mle", "", d)} \
       ${@bb.utils.contains("MACHINE_FEATURES", "qti-cvp", "gstreamer1.0-plugins-qti-oss-cvp-optclflow", "", d)} \
     "
+
+# Enable compilation of the jpeg encoder GST plugin
+#RDEPENDS_packagegroup-qti-gst += "${@bb.utils.contains("DISTRO_FEATURES", "qti-qmmf", "gstreamer1.0-plugins-qti-oss-jpegenc", "", d)}"
