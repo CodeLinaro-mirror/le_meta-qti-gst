@@ -45,6 +45,9 @@ FILES_${PN} += "${INSTALL_BINDIR}"
 FILES_${PN} += "${INSTALL_LIBDIR}"
 FILES_${PN} += "${@bb.utils.contains('MACHINE_FEATURES', 'qti-aic', '/data/misc/camera/user-config-yolov5m.yml', '', d)}"
 
+FILES_${PN}-dbg += "${INSTALL_LIBDIR}/gstreamer-1.0/.debug"
+FILES_${PN}-dbg += "${INSTALL_LIBDIR}/gstreamer-1.0/ml/modules/.debug"
+
 SOLIBS = ".so*"
 FILES_SOLIBSDEV = ""
 
