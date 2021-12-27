@@ -31,6 +31,7 @@ RDEPENDS_packagegroup-qti-gst = " \
       gstreamer1.0-plugins-qti-oss-mlvclassification \
       gstreamer1.0-plugins-qti-oss-mlvsegmentation \
       gstreamer1.0-plugins-qti-oss-roimux \
+      ${@bb.utils.contains("MACHINE_FEATURES", "qti-aic", "gstreamer1.0-plugins-qti-oss-mlaic", "", d)} \
       ${@bb.utils.contains("DISTRO_FEATURES", "tensorflow-lite", "gstreamer1.0-plugins-qti-oss-mltflite", "", d)} \
       ${@bb.utils.contains("DISTRO_FEATURES", "qti-snpe", "gstreamer1.0-plugins-qti-oss-mlsnpe", "", d)} \
       ${@bb.utils.contains("COMBINED_FEATURES", "qti-uvc", "gstreamer1.0-plugins-qti-oss-umd-daemon", "", d)} \
