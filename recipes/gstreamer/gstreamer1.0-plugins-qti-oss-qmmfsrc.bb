@@ -41,6 +41,9 @@ VIDEO_MAX_HEIGHT_qrb5165        := "6000"
 VIDEO_MAX_FPS_qrb5165           := "240/1"
 CAMERA_METADATA_VERSION_qrb5165 := "1.1"
 
+# Overwrite the default platform definitions for qrbx210.
+CAMERA_METADATA_VERSION_qrbx210 := "1.1"
+
 # Enable YUY2 format
 VIDEO_YUY2_FORMAT_ENABLE_sdmsteppe := "TRUE"
 
