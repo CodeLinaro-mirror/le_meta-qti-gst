@@ -11,8 +11,15 @@ SRC_URI += "file://0004-omxvideoenc-Add-support-for-ROI-encoding-on-QTI-targ.pat
 SRC_URI += "file://0004-omxvideoenc-property-to-support-rotation-using-VPU.patch"
 
 # Including media dependency as we need libOmxCore.so
-DEPENDS += "media gbm"
-RDEPENDS_${PN} = "media gbm"
+DEPENDS += "media"
+RDEPENDS_${PN} = "media"
+
+# Including gbm and kernel dependency as we need libgbm and some kernel headers
+DEPENDS += "gbm virtual/kernel"
+RDEPENDS_${PN} += "gbm"
+
+# Add path to the kernel headers.
+EXTRA_OECONF += "--with-sanitized-headers=${STAGING_KERNEL_BUILDDIR}/usr/include"
 
 # Including ML metadata dependecy
 DEPENDS += "gstreamer1.0-plugins-qti-oss-mlmeta"
