@@ -9,6 +9,7 @@ SRC_URI += "file://0003-omxvideoenc-Add-support-for-QTI-target-specific-exte.pat
 SRC_URI += "file://0003-omxaacdec-set-audio-DualMono-config.patch"
 SRC_URI += "file://0004-omxvideoenc-Add-support-for-ROI-encoding-on-QTI-targ.patch"
 SRC_URI += "file://0004-omxvideoenc-property-to-support-rotation-using-VPU.patch"
+SRC_URI += "file://0001-gstomxh265enc-Add-OMX_VIDEO_HEVCHighTierLevel1-case.patch"
 
 # Including media dependency as we need libOmxCore.so
 DEPENDS += "media gbm"
