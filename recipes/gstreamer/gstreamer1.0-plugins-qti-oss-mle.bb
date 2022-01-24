@@ -56,5 +56,7 @@ FILES_${PN} += "${INSTALL_LIBDIR}"
 FILES_${PN} += "/data/misc/camera/"
 INSANE_SKIP_${PN} += "file-rdeps"
 
+FILES_${PN}-dbg += "${INSTALL_LIBDIR}/gstreamer-1.0/.debug"
+
 SOLIBS = ".so*"
 FILES_SOLIBSDEV = ""
