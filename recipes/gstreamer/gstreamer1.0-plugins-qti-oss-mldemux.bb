@@ -9,11 +9,12 @@ LIC_FILES_CHKSUM = "file://${COMMON_LICENSE_DIR}/${LICENSE};md5=550794465ba0ec53
 # Dependencies.
 DEPENDS := "gstreamer1.0"
 DEPENDS += "gstreamer1.0-plugins-base"
+DEPENDS += "gstreamer1.0-plugins-qti-oss-base"
 
 FILESPATH =+ "${WORKSPACE}/vendor/qcom/opensource/gst-plugins-qti-oss/:"
 
-SRC_URI = "file://gst-plugin-streamdemux/"
-S = "${WORKDIR}/gst-plugin-streamdemux"
+SRC_URI = "file://gst-plugin-mldemux/"
+S = "${WORKDIR}/gst-plugin-mldemux"
 
 # Install directries.
 INSTALL_BINDIR := "${bindir}"
