@@ -1,7 +1,7 @@
 inherit cmake
 
 SUMMARY = "QTI open-source GStreamer Plug-in for overlay"
-HOMEPAGE = "https://source.codeaurora.org"
+HOMEPAGE = "https://git.codelinaro.org"
 SECTION = "multimedia"
 
 LICENSE = "BSD"
