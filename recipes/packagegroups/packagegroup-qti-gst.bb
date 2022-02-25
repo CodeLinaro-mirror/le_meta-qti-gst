@@ -45,4 +45,5 @@ RDEPENDS_packagegroup-qti-gst = " \
       ${@bb.utils.contains_any("DISTRO_FEATURES", "tensorflow-lite qti-snpe", "gstreamer1.0-plugins-qti-oss-mle", "", d)} \
       ${@bb.utils.contains("MACHINE_FEATURES", "qti-cvp", "gstreamer1.0-plugins-qti-oss-cvp-optclflow", "", d)} \
       ${@bb.utils.contains("BASEMACHINE", "sdmsteppe", "gstreamer1.0-plugins-qti-oss-jpegenc", "", d)} \
+      ${@bb.utils.contains("DISTRO_FEATURES", "qti-video-encoder", "gstreamer1.0-plugins-qti-oss-codec2", "", d)} \
     "
