@@ -5,3 +5,4 @@
 #     ${@bb.utils.contains("DISTRO_FEATURES", "pulseaudio", "file://0001-pulse-Add-pulsedirectsink-plugin.patch", "", d)} \
 #    "
 
+PACKAGECONFIG_remove = "mpg123 pulseaudio"
