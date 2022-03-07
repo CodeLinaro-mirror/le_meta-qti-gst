@@ -1,4 +1,4 @@
-From 630e9507edb75ef837818c6ce5938c015a9353a3 Mon Sep 17 00:00:00 2001
+From 41d9c658600e70ee07056ef4d3d0e77ebf80e90c Mon Sep 17 00:00:00 2001
 From: "Petar G. Georgiev" <petarg@codeaurora.org>
 Date: Tue, 21 Apr 2020 11:48:15 +0100
 Subject: [PATCH] omxvideo: Add support for GBM memory
@@ -10,7 +10,7 @@ Subject: [PATCH] omxvideo: Add support for GBM memory
  omx/Makefile.am        |   4 +
  omx/gstomx.c           | 279 +++++++++++++++++++++++++++++++++++++++++
  omx/gstomx.h           |  55 ++++++++
- omx/gstomxbufferpool.c | 168 ++++++++++++++++++++++++-
+ omx/gstomxbufferpool.c | 177 +++++++++++++++++++++++++-
  omx/gstomxbufferpool.h |   1 +
  omx/gstomxvideo.c      |  15 +++
  omx/gstomxvideodec.c   | 258 +++++++++++++++++++++++++++++++++++--
@@ -18,7 +18,7 @@ Subject: [PATCH] omxvideo: Add support for GBM memory
  omx/gstomxvideoenc.c   | 142 ++++++++++++++++++++-
  omx/gstomxvideoenc.h   |   3 +
  omx/meson.build        |   6 +-
- 14 files changed, 941 insertions(+), 22 deletions(-)
+ 14 files changed, 950 insertions(+), 22 deletions(-)
 
 diff --git a/configure.ac b/configure.ac
 index 219cecf..035c059 100644
@@ -115,7 +115,7 @@ index 3019040..9f2f016 100644
  	openmax \
  	gstomxvp8dec.c \
 diff --git a/omx/gstomx.c b/omx/gstomx.c
-index 038ce32..36eb54c 100644
+index 038ce32..386fece 100644
 --- a/omx/gstomx.c
 +++ b/omx/gstomx.c
 @@ -27,6 +27,9 @@
@@ -413,7 +413,7 @@ index 038ce32..36eb54c 100644
 +#if defined (HAVE_GBM) && defined (USE_OMX_TARGET_QTI)
 +      // Release any imported GBM buffers on the input port.
 +      if (port->port_def.eDir == OMX_DirInput &&
-+          port->allocation = GST_OMX_BUFFER_ALLOCATION_USE_BUFFER_DYNAMIC) {
++          port->allocation == GST_OMX_BUFFER_ALLOCATION_USE_BUFFER_DYNAMIC) {
 +        struct VideoGrallocMetadata *meta =
 +            (struct VideoGrallocMetadata *) buf->omx_buf->pBuffer;
 +
@@ -562,18 +562,29 @@ index cb62760..412d67d 100644
  
  void              gst_omx_buffer_set_omx_buf (GstBuffer * buffer, GstOMXBuffer * omx_buf);
 diff --git a/omx/gstomxbufferpool.c b/omx/gstomxbufferpool.c
-index c662c42..c713da2 100644
+index c662c42..efca2c9 100644
 --- a/omx/gstomxbufferpool.c
 +++ b/omx/gstomxbufferpool.c
-@@ -26,6 +26,7 @@
+@@ -26,8 +26,18 @@
  
  #include "gstomxbufferpool.h"
  
 +#include <gst/allocators/gstfdmemory.h>
  #include <gst/allocators/gstdmabuf.h>
  
++#if defined (HAVE_GBM) && defined (USE_OMX_TARGET_QTI)
++#include <linux/version.h>
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(5,4,0)
++#include <vidc/media/msm_media_info.h>
++#else
++#include <media/msm_media_info.h>
++#endif
++#endif
++
  GST_DEBUG_CATEGORY_STATIC (gst_omx_buffer_pool_debug_category);
-@@ -335,11 +336,11 @@ gst_omx_buffer_pool_set_config (GstBufferPool * bpool, GstStructure * config)
+ #define GST_CAT_DEFAULT gst_omx_buffer_pool_debug_category
+ 
+@@ -335,11 +345,11 @@ gst_omx_buffer_pool_set_config (GstBufferPool * bpool, GstStructure * config)
  {
    GstOMXBufferPool *pool = GST_OMX_BUFFER_POOL (bpool);
    GstCaps *caps;
@@ -587,7 +598,7 @@ index c662c42..c713da2 100644
      goto wrong_config;
  
    if (caps == NULL)
-@@ -359,7 +360,60 @@ gst_omx_buffer_pool_set_config (GstBufferPool * bpool, GstStructure * config)
+@@ -359,7 +369,60 @@ gst_omx_buffer_pool_set_config (GstBufferPool * bpool, GstStructure * config)
          gst_buffer_pool_config_has_option (config,
          GST_BUFFER_POOL_OPTION_VIDEO_META);
  
@@ -648,7 +659,7 @@ index c662c42..c713da2 100644
    }
  
    if (pool->caps)
-@@ -445,8 +499,74 @@ gst_omx_buffer_pool_alloc_buffer (GstBufferPool * bpool,
+@@ -445,8 +508,74 @@ gst_omx_buffer_pool_alloc_buffer (GstBufferPool * bpool,
      const guint nslice = pool->port->port_def.format.video.nSliceHeight;
      gsize offset[GST_VIDEO_MAX_PLANES] = { 0, };
      gint stride[GST_VIDEO_MAX_PLANES] = { nstride, 0, };
@@ -683,10 +694,10 @@ index c662c42..c713da2 100644
 +              pool->port->port_def.format.video.eColorFormat);
 +          return GST_FLOW_ERROR;
 +      }
++
++      isubwc = (usage & GBM_BO_USAGE_UBWC_ALIGNED_QTI) ? TRUE : FALSE;
  
 -    if (pool->output_mode == GST_OMX_BUFFER_MODE_DMABUF) {
-+      isubwc = (usage & GBM_BO_USAGE_UBWC_ALIGNED_QTI) ? TRUE : FALSE;
-+
 +      bo = pool->component->gbm->bo_create (pool->component->gbm->device,
 +          width, height, format, usage);
 +
@@ -724,7 +735,7 @@ index c662c42..c713da2 100644
        gint fd;
        GstMapInfo map;
  
-@@ -498,6 +618,20 @@ gst_omx_buffer_pool_alloc_buffer (GstBufferPool * bpool,
+@@ -498,6 +627,20 @@ gst_omx_buffer_pool_alloc_buffer (GstBufferPool * bpool,
        case GST_VIDEO_FORMAT_NV16_10LE32:
          stride[1] = nstride;
          offset[1] = offset[0] + stride[0] * nslice;
@@ -745,7 +756,7 @@ index c662c42..c713da2 100644
          break;
        default:
          g_assert_not_reached ();
-@@ -567,6 +701,21 @@ gst_omx_buffer_pool_free_buffer (GstBufferPool * bpool, GstBuffer * buffer)
+@@ -567,6 +710,21 @@ gst_omx_buffer_pool_free_buffer (GstBufferPool * bpool, GstBuffer * buffer)
    }
    GST_OBJECT_UNLOCK (pool);
  
@@ -767,7 +778,7 @@ index c662c42..c713da2 100644
    gst_omx_buffer_set_omx_buf (buffer, NULL);
  
    GST_BUFFER_POOL_CLASS (gst_omx_buffer_pool_parent_class)->free_buffer (bpool,
-@@ -610,7 +759,9 @@ gst_omx_buffer_pool_acquire_buffer (GstBufferPool * bpool,
+@@ -610,7 +768,9 @@ gst_omx_buffer_pool_acquire_buffer (GstBufferPool * bpool,
        GstMemory *mem = gst_buffer_peek_memory (*buffer, 0);
        GstOMXBuffer *omx_buf;
  
@@ -778,7 +789,7 @@ index c662c42..c713da2 100644
          omx_buf = gst_omx_buffer_get_omx_buf (buf);
        } else {
          g_assert (mem
-@@ -620,8 +771,10 @@ gst_omx_buffer_pool_acquire_buffer (GstBufferPool * bpool,
+@@ -620,8 +780,10 @@ gst_omx_buffer_pool_acquire_buffer (GstBufferPool * bpool,
          omx_buf = ((GstOMXMemory *) mem)->buf;
        }
  
@@ -791,7 +802,7 @@ index c662c42..c713da2 100644
      }
    } else {
      /* Acquire any buffer that is available to be filled by upstream */
-@@ -743,6 +896,9 @@ gst_omx_buffer_pool_new (GstElement * element, GstOMXComponent * component,
+@@ -743,6 +905,9 @@ gst_omx_buffer_pool_new (GstElement * element, GstOMXComponent * component,
    pool->output_mode = output_mode;
  
    switch (output_mode) {
