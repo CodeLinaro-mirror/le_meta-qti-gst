@@ -1,4 +1,4 @@
-From d263504791874c8d0d9568e3e87e14f28b5dcafa Mon Sep 17 00:00:00 2001
+From 013cf6bf06e41af217246a4eff78b815e7d16390 Mon Sep 17 00:00:00 2001
 From: "Petar G. Georgiev" <petarg@codeaurora.org>
 Date: Wed, 1 Apr 2020 14:05:58 +0100
 Subject: [PATCH] omx: Add support for QTI target
