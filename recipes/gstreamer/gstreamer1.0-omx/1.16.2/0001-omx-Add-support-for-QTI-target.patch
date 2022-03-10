@@ -1,4 +1,4 @@
-From 4f61f6306e4b16323d030fe63f098d9c1a0157e5 Mon Sep 17 00:00:00 2001
+From 8896d06d862a6f5c8be2d8982ad0f686fef67d52 Mon Sep 17 00:00:00 2001
 From: Jeremy Hao <jinghao@codeaurora.org>
 Date: Wed, 21 Oct 2020 14:32:52 +0530
 Subject: [PATCH] omx: Add support for QTI target
