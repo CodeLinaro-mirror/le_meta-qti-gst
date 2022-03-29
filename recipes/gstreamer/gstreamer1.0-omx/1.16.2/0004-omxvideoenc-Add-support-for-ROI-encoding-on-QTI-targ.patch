@@ -1,0 +1,501 @@
+From 0b8c18b13d6477cdbfce5f08a05130573610970d Mon Sep 17 00:00:00 2001
+From: Amrutha Sai Gattu <quic_agattu@quicinc.com>
+Date: Fri, 25 Mar 2022 18:17:53 -0700
+Subject: [PATCH 4/4] omxvideoenc: Add support for ROI encoding on QTI target
+
+---
+ meson.build          |   1 +
+ omx/Makefile.am      |   3 +-
+ omx/gstomxvideoenc.c | 343 +++++++++++++++++++++++++++++++++++++++++++
+ omx/gstomxvideoenc.h |   4 +
+ omx/meson.build      |   2 +-
+ 5 files changed, 351 insertions(+), 2 deletions(-)
+
+diff --git a/meson.build b/meson.build
+index 0b52aa3..05021d9 100644
+--- a/meson.build
++++ b/meson.build
+@@ -160,6 +160,7 @@ libm = cc.find_library('m', required : false)
+ glib_dep = dependency('glib-2.0', version : glib_req)
+ gio_dep = dependency('gio-2.0', version : glib_req)
+ gmodule_dep = dependency('gmodule-2.0', version : glib_req)
++libqtimlmeta = cc.find_library('qtimlmeta', required : false)
+ 
+ gst_omx_args = ['-DHAVE_CONFIG_H']
+ configinc = include_directories('.')
+diff --git a/omx/Makefile.am b/omx/Makefile.am
+index 9f2f016..ae5c9ea 100644
+--- a/omx/Makefile.am
++++ b/omx/Makefile.am
+@@ -103,7 +103,8 @@ libgstomx_la_LIBADD = \
+ 	$(GST_BASE_LIBS) \
+ 	$(GST_LIBS) \
+ 	$(GST_ALLOCATORS_LIBS) \
+-	$(GMODULE_NO_EXPORT_LIBS)
++	$(GMODULE_NO_EXPORT_LIBS) \
++	-lqtimlmeta
+ libgstomx_la_LDFLAGS = $(GST_PLUGIN_LDFLAGS)
+ 
+ if HAVE_GBM
+diff --git a/omx/gstomxvideoenc.c b/omx/gstomxvideoenc.c
+index 0c6cb67..bb2a020 100644
+--- a/omx/gstomxvideoenc.c
++++ b/omx/gstomxvideoenc.c
+@@ -37,6 +37,10 @@
+ #include <OMX_Index.h>
+ #endif
+ 
++#ifdef USE_OMX_TARGET_QTI
++#include <ml-meta/ml_meta.h>
++#endif
++
+ GST_DEBUG_CATEGORY_STATIC (gst_omx_video_enc_debug_category);
+ #define GST_CAT_DEFAULT gst_omx_video_enc_debug_category
+ 
+@@ -75,6 +79,38 @@ gst_omx_video_enc_control_rate_get_type (void)
+ }
+ 
+ #ifdef USE_OMX_TARGET_QTI
++typedef enum GST_OMX_VIDEO_ENC_ROI_QUANT_MODE
++{
++  GST_OMX_ROI_QUANT_DISABLED,
++  GST_OMX_ROI_QUANT_METADATA,
++  GST_OMX_ROI_QUANT_CUSTOM,
++} GST_OMX_ROI_QUANT_MODE;
++
++#define GST_TYPE_OMX_VIDEO_ENC_ROI_QUANT_MODE (gst_omx_video_enc_roi_quant_mode_get_type ())
++static GType
++gst_omx_video_enc_roi_quant_mode_get_type (void)
++{
++  static GType qtype = 0;
++
++  if (qtype == 0) {
++    static const GEnumValue values[] = {
++      {GST_OMX_ROI_QUANT_DISABLED,
++            "Let the encoder change the QP for each coding unit according to its content",
++          "disabled"},
++      {GST_OMX_ROI_QUANT_METADATA,
++            "Adjust QP according to the regions of interest defined on each frame. Must be set to handle ROI metadata.",
++          "metadata"},
++      {GST_OMX_ROI_QUANT_CUSTOM,
++            "User defined ROI area via the roi-quant-rectangles property. The ROI metadata will be ignored",
++          "custom"},
++      {0, NULL, NULL}
++    };
++
++    qtype = g_enum_register_static ("GstOMXVideoEncRoiQuantMode", values);
++  }
++  return qtype;
++}
++
+ #define GST_TYPE_OMX_VIDEO_ENC_HIER_CODING (gst_omx_video_enc_hier_coding_get_type ())
+ static GType
+ gst_omx_video_enc_hier_coding_get_type (void)
+@@ -281,6 +317,9 @@ enum
+   PROP_MAX_QUANT_P_FRAMES,
+   PROP_MIN_QUANT_B_FRAMES,
+   PROP_MAX_QUANT_B_FRAMES,
++  PROP_ROI_QUANT_MODE,
++  PROP_ROI_QUANT_DELTA,
++  PROP_ROI_QUANT_RECTANGLES,
+   PROP_NUM_LTR_FRAMES,
+   PROP_NUM_HIER_LAYERS,
+   PROP_HIER_CODING,
+@@ -324,6 +363,8 @@ enum
+ #define GST_OMX_VIDEO_ENC_SLICE_SIZE_DEFAULT (0)
+ #define GST_OMX_VIDEO_ENC_DEPENDENT_SLICE_DEFAULT (FALSE)
+ #define GST_OMX_VIDEO_ENC_DEFAULT_ROI_QUALITY OMX_ALG_ROI_QUALITY_HIGH
++#define GST_OMX_VIDEO_ENC_ROI_QUANT_MODE_DEFAULT GST_OMX_ROI_QUANT_DISABLED
++#define GST_OMX_VIDEO_ENC_ROI_QUANT_DELTA_DEFAULT (-15)
+ #define GST_OMX_VIDEO_ENC_NUM_LTR_FRAMES_DEFAULT (0xffffffff)
+ #define GST_OMX_VIDEO_ENC_NUM_HIER_LAYERS_DEFAULT (0xffffffff)
+ #define GST_OMX_VIDEO_ENC_HIER_CODING_DEFAULT (0xffffffff)
+@@ -430,6 +471,38 @@ gst_omx_video_enc_class_init (GstOMXVideoEncClass * klass)
+           G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS |
+           GST_PARAM_MUTABLE_READY));
+ 
++  g_object_class_install_property (gobject_class, PROP_ROI_QUANT_MODE,
++      g_param_spec_enum ("roi-quant-mode", "ROI Quantization Mode",
++          "Adjust quantization parameter according a ROI",
++          GST_TYPE_OMX_VIDEO_ENC_ROI_QUANT_MODE,
++          GST_OMX_VIDEO_ENC_ROI_QUANT_MODE_DEFAULT,
++          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS |
++          GST_PARAM_MUTABLE_READY));
++
++  g_object_class_install_property (gobject_class, PROP_ROI_QUANT_RECTANGLES,
++      gst_param_spec_array ("roi-quant-rectangles",
++          "ROI Quantization Rectangles",
++          "Manually set ROI rectangles and QP Delta (e.g. '<<X, Y, W, H, QP>, <X, Y, W, H, QP>>') "
++          "to be used when 'roi-quant-mode=custom'",
++          gst_param_spec_array ("rectangle", "Rectangle", "Rectangle",
++              g_param_spec_int ("value", "Rectangle Value",
++                  "One of X, Y, WIDTH or HEIGHT value and QP Delta.", -31, G_MAXINT, 0,
++                  G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS | GST_PARAM_MUTABLE_READY),
++              G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS | GST_PARAM_MUTABLE_READY),
++          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS | GST_PARAM_MUTABLE_READY));
++
++  g_object_class_install_property (gobject_class, PROP_ROI_QUANT_DELTA,
++      gst_param_spec_array ("roi-quant-delta",
++          "Metadata based ROI QP Deltas",
++          "Manually set QP delta for ROI for a detected object by name (e.g. '<<object_name, qpdelta>, <object_name, qpdelta>>') "
++          "to be used when 'roi-quant-mode=metadata'",
++          gst_param_spec_array ("object-delta", "object,delta", "object,delta",
++              g_param_spec_string ("object-qpdelta", "object,qpdelta",
++                  "object and qp delta pair", "",
++                  G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS | GST_PARAM_MUTABLE_READY),
++              G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS | GST_PARAM_MUTABLE_READY),
++          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS | GST_PARAM_MUTABLE_READY));
++
+   g_object_class_install_property (gobject_class, PROP_NUM_LTR_FRAMES,
+       g_param_spec_uint ("num-ltr-frames", "LTR Frames Count",
+           "Number of Long Term Reference Frames (0xffffffff=component default)",
+@@ -624,6 +697,13 @@ gst_omx_video_enc_init (GstOMXVideoEnc * self)
+   self->max_quant_p_frames = GST_OMX_VIDEO_ENC_MAX_QP_DEFAULT;
+   self->min_quant_b_frames = GST_OMX_VIDEO_ENC_MIN_QP_DEFAULT;
+   self->max_quant_b_frames = GST_OMX_VIDEO_ENC_MAX_QP_DEFAULT;
++  self->roi_quant_mode = GST_OMX_VIDEO_ENC_ROI_QUANT_MODE_DEFAULT;
++  self->roi_quant_rectangles =
++      g_array_new (FALSE, TRUE, sizeof (GstVideoRectangle));
++  self->roi_quant_deltas =
++      g_array_new (FALSE, TRUE, sizeof (int));
++  self->roi_metadata_qp_delta_table =
++      g_hash_table_new(g_str_hash, g_str_equal);
+   self->num_ltr_frames = GST_OMX_VIDEO_ENC_NUM_LTR_FRAMES_DEFAULT;
+   self->num_hier_layers = GST_OMX_VIDEO_ENC_NUM_HIER_LAYERS_DEFAULT;
+   self->hier_coding = GST_OMX_VIDEO_ENC_HIER_CODING_DEFAULT;
+@@ -1112,6 +1192,30 @@ gst_omx_video_enc_open (GstVideoEncoder * encoder)
+       return FALSE;
+     }
+ 
++    QOMX_INDEXEXTRADATATYPE extra_data;
++    extra_data.nSize = sizeof(QOMX_INDEXEXTRADATATYPE);
++    extra_data.nPortIndex = self->enc_in_port->index;
++    extra_data.bEnabled = (self->roi_quant_mode != GST_OMX_ROI_QUANT_DISABLED) ?
++        OMX_TRUE : OMX_FALSE;
++    extra_data.nIndex = (OMX_INDEXTYPE)OMX_QTI_ExtraDataCategory_Enc_ROI;
++
++    err =
++        gst_omx_component_set_parameter (GST_OMX_VIDEO_ENC (self)->enc,
++        OMX_QcomIndexParamIndexExtraDataType, (OMX_PTR)&extra_data);
++
++    if (err == OMX_ErrorUnsupportedIndex) {
++      GST_WARNING_OBJECT (self,
++          "Setting OMX_QcomIndexParamIndexExtraDataType not supported by the component");
++    } else if (err == OMX_ErrorUnsupportedSetting) {
++      GST_WARNING_OBJECT (self,
++          "Setting ROI info not supported by the component");
++    } else if (err != OMX_ErrorNone) {
++      GST_ERROR_OBJECT (self,
++          "can't set OMX_QcomIndexParamIndexExtraDataType %s (0x%08x)",
++          gst_omx_error_to_string (err), err);
++      return FALSE;
++    }
++
+     if (self->num_ltr_frames != 0xffffffff) {
+       QOMX_VIDEO_PARAM_LTRCOUNT_TYPE ltrframes;
+ 
+@@ -1267,6 +1371,12 @@ gst_omx_video_enc_finalize (GObject * object)
+   g_clear_pointer (&self->alg_roi_quality_enum_class, g_type_class_unref);
+ #endif
+ 
++#ifdef USE_OMX_TARGET_QTI
++  g_array_free (self->roi_quant_rectangles, TRUE);
++  g_array_free (self->roi_quant_deltas, TRUE);
++  g_hash_table_unref(self->roi_metadata_qp_delta_table);
++#endif
++
+   G_OBJECT_CLASS (gst_omx_video_enc_parent_class)->finalize (object);
+ }
+ 
+@@ -1328,6 +1438,67 @@ gst_omx_video_enc_set_property (GObject * object, guint prop_id,
+     case PROP_MAX_QUANT_B_FRAMES:
+       self->max_quant_b_frames = g_value_get_uint (value);
+       break;
++    case PROP_ROI_QUANT_MODE:
++      self->roi_quant_mode = g_value_get_enum (value);
++      break;
++    case PROP_ROI_QUANT_RECTANGLES:
++    {
++      guint idx = 0;
++
++      /* Remove all old values */
++      g_array_set_size (self->roi_quant_rectangles, 0);
++      g_array_set_size (self->roi_quant_deltas, 0);
++
++      for (idx = 0; idx < gst_value_array_get_size (value); idx++) {
++        const GValue *val = gst_value_array_get_value (value, idx);
++        GstVideoRectangle rectangle = { 0, 0, 0, 0 };
++        gint qpdelta = 0;
++
++        if (gst_value_array_get_size (val) != 5) {
++          GST_ERROR_OBJECT (self, "Invalid dimensions for ROI rectangle "
++              "at index '%u', ignoring", idx);
++          continue;
++        }
++
++        rectangle.x = g_value_get_int (gst_value_array_get_value (val, 0));
++        rectangle.y = g_value_get_int (gst_value_array_get_value (val, 1));
++        rectangle.w = g_value_get_int (gst_value_array_get_value (val, 2));
++        rectangle.h = g_value_get_int (gst_value_array_get_value (val, 3));
++        qpdelta     = g_value_get_int (gst_value_array_get_value (val, 4));
++
++        if (rectangle.w == 0 || rectangle.h == 0) {
++          GST_WARNING_OBJECT (self, "Invalid width and/or height for the "
++              "ROI rectangle at index %u, ignoring", idx);
++          continue;
++        }
++
++        g_array_append_val (self->roi_quant_rectangles, rectangle);
++        g_array_append_val (self->roi_quant_deltas, qpdelta);
++      }
++      break;
++    }
++    case PROP_ROI_QUANT_DELTA:
++    {
++      guint idx = 0;
++      gchar *object_name;
++      gint qpdelta;
++
++      for (idx = 0; idx < gst_value_array_get_size (value); idx++) {
++        const GValue *val = gst_value_array_get_value (value, idx);
++
++        if (gst_value_array_get_size (val) != 2) {
++          GST_ERROR_OBJECT (self, "Invalid dimensions for ML metadata object qp delta pair"
++              "at index '%u', ignoring", idx);
++          continue;
++        }
++
++        object_name = g_value_get_string (gst_value_array_get_value (val, 0));
++        qpdelta    = g_ascii_strtoll(g_value_get_string (gst_value_array_get_value (val, 1)), NULL, 10);
++
++        g_hash_table_insert(self->roi_metadata_qp_delta_table, g_strdup(object_name), qpdelta);
++      }
++      break;
++    }
+     case PROP_NUM_LTR_FRAMES:
+       self->num_ltr_frames = g_value_get_uint (value);
+       break;
+@@ -1437,6 +1608,70 @@ gst_omx_video_enc_get_property (GObject * object, guint prop_id, GValue * value,
+     case PROP_MAX_QUANT_B_FRAMES:
+       g_value_set_uint (value, self->max_quant_b_frames);
+       break;
++    case PROP_ROI_QUANT_MODE:
++      g_value_set_enum (value, self->roi_quant_mode);
++      break;
++    case PROP_ROI_QUANT_RECTANGLES:
++    {
++      GstVideoRectangle *rectangle = NULL;
++      guint idx = 0;
++
++      for (idx = 0; idx < self->roi_quant_rectangles->len; idx++) {
++        GValue element = G_VALUE_INIT, val = G_VALUE_INIT;
++
++        g_value_init (&element, GST_TYPE_ARRAY);
++        g_value_init (&val, G_TYPE_INT);
++
++        rectangle = &g_array_index (self->roi_quant_rectangles,
++            GstVideoRectangle, idx);
++
++        g_value_set_int (&val, rectangle->x);
++        gst_value_array_append_value (&element, &val);
++
++        g_value_set_int (&val, rectangle->y);
++        gst_value_array_append_value (&element, &val);
++
++        g_value_set_int (&val, rectangle->w);
++        gst_value_array_append_value (&element, &val);
++
++        g_value_set_int (&val, rectangle->h);
++        gst_value_array_append_value (&element, &val);
++
++        /* Append the rectangle to the output GST array */
++        gst_value_array_append_value (value, &element);
++
++        g_value_unset (&val);
++        g_value_unset (&element);
++      }
++      break;
++    }
++    case PROP_ROI_QUANT_DELTA:
++    {
++      GHashTableIter iter;
++      gpointer key, hash_value;
++
++      g_hash_table_iter_init (&iter, self->roi_metadata_qp_delta_table);
++
++      while (g_hash_table_iter_next (&iter, &key, &hash_value))
++      {
++        /* do something with key and value */
++        GValue element = G_VALUE_INIT, val = G_VALUE_INIT;
++        g_value_init (&element, GST_TYPE_ARRAY);
++        g_value_init (&val, G_TYPE_STRING);
++
++        g_value_set_string (&val, (char)key);
++        gst_value_array_append_value (&element, &val);
++        g_value_set_int (&val, GPOINTER_TO_INT(hash_value));
++        gst_value_array_append_value (&element, &val);
++
++        /* Append the object_name qp_delta value pair to the output GST array */
++        gst_value_array_append_value (value, &element);
++
++        g_value_unset (&val);
++        g_value_unset (&element);
++      }
++      break;
++    }
+     case PROP_NUM_LTR_FRAMES:
+       g_value_set_uint (value, self->num_ltr_frames);
+       break;
+@@ -3171,6 +3406,110 @@ handle_roi_metadata (GstOMXVideoEnc * self, GstBuffer * input)
+ }
+ #endif
+ 
++#ifdef USE_OMX_TARGET_QTI
++static void
++handle_roi_metadata (GstOMXVideoEnc * self, GstBuffer * input)
++{
++  GSList *metalist = NULL, *list = NULL;
++  OMX_QTI_VIDEO_CONFIG_ROI_RECT_REGION_INFO roiparam;
++  int qp_delta_value = 0;
++
++  GST_OMX_INIT_STRUCT (&roiparam);
++
++  list = metalist = gst_buffer_get_detection_meta (input);
++
++  if (self->roi_quant_mode == GST_OMX_ROI_QUANT_DISABLED) {
++    // ROI mode is disable, nothing to do except to return immediately.
++    return;
++  } else if (self->roi_quant_mode == GST_OMX_ROI_QUANT_METADATA) {
++
++    if (NULL == metalist) {
++      GST_DEBUG_OBJECT (self, "No ML detection metadata found");
++      return;
++    }
++
++    while (list != NULL) {
++      GstMLDetectionMeta *meta = list->data;
++      GstMLClassificationResult *result = meta->box_info->data;
++
++      if (MAX_RECT_ROI_NUM == roiparam.nRegionNum) {
++        GST_WARNING_OBJECT (self,
++            "Received more than the allowed ROI, clipping to %d!",
++            MAX_RECT_ROI_NUM);
++        break;
++      }
++      // If user specifies some object_name qp_delta pair(s) perform lookup
++      if(g_hash_table_size(self->roi_metadata_qp_delta_table) != 0){
++
++        // Perform hash table look up if user specified object was detected.
++        // Returns the corresponding delta QP else will return 0.
++        qp_delta_value = GPOINTER_TO_INT(g_hash_table_lookup(
++            self->roi_metadata_qp_delta_table,result->name));
++      }
++
++      roiparam.nRegions[roiparam.nRegionNum].nLeft = meta->bounding_box.x;
++      roiparam.nRegions[roiparam.nRegionNum].nTop = meta->bounding_box.y;
++      roiparam.nRegions[roiparam.nRegionNum].nRight =
++          meta->bounding_box.x + meta->bounding_box.width;
++      roiparam.nRegions[roiparam.nRegionNum].nBottom =
++          meta->bounding_box.y + meta->bounding_box.height;
++      roiparam.nRegions[roiparam.nRegionNum].nDeltaQP = qp_delta_value;
++      roiparam.nRegionNum++;
++
++
++      GST_LOG_OBJECT (self, "ROI: name=%s confidence=%.2f (%d, %d) %dx%d",
++          result->name, result->confidence, meta->bounding_box.x,
++          meta->bounding_box.y, meta->bounding_box.width,
++          meta->bounding_box.height);
++
++      list = list->next;
++    }
++  } else if (self->roi_quant_mode == GST_OMX_ROI_QUANT_CUSTOM) {
++    GstVideoRectangle *rectangle = NULL;
++    guint idx = 0;
++
++    for (idx = 0; idx < self->roi_quant_rectangles->len; idx++) {
++      rectangle = &g_array_index (self->roi_quant_rectangles,
++          GstVideoRectangle, idx);
++
++      qp_delta_value = g_array_index(self->roi_quant_deltas, int, idx);
++
++      if (MAX_RECT_ROI_NUM == roiparam.nRegionNum) {
++        GST_WARNING_OBJECT (self,
++            "Received more than the allowed ROI, clipping to %d!",
++            MAX_RECT_ROI_NUM);
++        break;
++      }
++
++      roiparam.nRegions[roiparam.nRegionNum].nLeft = rectangle->x;
++      roiparam.nRegions[roiparam.nRegionNum].nTop = rectangle->y;
++      roiparam.nRegions[roiparam.nRegionNum].nRight =
++          rectangle->x + rectangle->w;
++      roiparam.nRegions[roiparam.nRegionNum].nBottom =
++          rectangle->y + rectangle->h;
++      roiparam.nRegions[roiparam.nRegionNum].nDeltaQP = qp_delta_value;
++      roiparam.nRegionNum++;
++
++      GST_LOG_OBJECT (self, "ROI: (%d, %d) %dx%d",
++          rectangle->x, rectangle->y, rectangle->w, rectangle->h);
++    }
++  }
++
++  if (metalist != NULL && self->roi_quant_mode != GST_OMX_ROI_QUANT_METADATA)
++    GST_WARNING_OBJECT (self,
++        "Need 'roi-quant-mode=metadata' to handle ROI metadata, ignoring!");
++
++  g_slist_free (metalist);
++
++  roiparam.nPortIndex = self->enc_in_port->index;
++  GST_OMX_SET_TICKS (roiparam.nTimeStamp,
++      gst_util_uint64_scale (input->pts, OMX_TICKS_PER_SECOND, GST_SECOND));
++
++  gst_omx_component_set_config (self->enc,
++      (OMX_INDEXTYPE) OMX_QTIIndexConfigVideoRoiRectRegionInfo, &roiparam);
++}
++#endif
++
+ static GstFlowReturn
+ gst_omx_video_enc_handle_frame (GstVideoEncoder * encoder,
+     GstVideoCodecFrame * frame)
+@@ -3364,6 +3703,10 @@ gst_omx_video_enc_handle_frame (GstVideoEncoder * encoder,
+     handle_roi_metadata (self, frame->input_buffer);
+ #endif
+ 
++#ifdef USE_OMX_TARGET_QTI
++    handle_roi_metadata (self, frame->input_buffer);
++#endif
++
+     /* Copy the buffer content in chunks of size as requested
+      * by the port */
+     if (fill_buffer
+diff --git a/omx/gstomxvideoenc.h b/omx/gstomxvideoenc.h
+index bc5d8b1..230a20a 100644
+--- a/omx/gstomxvideoenc.h
++++ b/omx/gstomxvideoenc.h
+@@ -82,6 +82,10 @@ struct _GstOMXVideoEnc
+   guint32 max_quant_p_frames;
+   guint32 min_quant_b_frames;
+   guint32 max_quant_b_frames;
++  guint32 roi_quant_mode;
++  GArray *roi_quant_rectangles;
++  GArray *roi_quant_deltas;
++  GHashTable *roi_metadata_qp_delta_table;
+   guint32 num_ltr_frames;
+   guint32 num_hier_layers;
+   guint32 hier_coding;
+diff --git a/omx/meson.build b/omx/meson.build
+index 5127d82..0164a5e 100644
+--- a/omx/meson.build
++++ b/omx/meson.build
+@@ -58,7 +58,7 @@ gstomx = library('gstomx',
+ #  link_args : noseh_link_args,
+   include_directories : [configinc, omx_inc],
+   dependencies : [gstvideo_dep, gstaudio_dep, gstbase_dep, gstcontroller_dep,
+-                  libdl, libm, gmodule_dep, gstallocators_dep] + optional_deps,
++                  libdl, libm, gmodule_dep, gstallocators_dep, libqtimlmeta] + optional_deps,
+   install : true,
+   install_dir : plugins_install_dir,
+ )
+-- 
+2.17.1
+
