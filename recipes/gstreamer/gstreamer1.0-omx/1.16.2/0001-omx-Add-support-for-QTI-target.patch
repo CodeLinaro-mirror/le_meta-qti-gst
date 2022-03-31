@@ -1,4 +1,4 @@
-From af72015ca5d264950dee9b73fe309723f6183b48 Mon Sep 17 00:00:00 2001
+From 8896d06d862a6f5c8be2d8982ad0f686fef67d52 Mon Sep 17 00:00:00 2001
 From: Jeremy Hao <jinghao@codeaurora.org>
 Date: Wed, 21 Oct 2020 14:32:52 +0530
 Subject: [PATCH] omx: Add support for QTI target
@@ -57,7 +57,7 @@ index 0000000..a5623e2
 +
 diff --git a/config/qti/gstomx.conf b/config/qti/gstomx.conf
 new file mode 100644
-index 0000000..2213a60
+index 0000000..8e09ad7
 --- /dev/null
 +++ b/config/qti/gstomx.conf
 @@ -0,0 +1,71 @@
@@ -104,7 +104,7 @@ index 0000000..2213a60
 +rank=0
 +in-port-index=0
 +out-port-index=1
-+hacks=no-disable-outport
++hacks=no-disable-outport;no-empty-eos-buffer
 +
 +[omxh264enc]
 +type-name=GstOMXH264Enc
@@ -122,7 +122,7 @@ index 0000000..2213a60
 +rank=0
 +in-port-index=0
 +out-port-index=1
-+hacks=no-disable-outport
++hacks=no-disable-outport;no-empty-eos-buffer
 +
 +[omxh265enc]
 +type-name=GstOMXH265Enc
