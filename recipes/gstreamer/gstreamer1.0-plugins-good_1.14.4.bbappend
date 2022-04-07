@@ -11,7 +11,7 @@ SRC_URI += "\
   file://0006-pulse-Add-channel-mapping-for-newly-added-positions.patch \
   file://0007-pulse-Add-support-for-auxiliary-channel-positions.patch \
   file://0001-pulsedirectsink_1.14.4.patch \
-  https://source.codeaurora.org/quic/le/gstreamer/gst-plugins-good/patch/?id=f0bdec32c1e8c4d67b0a8a0414900f2e1061740c;downloadfilename=f0bdec32c1e8c4d67b0a8a0414900f2e1061740c.patch;name=pulsesink-null-caps \
+  https://git.codelinaro.org/clo/le/gstreamer/gst-plugins-good/patch/?id=f0bdec32c1e8c4d67b0a8a0414900f2e1061740c;downloadfilename=f0bdec32c1e8c4d67b0a8a0414900f2e1061740c.patch;name=pulsesink-null-caps \
   file://0001-add-support-to-set-prebuf-in-properties.patch \
   file://0001-gstreamer1.0-plugins-good-Adding-dsd-compressed-playback.patch \
   file://0001-pulse-Add-a-pulsedirectsrc-without-audioringbuffer.patch \
