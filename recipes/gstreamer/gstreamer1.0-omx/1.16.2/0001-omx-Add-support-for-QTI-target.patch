@@ -1,4 +1,4 @@
-From 505cf395fd4522233e36e9ae87ae00200204c4ba Mon Sep 17 00:00:00 2001
+From f3e617568e64103c50b079e1916918461f6fdcb7 Mon Sep 17 00:00:00 2001
 From: Jeremy Hao <jinghao@codeaurora.org>
 Date: Wed, 21 Oct 2020 14:32:52 +0530
 Subject: [PATCH] omx: Add support for QTI target
@@ -57,7 +57,7 @@ index 0000000..a5623e2
 +
 diff --git a/config/qti/gstomx.conf b/config/qti/gstomx.conf
 new file mode 100644
-index 0000000..8e09ad7
+index 0000000..b143094
 --- /dev/null
 +++ b/config/qti/gstomx.conf
 @@ -0,0 +1,71 @@
@@ -104,7 +104,7 @@ index 0000000..8e09ad7
 +rank=0
 +in-port-index=0
 +out-port-index=1
-+hacks=no-disable-outport;no-empty-eos-buffer
++hacks=no-disable-outport;
 +
 +[omxh264enc]
 +type-name=GstOMXH264Enc
@@ -122,7 +122,7 @@ index 0000000..8e09ad7
 +rank=0
 +in-port-index=0
 +out-port-index=1
-+hacks=no-disable-outport;no-empty-eos-buffer
++hacks=no-disable-outport;
 +
 +[omxh265enc]
 +type-name=GstOMXH265Enc
@@ -140,7 +140,7 @@ index 0000000..dc99c08
 @@ -0,0 +1 @@
 +install_data (['gstomx.conf'], install_dir : omx_conf_dir)
 diff --git a/configure.ac b/configure.ac
-index d767764..219cecf 100644
+index c2710a8..6142526 100644
 --- a/configure.ac
 +++ b/configure.ac
 @@ -200,7 +200,7 @@ AC_ARG_ENABLE(Bsymbolic,
@@ -222,7 +222,7 @@ index d767764..219cecf 100644
  examples/egl/Makefile
  m4/Makefile
 diff --git a/meson.build b/meson.build
-index cdd6d17..53e14e0 100644
+index 69c8e2a..464ed97 100644
 --- a/meson.build
 +++ b/meson.build
 @@ -212,6 +212,8 @@ elif omx_target == 'tizonia'
