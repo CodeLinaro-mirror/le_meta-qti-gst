@@ -1,1 +1,1 @@
-SRC_URI = "git://salsa.debian.org/iso-codes-team/iso-codes.git;protocol=http;branch=main;"
+SRC_URI = "git://source.codeaurora.org/quic/le/iso-codes.git;branch=iso-codes-team/main;protocol=https"

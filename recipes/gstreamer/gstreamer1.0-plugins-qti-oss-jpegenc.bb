@@ -12,8 +12,6 @@ DEPENDS += "gstreamer1.0-plugins-base"
 DEPENDS += "gstreamer1.0-plugins-qti-oss-base"
 DEPENDS += "qmmf-sdk"
 
-do_configure[depends] += "virtual/kernel:do_shared_workdir"
-
 FILESPATH =+ "${WORKSPACE}/vendor/qcom/opensource/gst-plugins-qti-oss/:"
 
 SRC_URI = "file://gst-plugin-jpegenc/"
