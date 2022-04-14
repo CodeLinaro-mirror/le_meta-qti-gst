@@ -8,5 +8,5 @@ do_clone_gst_common () {
     cd ${S}
     rm -rf common
     touch NEWS && touch AUTHORS && touch ChangeLog && touch README && touch REQUIREMENTS
-    git clone -b gstreamer/common/master https://source.codeaurora.org/quic/le/gstreamer/common
+    git clone -b caf_migration/gstreamer/common/master https://git.codelinaro.org/clo/le/gstreamer/common
 }
