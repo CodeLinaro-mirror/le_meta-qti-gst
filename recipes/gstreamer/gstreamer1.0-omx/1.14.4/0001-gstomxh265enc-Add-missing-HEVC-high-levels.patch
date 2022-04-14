@@ -1,0 +1,48 @@
+From e76dddd5fd76409ff991a42232fc14384ae017b2 Mon Sep 17 00:00:00 2001
+From: Divya Theja <quic_divyathe@quicinc.com>
+Date: Mon, 31 Jan 2022 11:25:22 +0530
+Subject: [PATCH] gstomxh265enc: Add missing HEVC high levels
+
+Add case OMX_VIDEO_HEVCHighTierLevel1 and other missing high tier level
+cases in switch flow and set the caps according to the profile and
+level returned by OMX structure
+
+Signed-off-by: Divya Theja <quic_divyathe@quicinc.com>
+---
+ omx/gstomxh265enc.c | 20 ++++++++++++++++++++
+ 1 file changed, 20 insertions(+)
+
+diff --git a/omx/gstomxh265enc.c b/omx/gstomxh265enc.c
+index 20d1a6d..9bfd408 100644
+--- a/omx/gstomxh265enc.c
++++ b/omx/gstomxh265enc.c
+@@ -690,6 +690,26 @@ gst_omx_h265_enc_get_caps (GstOMXVideoEnc * enc, GstOMXPort * port,
+         tier = "main";
+         level = "6.2";
+         break;
++      case OMX_VIDEO_HEVCHighTierLevel1:
++        tier = "hight";
++        level = "1";
++        break;
++      case OMX_VIDEO_HEVCHighTierLevel2:
++        tier = "high";
++        level = "2";
++        break;
++      case OMX_VIDEO_HEVCHighTierLevel21:
++        tier = "high";
++        level = "2.1";
++        break;
++      case OMX_VIDEO_HEVCHighTierLevel3:
++        tier = "high";
++        level = "3";
++        break;
++      case OMX_VIDEO_HEVCHighTierLevel31:
++        tier = "high";
++        level = "3.1";
++        break;
+       case OMX_VIDEO_HEVCHighTierLevel4:
+         tier = "high";
+         level = "4";
+-- 
+2.17.1
+
