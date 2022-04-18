@@ -1,4 +1,4 @@
-From 41d9c658600e70ee07056ef4d3d0e77ebf80e90c Mon Sep 17 00:00:00 2001
+From d0a8f47375b0545b6c8503732165f79de4b7cb01 Mon Sep 17 00:00:00 2001
 From: "Petar G. Georgiev" <petarg@codeaurora.org>
 Date: Tue, 21 Apr 2020 11:48:15 +0100
 Subject: [PATCH] omxvideo: Add support for GBM memory
@@ -13,12 +13,12 @@ Subject: [PATCH] omxvideo: Add support for GBM memory
  omx/gstomxbufferpool.c | 177 +++++++++++++++++++++++++-
  omx/gstomxbufferpool.h |   1 +
  omx/gstomxvideo.c      |  15 +++
- omx/gstomxvideodec.c   | 258 +++++++++++++++++++++++++++++++++++--
+ omx/gstomxvideodec.c   | 259 ++++++++++++++++++++++++++++++++++++--
  omx/gstomxvideodec.h   |   4 +-
  omx/gstomxvideoenc.c   | 142 ++++++++++++++++++++-
  omx/gstomxvideoenc.h   |   3 +
  omx/meson.build        |   6 +-
- 14 files changed, 950 insertions(+), 22 deletions(-)
+ 14 files changed, 951 insertions(+), 22 deletions(-)
 
 diff --git a/configure.ac b/configure.ac
 index 219cecf..035c059 100644
@@ -858,7 +858,7 @@ index 9feda19..f094b90 100644
          gst_structure_new ("video/x-raw",
              "format", G_TYPE_STRING,
 diff --git a/omx/gstomxvideodec.c b/omx/gstomxvideodec.c
-index abe6e30..b392652 100644
+index abe6e30..19e23ed 100644
 --- a/omx/gstomxvideodec.c
 +++ b/omx/gstomxvideodec.c
 @@ -185,6 +185,10 @@ gst_omx_video_dec_class_init (GstOMXVideoDecClass * klass)
@@ -1105,17 +1105,18 @@ index abe6e30..b392652 100644
  
    GST_DEBUG_OBJECT (self, "Trying to negotiate a video format with downstream");
  
-@@ -2093,6 +2216,9 @@ gst_omx_video_dec_negotiate (GstOMXVideoDec * self)
+@@ -2093,6 +2216,10 @@ gst_omx_video_dec_negotiate (GstOMXVideoDec * self)
      return FALSE;
    }
  
-+  isgbm = gst_omx_caps_has_feature (intersection, GST_CAPS_FEATURE_MEMORY_GBM);
-+  isubwc = gst_omx_caps_has_compression (intersection, "ubwc");
++  isgbm = (self->dec->gbm != NULL) ? TRUE : FALSE;
++  isubwc = gst_omx_caps_has_compression (intersection, "ubwc") &&
++      gst_omx_caps_has_feature (intersection, GST_CAPS_FEATURE_MEMORY_GBM);
 +
    GST_OMX_INIT_STRUCT (&param);
    param.nPortIndex = self->dec_out_port->index;
  
-@@ -2107,6 +2233,27 @@ gst_omx_video_dec_negotiate (GstOMXVideoDec * self)
+@@ -2107,6 +2234,27 @@ gst_omx_video_dec_negotiate (GstOMXVideoDec * self)
    for (l = negotiation_map; l; l = l->next) {
      GstOMXVideoNegotiationMap *m = l->data;
  
@@ -1143,7 +1144,7 @@ index abe6e30..b392652 100644
      if (m->format == format) {
        param.eColorFormat = m->type;
        break;
-@@ -2344,6 +2491,22 @@ gst_omx_video_dec_pick_input_allocation_mode (GstOMXVideoDec * self,
+@@ -2344,6 +2492,22 @@ gst_omx_video_dec_pick_input_allocation_mode (GstOMXVideoDec * self,
    if (!gst_omx_is_dynamic_allocation_supported ())
      return GST_OMX_BUFFER_ALLOCATION_ALLOCATE_BUFFER;
  
@@ -1166,7 +1167,7 @@ index abe6e30..b392652 100644
    if (can_use_dynamic_buffer_mode (self, inbuf)) {
      GST_DEBUG_OBJECT (self,
          "input buffer is properly aligned, use dynamic allocation");
-@@ -2530,6 +2693,14 @@ gst_omx_video_dec_set_format (GstVideoDecoder * decoder,
+@@ -2530,6 +2694,14 @@ gst_omx_video_dec_set_format (GstVideoDecoder * decoder,
  
    GST_DEBUG_OBJECT (self, "Setting new caps %" GST_PTR_FORMAT, state->caps);
  
@@ -1181,7 +1182,7 @@ index abe6e30..b392652 100644
    if (!self->dmabuf
        && gst_caps_features_contains (gst_caps_get_features (state->caps, 0),
            GST_CAPS_FEATURE_MEMORY_DMABUF)) {
-@@ -2640,6 +2811,73 @@ gst_omx_video_dec_set_format (GstVideoDecoder * decoder,
+@@ -2640,6 +2812,73 @@ gst_omx_video_dec_set_format (GstVideoDecoder * decoder,
    gst_buffer_replace (&self->codec_data, state->codec_data);
    self->input_state = gst_video_codec_state_ref (state);
  
