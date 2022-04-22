@@ -7,6 +7,7 @@ SRC_URI += "file://0001-omxh264enc-Set-maximum-caps-resolution-range-to-MAX.patc
 SRC_URI += "file://0001-omx-Add-support-for-QTI-target.patch"
 SRC_URI += "file://0002-omxvideo-Add-support-for-GBM-memory.patch"
 SRC_URI += "file://0003-omx-Add-support-for-QTI-target-specific-extensions.patch"
+SRC_URI += "file://0004-omxvideoenc-property-to-support-rotation-using-VPU.patch"
 
 DEPENDS += "media"
 RDEPENDS_${PN} = "media"
