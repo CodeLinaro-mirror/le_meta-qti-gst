@@ -1,6 +1,6 @@
 inherit cmake
 
-SUMMARY = "QTI open-source GStreamer Plug-in for converting from video to ML stream"
+SUMMARY = "QTI open-source GStreamer Plug-in for jpeg encoding"
 SECTION = "multimedia"
 
 LICENSE = "BSD"
@@ -10,16 +10,14 @@ LIC_FILES_CHKSUM = "file://${COMMON_LICENSE_DIR}/${LICENSE};md5=3775480a712fc46a
 DEPENDS := "gstreamer1.0"
 DEPENDS += "gstreamer1.0-plugins-base"
 DEPENDS += "gstreamer1.0-plugins-qti-oss-base"
+DEPENDS += "qmmf-sdk"
 
 FILESPATH =+ "${WORKSPACE}/vendor/qcom/opensource/gst-plugins-qti-oss/:"
 
-SRC_URI = "file://gst-plugin-mlvconverter/"
-S = "${WORKDIR}/gst-plugin-mlvconverter"
+SRC_URI = "file://gst-plugin-jpegenc/"
+S = "${WORKDIR}/gst-plugin-jpegenc"
 
-# Default platform definitions.
-VIDEO_CONVERTER_ENGINE := "C2D"
-
-# Install directories.
+# Install directries.
 INSTALL_BINDIR := "${bindir}"
 INSTALL_LIBDIR := "${libdir}"
 
@@ -36,12 +34,8 @@ EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_PACKAGE=${PN}"
 EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_SUMMARY="${SUMMARY}""
 EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_ORIGIN="Unknown package origin""
 
-EXTRA_OECMAKE += "-DGST_VIDEO_CONVERTER_ENGINE=${VIDEO_CONVERTER_ENGINE}"
-
 FILES_${PN} += "${INSTALL_BINDIR}"
 FILES_${PN} += "${INSTALL_LIBDIR}"
-
-FILES_${PN}-dbg += "${INSTALL_LIBDIR}/gstreamer-1.0/.debug"
 
 SOLIBS = ".so*"
 FILES_SOLIBSDEV = ""

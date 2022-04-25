@@ -1,6 +1,6 @@
 inherit cmake
 
-SUMMARY = "QTI open-source GStreamer Plug-in for converting from video to ML stream"
+SUMMARY = "QTI open-source GStreamer Plug-in for Machine Learning using AIC100"
 SECTION = "multimedia"
 
 LICENSE = "BSD"
@@ -10,20 +10,20 @@ LIC_FILES_CHKSUM = "file://${COMMON_LICENSE_DIR}/${LICENSE};md5=3775480a712fc46a
 DEPENDS := "gstreamer1.0"
 DEPENDS += "gstreamer1.0-plugins-base"
 DEPENDS += "gstreamer1.0-plugins-qti-oss-base"
+DEPENDS += "protobuf"
+DEPENDS += "qaic-rt"
 
 FILESPATH =+ "${WORKSPACE}/vendor/qcom/opensource/gst-plugins-qti-oss/:"
 
-SRC_URI = "file://gst-plugin-mlvconverter/"
-S = "${WORKDIR}/gst-plugin-mlvconverter"
-
-# Default platform definitions.
-VIDEO_CONVERTER_ENGINE := "C2D"
+SRC_URI = "file://gst-plugin-mlaic/"
+S = "${WORKDIR}/gst-plugin-mlaic"
 
 # Install directories.
 INSTALL_BINDIR := "${bindir}"
 INSTALL_LIBDIR := "${libdir}"
 
 EXTRA_OECMAKE += "-DGST_VERSION_REQUIRED=1.14.4"
+EXTRA_OECMAKE += "-DPROTOBUF_VERSION_REQUIRED=3.11.4"
 EXTRA_OECMAKE += "-DSYSROOT_INCDIR=${STAGING_INCDIR}"
 EXTRA_OECMAKE += "-DSYSROOT_LIBDIR=${STAGING_LIBDIR}"
 EXTRA_OECMAKE += "-DKERNEL_BUILDDIR=${STAGING_KERNEL_BUILDDIR}"
@@ -36,8 +36,6 @@ EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_PACKAGE=${PN}"
 EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_SUMMARY="${SUMMARY}""
 EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_ORIGIN="Unknown package origin""
 
-EXTRA_OECMAKE += "-DGST_VIDEO_CONVERTER_ENGINE=${VIDEO_CONVERTER_ENGINE}"
-
 FILES_${PN} += "${INSTALL_BINDIR}"
 FILES_${PN} += "${INSTALL_LIBDIR}"
 
@@ -45,3 +43,6 @@ FILES_${PN}-dbg += "${INSTALL_LIBDIR}/gstreamer-1.0/.debug"
 
 SOLIBS = ".so*"
 FILES_SOLIBSDEV = ""
+
+# Since the qaic-rt recipe is not installing any libraries we need to skip rdeps check.
+INSANE_SKIP_${PN} += "file-rdeps"
