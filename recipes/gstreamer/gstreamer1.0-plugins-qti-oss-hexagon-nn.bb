@@ -1,7 +1,7 @@
 inherit cmake
 
 SUMMARY = "QTI open-source GStreamer Plug-in for hexagon-nn"
-HOMEPAGE = "https://git.codelinaro.org"
+HOMEPAGE = "https://source.codeaurora.org"
 SECTION = "multimedia"
 
 LICENSE = "BSD"

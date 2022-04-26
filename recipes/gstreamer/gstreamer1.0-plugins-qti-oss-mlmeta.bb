@@ -1,7 +1,7 @@
 inherit cmake
 
 SUMMARY = "QTI open-source GStreamer machine learning metadata"
-HOMEPAGE = "https://git.codelinaro.org"
+HOMEPAGE = "https://source.codeaurora.org"
 SECTION = "multimedia"
 
 LICENSE = "BSD"

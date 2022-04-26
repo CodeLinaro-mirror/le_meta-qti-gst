@@ -1,7 +1,7 @@
 inherit cmake
 
 SUMMARY = "QTI open-source GStreamer Plug-in for overlay"
-HOMEPAGE = "https://git.codelinaro.org"
+HOMEPAGE = "https://source.codeaurora.org"
 SECTION = "multimedia"
 
 LICENSE = "BSD"
@@ -41,8 +41,6 @@ EXTRA_OECMAKE += "-DPKG_CONFIG_SYSROOT_DIR=${PKG_CONFIG_SYSROOT_DIR}"
 
 FILES_${PN} += "${INSTALL_BINDIR}"
 FILES_${PN} += "${INSTALL_LIBDIR}"
-
-FILES_${PN}-dbg += "${INSTALL_LIBDIR}/gstreamer-1.0/.debug"
 
 SOLIBS = ".so*"
 FILES_SOLIBSDEV = ""

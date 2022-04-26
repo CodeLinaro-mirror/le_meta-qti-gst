@@ -1,7 +1,7 @@
 inherit cmake
 
 SUMMARY = "QTI open-source GStreamer Plug-in for CVP"
-HOMEPAGE = "https://git.codelinaro.org"
+HOMEPAGE = "https://source.codeaurora.org"
 SECTION = "multimedia"
 
 LICENSE = "BSD"
@@ -38,8 +38,6 @@ EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_ORIGIN=${HOMEPAGE}"
 
 FILES_${PN} += "${INSTALL_BINDIR}"
 FILES_${PN} += "${INSTALL_LIBDIR}"
-
-FILES_${PN}-dbg += "${INSTALL_LIBDIR}/gstreamer-1.0/.debug"
 
 SOLIBS = ".so*"
 FILES_SOLIBSDEV = ""

@@ -1,7 +1,7 @@
 inherit cmake
 
 SUMMARY = "QTI open-source GStreamer Plug-in for Machine Learning Engine"
-HOMEPAGE = "https://git.codelinaro.org"
+HOMEPAGE = "https://source.codeaurora.org"
 SECTION = "multimedia"
 
 LICENSE = "BSD"
@@ -55,8 +55,6 @@ FILES_${PN} += "${INSTALL_BINDIR}"
 FILES_${PN} += "${INSTALL_LIBDIR}"
 FILES_${PN} += "/data/misc/camera/"
 INSANE_SKIP_${PN} += "file-rdeps"
-
-FILES_${PN}-dbg += "${INSTALL_LIBDIR}/gstreamer-1.0/.debug"
 
 SOLIBS = ".so*"
 FILES_SOLIBSDEV = ""
