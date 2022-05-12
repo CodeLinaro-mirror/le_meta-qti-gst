@@ -9,9 +9,14 @@ SRC_URI += "file://0002-omxvideo-Add-support-for-GBM-memory.patch"
 SRC_URI += "file://0002-omx-Fix-PortSettingsChanged-event.patch"
 SRC_URI += "file://0003-omxvideoenc-Add-support-for-QTI-target-specific-exte.patch"
 SRC_URI += "file://0003-omxaacdec-set-audio-DualMono-config.patch"
+SRC_URI += "file://0004-omxvideoenc-Add-support-for-ROI-encoding-on-QTI-targ.patch"
 
 DEPENDS += "media gbm"
 RDEPENDS_${PN} = "media gbm"
+
+# Including ML metadata dependecy
+DEPENDS += "gstreamer1.0-plugins-qti-oss-mlmeta"
+RDEPENDS_${PN} += "gstreamer1.0-plugins-qti-oss-mlmeta"
 
 EXTRA_OEMESON += "-Dheader_path=${STAGING_INCDIR}"
 
