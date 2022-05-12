@@ -34,11 +34,11 @@ VIDEO_MAX_HEIGHT_apq8009  := "1080"
 VIDEO_MAX_FPS_apq8009     := "30/1"
 
 # Overwrite the default platform definitions for qrb5165.
-IMAGE_MAX_WIDTH_qrb5165         := "8000"
-IMAGE_MAX_HEIGHT_qrb5165        := "6000"
-VIDEO_MAX_WIDTH_qrb5165         := "8000"
-VIDEO_MAX_HEIGHT_qrb5165        := "6000"
-VIDEO_MAX_FPS_qrb5165           := "240/1"
+IMAGE_MAX_WIDTH_qrb5165         := "9248"
+IMAGE_MAX_HEIGHT_qrb5165        := "6944"
+VIDEO_MAX_WIDTH_qrb5165         := "9248"
+VIDEO_MAX_HEIGHT_qrb5165        := "6944"
+VIDEO_MAX_FPS_qrb5165           := "480/1"
 CAMERA_METADATA_VERSION_qrb5165 := "1.1"
 
 # Enable YUY2 format
