@@ -1,0 +1,321 @@
+From 1e62234f02b407579ba8043ef437054eea3a151a Mon Sep 17 00:00:00 2001
+From: Xinzheng Long <quic_xinzlong@quicinc.com>
+Date: Tue, 12 Apr 2022 13:29:47 +0530
+Subject: [PATCH] omxvideoenc: property to support rotation using VPU
+
+added new property rotate
+Config will be set to rotate frames
+in 90deg clockwise, 180deg and 90deg
+counter clockwise based on respective
+enum value set to rotate property
+Currently supported for AVC and HEVC
+
+Signed-off-by: Xinzheng Long <quic_xinzlong@quicinc.com>
+---
+ omx/gstomxh264enc.c  | 58 ++++++++++++++++++++++++++++++++++++++++++++++++++++
+ omx/gstomxh264enc.h  |  1 +
+ omx/gstomxh265enc.c  | 58 ++++++++++++++++++++++++++++++++++++++++++++++++++++
+ omx/gstomxh265enc.h  |  1 +
+ omx/gstomxvideoenc.c | 17 +++++++++++++++
+ omx/gstomxvideoenc.h | 11 ++++++++++
+ 6 files changed, 146 insertions(+)
+
+diff --git a/omx/gstomxh264enc.c b/omx/gstomxh264enc.c
+index 733dea3..9ec5a8c 100644
+--- a/omx/gstomxh264enc.c
++++ b/omx/gstomxh264enc.c
+@@ -62,6 +62,7 @@ enum
+   PROP_ENTROPY_MODE,
+   PROP_CONSTRAINED_INTRA_PREDICTION,
+   PROP_LOOP_FILTER_MODE,
++  PROP_ROTATE,
+ };
+ 
+ #ifdef USE_OMX_TARGET_RPI
+@@ -210,6 +211,14 @@ gst_omx_h264_enc_class_init (GstOMXH264EncClass * klass)
+           G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS |
+           GST_PARAM_MUTABLE_READY));
+ 
++  g_object_class_install_property (gobject_class, PROP_ROTATE,
++      g_param_spec_enum ("rotate", "Rotate frames",
++          "Rotate video image",
++          GST_TYPE_OMX_VIDEO_ENC_ROTATE,
++          GST_OMX_VIDEO_ENC_ROTATE_NONE,
++          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS |
++          GST_PARAM_MUTABLE_READY));
++
+   basevideoenc_class->flush = gst_omx_h264_enc_flush;
+   basevideoenc_class->stop = gst_omx_h264_enc_stop;
+ 
+@@ -258,6 +267,9 @@ gst_omx_h264_enc_set_property (GObject * object, guint prop_id,
+     case PROP_LOOP_FILTER_MODE:
+       self->loop_filter_mode = g_value_get_enum (value);
+       break;
++    case PROP_ROTATE:
++      self->rotate = g_value_get_enum (value);
++      break;
+     default:
+       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+       break;
+@@ -295,6 +307,9 @@ gst_omx_h264_enc_get_property (GObject * object, guint prop_id, GValue * value,
+     case PROP_LOOP_FILTER_MODE:
+       g_value_set_enum (value, self->loop_filter_mode);
+       break;
++    case PROP_ROTATE:
++      g_value_set_enum (value, self->rotate);
++      break;
+     default:
+       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+       break;
+@@ -317,6 +332,7 @@ gst_omx_h264_enc_init (GstOMXH264Enc * self)
+   self->constrained_intra_prediction =
+       GST_OMX_H264_VIDEO_ENC_CONSTRAINED_INTRA_PREDICTION_DEFAULT;
+   self->loop_filter_mode = GST_OMX_H264_VIDEO_ENC_LOOP_FILTER_MODE_DEFAULT;
++  self->rotate = GST_OMX_VIDEO_ENC_ROTATE_NONE;
+ }
+ 
+ static gboolean
+@@ -578,6 +594,45 @@ set_brcm_video_intra_period (GstOMXH264Enc * self)
+ }
+ #endif
+ 
++/* Updates OMX_CONFIG_ROTATIONTYPE
++ * Reads the current value using get_config
++ * If the current value and desired value are not same, then does set_config */
++static void
++set_frame_rotation (GstOMXH264Enc *self) {
++  OMX_CONFIG_ROTATIONTYPE framerotate;
++  OMX_ERRORTYPE err;
++  guint rotation_deg = self->rotate * 90;
++
++  GST_OMX_INIT_STRUCT (&framerotate);
++  framerotate.nPortIndex = GST_OMX_VIDEO_ENC (self)->enc_out_port->index;
++  err = gst_omx_component_get_config (GST_OMX_VIDEO_ENC(self)->enc,
++      OMX_IndexConfigCommonRotate, &framerotate);
++  if (err == OMX_ErrorUnsupportedIndex) {
++    GST_WARNING_OBJECT (
++        self, "OMX_IndexConfigCommonRotate not supported by component");
++    return;
++  } else if (err != OMX_ErrorNone) {
++    GST_ERROR_OBJECT (self, "can't get OMX_IndexConfigCommonRotate %s (0x%08x)",
++        gst_omx_error_to_string(err), err);
++    return;
++  }
++
++  GST_DEBUG_OBJECT (self, "current rotation angle:%u, new rotation angle:%u",
++      (guint)framerotate.nRotation, (guint)rotation_deg);
++
++  if (rotation_deg == framerotate.nRotation)
++    return;
++
++  framerotate.nRotation = rotation_deg;
++  err = gst_omx_component_set_config (GST_OMX_VIDEO_ENC(self)->enc,
++      OMX_IndexConfigCommonRotate, &framerotate);
++  if (err != OMX_ErrorNone) {
++    GST_ERROR_OBJECT (self, "can't set OMX_IndexConfigCommonRotate %s (0x%08x)",
++        gst_omx_error_to_string(err), err);
++  }
++  return;
++}
++
+ static gboolean
+ gst_omx_h264_enc_set_format (GstOMXVideoEnc * enc, GstOMXPort * port,
+     GstVideoCodecState * state)
+@@ -654,6 +709,9 @@ gst_omx_h264_enc_set_format (GstOMXVideoEnc * enc, GstOMXPort * port,
+     set_brcm_video_intra_period (self);
+ #endif
+ 
++   if (self->rotate != GST_OMX_VIDEO_ENC_ROTATE_NONE)
++      set_frame_rotation (self);
++
+   gst_omx_port_get_port_definition (GST_OMX_VIDEO_ENC (self)->enc_out_port,
+       &port_def);
+   port_def.format.video.eCompressionFormat = OMX_VIDEO_CodingAVC;
+diff --git a/omx/gstomxh264enc.h b/omx/gstomxh264enc.h
+index c8db9aa..a2b91dd 100644
+--- a/omx/gstomxh264enc.h
++++ b/omx/gstomxh264enc.h
+@@ -55,6 +55,7 @@ struct _GstOMXH264Enc
+   guint32 entropy_mode;
+   gboolean constrained_intra_prediction;
+   guint32 loop_filter_mode;
++  guint rotate;
+ 
+   GList *headers;
+ };
+diff --git a/omx/gstomxh265enc.c b/omx/gstomxh265enc.c
+index c2bee06..44766e7 100644
+--- a/omx/gstomxh265enc.c
++++ b/omx/gstomxh265enc.c
+@@ -49,6 +49,7 @@ enum
+   PROP_B_FRAMES,
+   PROP_CONSTRAINED_INTRA_PREDICTION,
+   PROP_LOOP_FILTER_MODE,
++  PROP_ROTATE,
+ };
+ 
+ #define GST_OMX_H265_VIDEO_ENC_PERIODICITY_OF_IDR_FRAMES_DEFAULT    (0xffffffff)
+@@ -180,6 +181,14 @@ gst_omx_h265_enc_class_init (GstOMXH265EncClass * klass)
+           GST_PARAM_MUTABLE_READY));
+ #endif
+ 
++  g_object_class_install_property (gobject_class, PROP_ROTATE,
++      g_param_spec_enum ("rotate", "Rotate frames",
++          "Rotate video image",
++          GST_TYPE_OMX_VIDEO_ENC_ROTATE,
++          GST_OMX_VIDEO_ENC_ROTATE_NONE,
++          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS |
++          GST_PARAM_MUTABLE_READY));
++
+   videoenc_class->cdata.default_src_template_caps = "video/x-h265, "
+       "width=(int) [ 1, MAX ], " "height=(int) [ 1, MAX ], "
+       "framerate = (fraction) [0, MAX], "
+@@ -226,6 +235,9 @@ gst_omx_h265_enc_set_property (GObject * object, guint prop_id,
+       self->loop_filter_mode = g_value_get_enum (value);
+       break;
+ #endif
++    case PROP_ROTATE:
++      self->rotate = g_value_get_enum (value);
++      break;
+     default:
+       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+       break;
+@@ -264,6 +276,9 @@ gst_omx_h265_enc_get_property (GObject * object, guint prop_id, GValue * value,
+       g_value_set_enum (value, self->loop_filter_mode);
+       break;
+ #endif
++    case PROP_ROTATE:
++      g_value_set_enum (value, self->rotate);
++      break;
+     default:
+       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+       break;
+@@ -288,6 +303,7 @@ gst_omx_h265_enc_init (GstOMXH265Enc * self)
+       GST_OMX_H265_VIDEO_ENC_CONSTRAINED_INTRA_PREDICTION_DEFAULT;
+   self->loop_filter_mode = GST_OMX_H265_VIDEO_ENC_LOOP_FILTER_MODE_DEFAULT;
+ #endif
++  self->rotate = GST_OMX_VIDEO_ENC_ROTATE_NONE;
+ }
+ 
+ /* Update OMX_VIDEO_PARAM_PROFILELEVELTYPE.{eProfile,eLevel}
+@@ -579,6 +595,45 @@ set_intra_period (GstOMXH265Enc * self)
+ }
+ #endif
+ 
++/* Updates OMX_CONFIG_ROTATIONTYPE
++ * Reads the current value using get_config
++ * If the current value and desired value are not same, then does set_config */
++static void
++set_frame_rotation (GstOMXH265Enc *self) {
++  OMX_CONFIG_ROTATIONTYPE framerotate;
++  OMX_ERRORTYPE err;
++  guint rotation_deg = self->rotate * 90;
++
++  GST_OMX_INIT_STRUCT (&framerotate);
++  framerotate.nPortIndex = GST_OMX_VIDEO_ENC (self)->enc_out_port->index;
++  err = gst_omx_component_get_config (GST_OMX_VIDEO_ENC(self)->enc,
++      OMX_IndexConfigCommonRotate, &framerotate);
++  if (err == OMX_ErrorUnsupportedIndex) {
++    GST_WARNING_OBJECT (
++        self, "OMX_IndexConfigCommonRotate not supported by component");
++    return;
++  } else if (err != OMX_ErrorNone) {
++    GST_ERROR_OBJECT (self, "can't get OMX_IndexConfigCommonRotate %s (0x%08x)",
++        gst_omx_error_to_string(err), err);
++    return;
++  }
++
++  GST_DEBUG_OBJECT (self, "current rotation angle:%u, new rotation angle:%u",
++      (guint)framerotate.nRotation, (guint)rotation_deg);
++
++  if (rotation_deg == framerotate.nRotation)
++    return;
++
++  framerotate.nRotation = rotation_deg;
++  err = gst_omx_component_set_config (GST_OMX_VIDEO_ENC(self)->enc,
++      OMX_IndexConfigCommonRotate, &framerotate);
++  if (err != OMX_ErrorNone) {
++    GST_ERROR_OBJECT (self, "can't set OMX_IndexConfigCommonRotate %s (0x%08x)",
++        gst_omx_error_to_string(err), err);
++  }
++  return;
++}
++
+ static gboolean
+ gst_omx_h265_enc_set_format (GstOMXVideoEnc * enc, GstOMXPort * port,
+     GstVideoCodecState * state)
+@@ -606,6 +661,9 @@ gst_omx_h265_enc_set_format (GstOMXVideoEnc * enc, GstOMXPort * port,
+     set_intra_period (self);
+ #endif
+ 
++  if (self->rotate != GST_OMX_VIDEO_ENC_ROTATE_NONE)
++      set_frame_rotation (self);
++
+   gst_omx_port_get_port_definition (GST_OMX_VIDEO_ENC (self)->enc_out_port,
+       &port_def);
+   port_def.format.video.eCompressionFormat =
+diff --git a/omx/gstomxh265enc.h b/omx/gstomxh265enc.h
+index d8fec7f..be16c32 100644
+--- a/omx/gstomxh265enc.h
++++ b/omx/gstomxh265enc.h
+@@ -58,6 +58,7 @@ struct _GstOMXH265Enc
+   gboolean constrained_intra_prediction;
+   guint32 loop_filter_mode;
+ #endif
++  guint rotate;
+ };
+ 
+ struct _GstOMXH265EncClass
+diff --git a/omx/gstomxvideoenc.c b/omx/gstomxvideoenc.c
+index 0c6cb67..aa8ebbd 100644
+--- a/omx/gstomxvideoenc.c
++++ b/omx/gstomxvideoenc.c
+@@ -3724,6 +3724,23 @@ gst_omx_video_enc_getcaps (GstVideoEncoder * encoder, GstCaps * filter)
+   return ret;
+ }
+ 
++GType
++gst_omx_video_enc_rotate_get_type (void)
++{
++  static GType qtype = 0;
++  if (qtype == 0) {
++    static const GEnumValue values[] = {
++      {GST_OMX_VIDEO_ENC_ROTATE_NONE, "No rotation", "none" },
++      {GST_OMX_VIDEO_ENC_ROTATE_90_CW, "Rotate 90 degrees clockwise", "90CW"},
++      {GST_OMX_VIDEO_ENC_ROTATE_180, "Rotate 180 degrees", "180"},
++      {GST_OMX_VIDEO_ENC_ROTATE_90_CCW, "Rotate 90 degrees counter-clockwise", "90CCW"},
++      {0, NULL, NULL},
++    };
++    qtype = g_enum_register_static ("GstOmxVideoEncRotate", values);
++  }
++  return qtype;
++}
++
+ static gboolean
+ gst_omx_video_enc_decide_allocation (GstVideoEncoder * encoder,
+     GstQuery * query)
+diff --git a/omx/gstomxvideoenc.h b/omx/gstomxvideoenc.h
+index bc5d8b1..68155cd 100644
+--- a/omx/gstomxvideoenc.h
++++ b/omx/gstomxvideoenc.h
+@@ -139,6 +139,17 @@ struct _GstOMXVideoEncClass
+ 
+ GType gst_omx_video_enc_get_type (void);
+ 
++typedef enum {
++  GST_OMX_VIDEO_ENC_ROTATE_NONE,
++  GST_OMX_VIDEO_ENC_ROTATE_90_CW,
++  GST_OMX_VIDEO_ENC_ROTATE_180,
++  GST_OMX_VIDEO_ENC_ROTATE_90_CCW,
++} GstOmxVideoEncRotate;
++
++GType gst_omx_video_enc_rotate_get_type (void);
++
++#define GST_TYPE_OMX_VIDEO_ENC_ROTATE (gst_omx_video_enc_rotate_get_type())
++
+ G_END_DECLS
+ 
+ #endif /* __GST_OMX_VIDEO_ENC_H__ */
+-- 
+2.7.4
+
