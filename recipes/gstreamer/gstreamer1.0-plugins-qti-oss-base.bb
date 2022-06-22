@@ -9,8 +9,12 @@ LIC_FILES_CHKSUM = "file://${COMMON_LICENSE_DIR}/${LICENSE};md5=3775480a712fc46a
 # Dependencies.
 DEPENDS := "gstreamer1.0"
 DEPENDS += "gstreamer1.0-plugins-base"
-DEPENDS += "adreno"
 DEPENDS += "gbm"
+DEPENDS += "adreno"
+
+# Conditional dependency in IB2C library used in GLES Video Converter.
+DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'qti-ib2c', 'qti-ib2c', '', d)}"
+RDEPENDS_${PN} += "${@bb.utils.contains('DISTRO_FEATURES', 'qti-ib2c', 'qti-ib2c', '', d)}"
 
 FILESPATH =+ "${WORKSPACE}/vendor/qcom/opensource/gst-plugins-qti-oss/:"
 
@@ -19,7 +23,7 @@ S = "${WORKDIR}/gst-plugin-base"
 
 # Default platform definitions.
 C2D_CONVERTER := "TRUE"
-GLES_CONVERTER := "FALSE"
+GLES_CONVERTER := "${@bb.utils.contains('DISTRO_FEATURES', 'qti-ib2c', 'TRUE', 'FALSE', d)}"
 
 # Install directries.
 INSTALL_INCDIR := "${includedir}"
