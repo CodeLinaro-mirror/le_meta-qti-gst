@@ -4,11 +4,25 @@ Date: Thu, 7 May 2020 10:12:31 +0100
 Subject: [PATCH] omxvideoenc: Add support for ROI encoding on QTI target
 
 ---
+ meson.build          |   1 +
  omx/Makefile.am      |   3 +-
  omx/gstomxvideoenc.c | 398 +++++++++++++++++++++++++++++++++++++++++++
  omx/gstomxvideoenc.h |   4 +
- 3 files changed, 404 insertions(+), 1 deletion(-)
+ omx/meson.build      |   2 +-
+ 5 files changed, 406 insertions(+), 2 deletions(-)
 
+diff --git a/meson.build b/meson.build
+index 8fdba38..2df2199 100644
+--- a/meson.build
++++ b/meson.build
+@@ -160,6 +160,7 @@ libm = cc.find_library('m', required : false)
+ glib_dep = dependency('glib-2.0', version : glib_req)
+ gio_dep = dependency('gio-2.0', version : glib_req)
+ gmodule_dep = dependency('gmodule-2.0', version : glib_req)
++libmlmeta = cc.find_library('qtimlmeta', required : false)
+
+ gst_omx_args = ['-DHAVE_CONFIG_H']
+ configinc = include_directories('.')
 diff --git a/omx/Makefile.am b/omx/Makefile.am
 index 9f2f016..ae5c9ea 100644
 --- a/omx/Makefile.am
@@ -21,7 +35,7 @@ index 9f2f016..ae5c9ea 100644
 +	$(GMODULE_NO_EXPORT_LIBS) \
 +	-lqtimlmeta
  libgstomx_la_LDFLAGS = $(GST_PLUGIN_LDFLAGS)
- 
+
  if HAVE_GBM
 diff --git a/omx/gstomxvideoenc.c b/omx/gstomxvideoenc.c
 index 9f8ecc2..3b3c91f 100644
@@ -30,17 +44,17 @@ index 9f8ecc2..3b3c91f 100644
 @@ -36,6 +36,10 @@
  #include <OMX_Index.h>
  #endif
- 
+
 +#ifdef USE_OMX_TARGET_QTI
 +#include <ml-meta/ml_meta.h>
 +#endif
 +
  GST_DEBUG_CATEGORY_STATIC (gst_omx_video_enc_debug_category);
  #define GST_CAT_DEFAULT gst_omx_video_enc_debug_category
- 
+
 @@ -74,6 +78,38 @@ gst_omx_video_enc_control_rate_get_type (void)
  }
- 
+
  #ifdef USE_OMX_TARGET_QTI
 +typedef enum
 +{
@@ -100,7 +114,7 @@ index 9f8ecc2..3b3c91f 100644
 @@ -425,6 +467,51 @@ gst_omx_video_enc_class_init (GstOMXVideoEncClass * klass)
            G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS |
            GST_PARAM_MUTABLE_READY));
- 
+
 +  g_object_class_install_property (gobject_class, PROP_ROI_QUANT_MODE,
 +      g_param_spec_enum ("roi-quant-mode", "ROI Quantization Mode",
 +          "Adjust quantization parameter according a ROI",
@@ -168,13 +182,13 @@ index 9f8ecc2..3b3c91f 100644
      OMX_QCOM_VIDEO_CONFIG_AUD audelimiter;
      OMX_QCOM_VIDEO_PARAM_IPB_QPRANGETYPE qprange;
 +    OMX_BOOL enable_roi_info;
- 
+
      GST_OMX_INIT_STRUCT (&prepend_sps_pps_headers);
      prepend_sps_pps_headers.bEnabled = OMX_TRUE;
 @@ -1082,6 +1177,26 @@ gst_omx_video_enc_open (GstVideoEncoder * encoder)
        return FALSE;
      }
- 
+
 +    enable_roi_info = (self->roi_quant_mode != GST_OMX_ROI_QUANT_DISABLED) ?
 +        OMX_TRUE : OMX_FALSE;
 +
@@ -197,11 +211,11 @@ index 9f8ecc2..3b3c91f 100644
 +
      if (self->num_ltr_frames != 0xffffffff) {
        QOMX_VIDEO_PARAM_LTRCOUNT_TYPE ltrframes;
- 
+
 @@ -1226,6 +1341,12 @@ gst_omx_video_enc_finalize (GObject * object)
    g_clear_pointer (&self->alg_roi_quality_enum_class, g_type_class_unref);
  #endif
- 
+
 +#ifdef USE_OMX_TARGET_QTI
 +  g_array_free (self->roi_quant_rectangles, TRUE);
 +  g_array_free (self->roi_quant_deltas, TRUE);
@@ -210,7 +224,7 @@ index 9f8ecc2..3b3c91f 100644
 +
    G_OBJECT_CLASS (gst_omx_video_enc_parent_class)->finalize (object);
  }
- 
+
 @@ -1287,6 +1408,75 @@ gst_omx_video_enc_set_property (GObject * object, guint prop_id,
      case PROP_MAX_QUANT_B_FRAMES:
        self->max_quant_b_frames = g_value_get_uint (value);
@@ -383,7 +397,7 @@ index 9f8ecc2..3b3c91f 100644
 @@ -3029,6 +3305,124 @@ handle_roi_metadata (GstOMXVideoEnc * self, GstBuffer * input)
  }
  #endif
- 
+
 +#ifdef USE_OMX_TARGET_QTI
 +static void
 +handle_roi_metadata (GstOMXVideoEnc * self, GstBuffer * input)
@@ -508,7 +522,7 @@ index 9f8ecc2..3b3c91f 100644
 @@ -3188,6 +3582,10 @@ gst_omx_video_enc_handle_frame (GstVideoEncoder * encoder,
      handle_roi_metadata (self, frame->input_buffer);
  #endif
- 
+
 +#ifdef USE_OMX_TARGET_QTI
 +    handle_roi_metadata (self, frame->input_buffer);
 +#endif
@@ -531,6 +545,19 @@ index 3fda470..546d78b 100644
    guint32 num_ltr_frames;
    guint32 num_hier_layers;
    guint32 hier_coding;
--- 
+diff --git a/omx/meson.build b/omx/meson.build
+index 5127d82..2b454eb 100644
+--- a/omx/meson.build
++++ b/omx/meson.build
+@@ -58,7 +58,7 @@ gstomx = library('gstomx',
+ #  link_args : noseh_link_args,
+   include_directories : [configinc, omx_inc],
+   dependencies : [gstvideo_dep, gstaudio_dep, gstbase_dep, gstcontroller_dep,
+-                  libdl, libm, gmodule_dep, gstallocators_dep] + optional_deps,
++                  libmlmeta, libdl, libm, gmodule_dep, gstallocators_dep] + optional_deps,
+   install : true,
+   install_dir : plugins_install_dir,
+ )
+--
 2.17.1
 
