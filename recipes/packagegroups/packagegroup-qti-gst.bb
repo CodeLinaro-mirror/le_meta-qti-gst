@@ -26,6 +26,7 @@ RDEPENDS_packagegroup-qti-gst = " \
       gstreamer1.0-plugins-qti-oss-vcrop \
       gstreamer1.0-plugins-qti-oss-roimux \
       gstreamer1.0-plugins-qti-oss-vtransform \
+      gstreamer1.0-plugins-qti-oss-vsplit \
       gstreamer1.0-plugins-qti-oss-vcomposer \
       gstreamer1.0-plugins-qti-oss-batch \
       gstreamer1.0-plugins-qti-oss-metamux \
@@ -33,6 +34,7 @@ RDEPENDS_packagegroup-qti-gst = " \
       gstreamer1.0-plugins-qti-oss-mlvdetection \
       gstreamer1.0-plugins-qti-oss-mlvclassification \
       gstreamer1.0-plugins-qti-oss-mlvsegmentation \
+      gstreamer1.0-plugins-qti-oss-mlvposenet \
       gstreamer1.0-plugins-qti-oss-mldemux \
       ${@bb.utils.contains("MACHINE_FEATURES", "qti-aic", "gstreamer1.0-plugins-qti-oss-mlaic", "", d)} \
       ${@bb.utils.contains("DISTRO_FEATURES", "tensorflow-lite", "gstreamer1.0-plugins-qti-oss-mltflite", "", d)} \
