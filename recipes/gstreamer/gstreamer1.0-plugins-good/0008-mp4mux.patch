@@ -1,0 +1,61 @@
+diff --git a/gst/isomp4/gstqtmux.c b/gst/isomp4/gstqtmux.c
+index 3fa682c..0739e63 100644
+--- a/gst/isomp4/gstqtmux.c
++++ b/gst/isomp4/gstqtmux.c
+@@ -4229,8 +4229,10 @@ gst_qt_mux_add_buffer (GstQTMux * qtmux, GstQTPad * pad, GstBuffer * buf)
+     goto exit;
+   }
+
++#if 0
+   if (!GST_BUFFER_PTS_IS_VALID (last_buf))
+     goto no_pts;
++#endif
+
+   /* if this is the first buffer, store the timestamp */
+   if (G_UNLIKELY (pad->first_ts == GST_CLOCK_TIME_NONE)) {
+@@ -4423,6 +4425,7 @@ gst_qt_mux_add_buffer (GstQTMux * qtmux, GstQTPad * pad, GstBuffer * buf)
+     sync = TRUE;
+   }
+
++#if 0
+   if (GST_BUFFER_DTS_IS_VALID (last_buf)) {
+     last_dts = gst_util_uint64_scale_round (GST_BUFFER_DTS (last_buf),
+         atom_trak_get_timescale (pad->trak), GST_SECOND);
+@@ -4434,6 +4437,25 @@ gst_qt_mux_add_buffer (GstQTMux * qtmux, GstQTPad * pad, GstBuffer * buf)
+     last_dts = gst_util_uint64_scale_round (GST_BUFFER_PTS (last_buf),
+         atom_trak_get_timescale (pad->trak), GST_SECOND);
+   }
++#else
++  if (GST_BUFFER_DTS_IS_VALID (last_buf) && GST_BUFFER_PTS_IS_VALID (last_buf)) {
++    last_dts = gst_util_uint64_scale_round (GST_BUFFER_DTS (last_buf),
++        atom_trak_get_timescale (pad->trak), GST_SECOND);
++    pts_offset =
++        (gint64) (gst_util_uint64_scale_round (GST_BUFFER_PTS (last_buf),
++            atom_trak_get_timescale (pad->trak), GST_SECOND) - last_dts);
++  } else if (GST_BUFFER_PTS_IS_VALID (last_buf)) {
++    pts_offset = 0;
++    last_dts = gst_util_uint64_scale_round (GST_BUFFER_PTS (last_buf),
++        atom_trak_get_timescale (pad->trak), GST_SECOND);
++  } else if (GST_BUFFER_DTS_IS_VALID (last_buf)) {
++    pts_offset = 0;
++    last_dts = gst_util_uint64_scale_round (GST_BUFFER_DTS (last_buf),
++        atom_trak_get_timescale (pad->trak), GST_SECOND);
++  } else {
++    goto no_timestamps;
++  }
++#endif
+   GST_DEBUG ("dts: %" GST_TIME_FORMAT " pts: %" GST_TIME_FORMAT
+       " timebase_dts: %d pts_offset: %d",
+       GST_TIME_ARGS (GST_BUFFER_DTS (last_buf)),
+@@ -4559,6 +4581,11 @@ no_pts:
+     GST_ELEMENT_ERROR (qtmux, STREAM, MUX, (NULL), ("Buffer has no PTS."));
+     goto bail;
+   }
++no_timestamps:
++  {
++    GST_ELEMENT_ERROR (qtmux, STREAM, MUX, (NULL), ("Buffer has neither PTS nor DTS."));
++    goto bail;
++  }
+ not_negotiated:
+   {
+     GST_ELEMENT_ERROR (qtmux, CORE, NEGOTIATION, (NULL),
