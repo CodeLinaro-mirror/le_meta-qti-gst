@@ -9,6 +9,7 @@ FILESEXTRAPATHS_prepend := "${THISDIR}/gstreamer1.0-plugins-bad/1.16.2:"
 SRC_URI_append = " \
        file://0001-waylandsink-support-fullscreen-for-waylandsink-for-g.patch \
        file://0002-waylandsink-support-gbm-buffer-backend-protocol.patch \
+       file://0003-waylandsink-Forcibly-release-pending-buffers-on-PAUS.patch \
 "
 
 do_gbm_configure() {
