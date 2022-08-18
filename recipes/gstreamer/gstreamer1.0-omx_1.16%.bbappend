@@ -17,10 +17,6 @@ RDEPENDS_${PN} = "media"
 DEPENDS += "gbm linux-msm-headers"
 RDEPENDS_${PN} += "gbm"
 
-# Including ML metadata dependency
-DEPENDS += "gstreamer1.0-plugins-qti-oss-mlmeta"
-RDEPENDS_${PN} += "gstreamer1.0-plugins-qti-oss-mlmeta"
-
 # Add path to the kernel headers.
 EXTRA_OEMESON += "-Dsanitized_headers=${STAGING_INCDIR}/linux-msm/usr/include"
 
