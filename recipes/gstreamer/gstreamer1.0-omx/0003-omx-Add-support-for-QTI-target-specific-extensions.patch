@@ -1,8 +1,9 @@
-From 232f5b86e2b95d221919cc74aa7113ac5791b54d Mon Sep 17 00:00:00 2001
-From: "Petar G. Georgiev" <petarg@codeaurora.org>
-Date: Tue, 30 Jun 2020 18:51:59 +0300
+From 4d512417f118305892559ddcfb439cae8d3e2895 Mon Sep 17 00:00:00 2001
+From: "Petar G. Georgiev" <quic_petarg@quicinc.com>
+Date: Mon, 22 Aug 2022 19:17:04 +0300
 Subject: [PATCH] omx: Add support for QTI target specific extensions
 
+Signed-off-by: Petar G. Georgiev <quic_petarg@quicinc.com>
 ---
  omx/gstomx.c         |  14 +-
  omx/gstomxaacdec.c   |  13 ++
@@ -15,7 +16,7 @@ Subject: [PATCH] omx: Add support for QTI target specific extensions
  8 files changed, 534 insertions(+), 4 deletions(-)
 
 diff --git a/omx/gstomx.c b/omx/gstomx.c
-index 386fece..7b9817e 100644
+index 0c88818..7718f8c 100644
 --- a/omx/gstomx.c
 +++ b/omx/gstomx.c
 @@ -864,9 +864,18 @@ EventHandler (OMX_HANDLETYPE hComponent, OMX_PTR pAppData, OMX_EVENTTYPE eEvent,
