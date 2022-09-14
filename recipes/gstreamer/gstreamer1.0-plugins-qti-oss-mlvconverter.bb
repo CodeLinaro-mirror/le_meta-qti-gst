@@ -17,7 +17,7 @@ SRC_URI = "file://gst-plugin-mlvconverter/"
 S = "${WORKDIR}/gst-plugin-mlvconverter"
 
 # Default platform definitions.
-VIDEO_CONVERTER_ENGINE := "C2D"
+VIDEO_CONVERTER_ENGINE := "${@bb.utils.contains('DISTRO_FEATURES', 'qti-ib2c', 'GLES', 'C2D', d)}"
 
 # Install directories.
 INSTALL_BINDIR := "${bindir}"

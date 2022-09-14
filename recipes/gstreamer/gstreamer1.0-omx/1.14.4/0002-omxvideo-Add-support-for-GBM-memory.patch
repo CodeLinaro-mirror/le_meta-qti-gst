@@ -1,27 +1,28 @@
-From 44413a3b3e08195ee0299811dcfea6225a1bfdc9 Mon Sep 17 00:00:00 2001
-From: "Petar G. Georgiev" <petarg@codeaurora.org>
-Date: Tue, 21 Apr 2020 11:48:15 +0100
+From 6af0845355ba9973bfef56c972d7e3ca403b9008 Mon Sep 17 00:00:00 2001
+From: "Petar G. Georgiev" <quic_petarg@quicinc.com>
+Date: Mon, 22 Aug 2022 19:16:51 +0300
 Subject: [PATCH] omxvideo: Add support for GBM memory
 
+Signed-off-by: Petar G. Georgiev <quic_petarg@quicinc.com>
 ---
  configure.ac           |  11 ++
  meson.build            |  11 ++
  meson_options.txt      |   1 +
  omx/Makefile.am        |   4 +
- omx/gstomx.c           | 251 +++++++++++++++++++++++++++++++++++
- omx/gstomx.h           |  55 ++++++++
- omx/gstomxbufferpool.c | 177 ++++++++++++++++++++++++-
+ omx/gstomx.c           | 260 +++++++++++++++++++++++++++++++++++++++++
+ omx/gstomx.h           |  55 +++++++++
+ omx/gstomxbufferpool.c | 178 +++++++++++++++++++++++++++-
  omx/gstomxbufferpool.h |   1 +
  omx/gstomxvideo.c      |  15 +++
- omx/gstomxvideodec.c   | 288 +++++++++++++++++++++++++++++++++++++++--
+ omx/gstomxvideodec.c   | 259 ++++++++++++++++++++++++++++++++++++++--
  omx/gstomxvideodec.h   |   4 +-
- omx/gstomxvideoenc.c   | 160 ++++++++++++++++++++++-
+ omx/gstomxvideoenc.c   | 160 ++++++++++++++++++++++++-
  omx/gstomxvideoenc.h   |   2 +
  omx/meson.build        |   6 +-
- 14 files changed, 965 insertions(+), 21 deletions(-)
+ 14 files changed, 948 insertions(+), 19 deletions(-)
 
 diff --git a/configure.ac b/configure.ac
-index 8200da3..55648c0 100644
+index 787ee22..872cb0b 100644
 --- a/configure.ac
 +++ b/configure.ac
 @@ -184,6 +184,13 @@ PKG_CHECK_MODULES([X11], [x11], [
@@ -50,7 +51,7 @@ index 8200da3..55648c0 100644
              AS_HELP_STRING([--with-omx-header-path],[path of external OpenMAX IL header files]),
          [omx_header_path="$withval"], [omx_header_path="none"])
 diff --git a/meson.build b/meson.build
-index 0171388..b65ff08 100644
+index 3f68c9f..73c411f 100644
 --- a/meson.build
 +++ b/meson.build
 @@ -156,6 +156,7 @@ if host_machine.system() != 'windows'
@@ -110,7 +111,7 @@ index 3019040..9f2f016 100644
  	openmax \
  	gstomxvp8dec.c \
 diff --git a/omx/gstomx.c b/omx/gstomx.c
-index d7181bf..e7467c1 100644
+index d7181bf..64de90f 100644
 --- a/omx/gstomx.c
 +++ b/omx/gstomx.c
 @@ -27,6 +27,9 @@
@@ -335,7 +336,7 @@ index d7181bf..e7467c1 100644
  /* gst_omx_buffer_map_* methods are used in dynamic buffer mode to map
   * a frame/memory/buffer and update @buffer so its pBuffer points to the
   * mapped data. It also ensures that the input will stay alive until
-@@ -2005,6 +2185,65 @@ gst_omx_buffer_import_fd (GstOMXBuffer * buffer, GstBuffer * input)
+@@ -2005,6 +2185,72 @@ gst_omx_buffer_import_fd (GstOMXBuffer * buffer, GstBuffer * input)
    return TRUE;
  }
  
@@ -364,6 +365,14 @@ index d7181bf..e7467c1 100644
 +  buffer->input_buffer = gst_buffer_ref (input);
 +
 +#if defined (HAVE_GBM) && defined (USE_OMX_TARGET_QTI)
++  /* Release previously imported GBM buffer */
++  meta = (struct VideoGrallocMetadata *) buffer->omx_buf->pBuffer;
++
++  if (meta->pHandle)
++    buffer->port->comp->gbm->bo_destroy (meta->pHandle);
++
++  meta->pHandle = NULL;
++
 +  buffer->omx_buf->nAllocLen = sizeof (struct VideoGrallocMetadata);
 +  buffer->omx_buf->nFilledLen = buffer->omx_buf->nAllocLen;
 +
@@ -388,7 +397,6 @@ index d7181bf..e7467c1 100644
 +      return FALSE;
 +  }
 +
-+  meta = (struct VideoGrallocMetadata *) buffer->omx_buf->pBuffer;
 +  meta->eType = kMetadataBufferTypeGrallocSource;
 +  meta->pHandle =
 +      buffer->port->comp->gbm->bo_import (buffer->port->comp->gbm->device,
@@ -401,19 +409,21 @@ index d7181bf..e7467c1 100644
  gboolean
  gst_omx_buffer_map_buffer (GstOMXBuffer * buffer, GstBuffer * input)
  {
-@@ -2099,6 +2338,18 @@ gst_omx_port_deallocate_buffers_unlocked (GstOMXPort * port)
+@@ -2099,6 +2345,20 @@ gst_omx_port_deallocate_buffers_unlocked (GstOMXPort * port)
        GST_DEBUG_OBJECT (comp->parent, "%s: deallocating buffer %p (%p)",
            comp->name, buf, buf->omx_buf->pBuffer);
  
 +#if defined (HAVE_GBM) && defined (USE_OMX_TARGET_QTI)
-+      // Release any imported GBM buffers on the input port.
++      /* Release any imported GBM buffers on the input port */
 +      if (port->port_def.eDir == OMX_DirInput &&
 +          port->allocation == GST_OMX_BUFFER_ALLOCATION_USE_BUFFER_DYNAMIC) {
 +        struct VideoGrallocMetadata *meta =
 +            (struct VideoGrallocMetadata *) buf->omx_buf->pBuffer;
 +
-+        if (meta->pHandle != NULL)
++        if (meta->pHandle)
 +          port->comp->gbm->bo_destroy (meta->pHandle);
++
++        meta->pHandle = NULL;
 +      }
 +#endif
 +
@@ -515,7 +525,7 @@ index 693e420..49c8d14 100644
  
  /* refered by plugin_init */
 diff --git a/omx/gstomxbufferpool.c b/omx/gstomxbufferpool.c
-index 2d6923e..4ba75c6 100644
+index 2d6923e..b267aab 100644
 --- a/omx/gstomxbufferpool.c
 +++ b/omx/gstomxbufferpool.c
 @@ -26,8 +26,13 @@
@@ -704,31 +714,32 @@ index 2d6923e..4ba75c6 100644
          break;
        default:
          g_assert_not_reached ();
-@@ -514,6 +654,23 @@ gst_omx_buffer_pool_free_buffer (GstBufferPool * bpool, GstBuffer * buffer)
+@@ -514,6 +654,24 @@ gst_omx_buffer_pool_free_buffer (GstBufferPool * bpool, GstBuffer * buffer)
    }
    GST_OBJECT_UNLOCK (pool);
  
 +  if (pool->output_mode == GST_OMX_BUFFER_MODE_GBM) {
 +#if defined (HAVE_GBM) && defined (USE_OMX_TARGET_QTI)
-+    struct VideoGrallocMetadata *meta = NULL;
-+    struct gbm_bo *bo = NULL;
-+
 +    GstOMXBuffer *omx_buf =
 +        gst_mini_object_get_qdata (GST_MINI_OBJECT_CAST (buffer),
 +        gst_omx_buffer_data_quark);
 +
-+    meta = (struct VideoGrallocMetadata *) omx_buf->omx_buf->pBuffer;
-+    bo = (struct gbm_bo *) meta->pHandle;
++    if (omx_buf && omx_buf->omx_buf && omx_buf->omx_buf->pBuffer) {
++      struct VideoGrallocMetadata *meta =
++          (struct VideoGrallocMetadata *) omx_buf->omx_buf->pBuffer;
 +
-+    pool->component->gbm->bo_destroy (bo);
-+    meta->pHandle = NULL;
++      if (meta->pHandle)
++        pool->component->gbm->bo_destroy (meta->pHandle);
++
++      meta->pHandle = NULL;
++    }
 +#endif
 +  }
 +
    gst_mini_object_set_qdata (GST_MINI_OBJECT_CAST (buffer),
        gst_omx_buffer_data_quark, NULL, NULL);
  
-@@ -543,7 +700,11 @@ gst_omx_buffer_pool_acquire_buffer (GstBufferPool * bpool,
+@@ -543,7 +701,11 @@ gst_omx_buffer_pool_acquire_buffer (GstBufferPool * bpool,
        GstMemory *mem = gst_buffer_peek_memory (*buffer, 0);
        GstOMXBuffer *omx_buf;
  
@@ -741,7 +752,7 @@ index 2d6923e..4ba75c6 100644
          omx_buf =
              gst_mini_object_get_qdata (GST_MINI_OBJECT_CAST (buf),
              gst_omx_buffer_data_quark);
-@@ -555,8 +716,10 @@ gst_omx_buffer_pool_acquire_buffer (GstBufferPool * bpool,
+@@ -555,8 +717,10 @@ gst_omx_buffer_pool_acquire_buffer (GstBufferPool * bpool,
          omx_buf = ((GstOMXMemory *) mem)->buf;
        }
  
@@ -754,7 +765,7 @@ index 2d6923e..4ba75c6 100644
      }
    } else {
      /* Acquire any buffer that is available to be filled by upstream */
-@@ -581,6 +744,7 @@ gst_omx_buffer_pool_release_buffer (GstBufferPool * bpool, GstBuffer * buffer)
+@@ -581,6 +745,7 @@ gst_omx_buffer_pool_release_buffer (GstBufferPool * bpool, GstBuffer * buffer)
      omx_buf =
          gst_mini_object_get_qdata (GST_MINI_OBJECT_CAST (buffer),
          gst_omx_buffer_data_quark);
@@ -762,7 +773,7 @@ index 2d6923e..4ba75c6 100644
      if (pool->port->port_def.eDir == OMX_DirOutput && !omx_buf->used) {
        /* Release back to the port, can be filled again */
        err = gst_omx_port_release_buffer (pool->port, omx_buf);
-@@ -679,6 +843,9 @@ gst_omx_buffer_pool_new (GstElement * element, GstOMXComponent * component,
+@@ -679,6 +844,9 @@ gst_omx_buffer_pool_new (GstElement * element, GstOMXComponent * component,
    pool->output_mode = output_mode;
  
    switch (output_mode) {
@@ -818,7 +829,7 @@ index 151b3b4..a37e159 100644
          gst_structure_new ("video/x-raw",
              "format", G_TYPE_STRING,
 diff --git a/omx/gstomxvideodec.c b/omx/gstomxvideodec.c
-index 812eb29..ce6632a 100644
+index 576c211..e056d27 100644
 --- a/omx/gstomxvideodec.c
 +++ b/omx/gstomxvideodec.c
 @@ -181,6 +181,10 @@ gst_omx_video_dec_class_init (GstOMXVideoDecClass * klass)
@@ -891,7 +902,7 @@ index 812eb29..ce6632a 100644
    pool = gst_video_decoder_get_buffer_pool (GST_VIDEO_DECODER (self));
    if (pool) {
      GstAllocator *allocator;
-@@ -767,11 +800,23 @@ gst_omx_video_dec_allocate_output_buffers (GstOMXVideoDec * self)
+@@ -767,11 +800,20 @@ gst_omx_video_dec_allocate_output_buffers (GstOMXVideoDec * self)
    }
  #endif
  
@@ -906,75 +917,17 @@ index 812eb29..ce6632a 100644
 +      mode = GST_OMX_BUFFER_MODE_DMABUF;
 +    else if (self->gbm)
 +      mode = GST_OMX_BUFFER_MODE_GBM;
- 
++
 +    self->out_port_pool = gst_omx_buffer_pool_new (GST_ELEMENT_CAST (self),
 +        self->dec, port, mode);
-+
+ 
 +    // Always add video meta in GBM buffer mode.
 +    add_videometa |= (mode == GST_OMX_BUFFER_MODE_GBM) ? TRUE : FALSE;
-+
-+    // Always enable use buffers in GBM buffer mode.
-+    self->use_buffers |= (mode == GST_OMX_BUFFER_MODE_GBM) ? TRUE : FALSE;
 +  }
  #if defined (HAVE_GST_GL)
    if (eglimage) {
      GList *buffers = NULL;
-@@ -957,7 +1002,7 @@ gst_omx_video_dec_allocate_output_buffers (GstOMXVideoDec * self)
-       was_enabled = FALSE;
-     }
- 
--    if (self->use_buffers) {
-+    if (self->use_buffers && !self->gbm) {
-       GList *images = NULL;
-       GList *frames = NULL;
-       GstVideoInfo v_info;
-@@ -1022,6 +1067,36 @@ gst_omx_video_dec_allocate_output_buffers (GstOMXVideoDec * self)
-         g_list_free (images);
-         g_list_free_full (frames, (GDestroyNotify) gst_video_frame_unmap);
- 
-+        if (err == OMX_ErrorNone) {
-+          GST_DEBUG_OBJECT (self, "Using %d buffers", min);
-+        } else {
-+          GST_INFO_OBJECT (self,
-+              "Failed to OMX_UseBuffer on port: %s (0x%08x)",
-+              gst_omx_error_to_string (err), err);
-+          g_list_free_full (buffers, (GDestroyNotify) gst_buffer_unref);
-+          self->use_buffers = FALSE;
-+        }
-+      }
-+    } else if (self->use_buffers && self->gbm) {
-+      GList *metas = NULL;
-+      gint i = 0;
-+
-+      GST_DEBUG_OBJECT (self, "Trying to allocate %d meta buffers", min);
-+
-+#if defined (HAVE_GBM) && defined (USE_OMX_TARGET_QTI)
-+      for (i = 0; i < min; i++) {
-+        struct VideoGrallocMetadata *meta =
-+            calloc (1, sizeof (struct VideoGrallocMetadata));
-+        metas = g_list_append (metas, meta);
-+      }
-+
-+      GST_DEBUG_OBJECT (self, "Allocated %d meta buffers successfully", min);
-+#endif
-+
-+      if (metas) {
-+        err = gst_omx_port_use_buffers (port, metas);
-+        g_list_free (metas);
-+
-         if (err == OMX_ErrorNone) {
-           GST_DEBUG_OBJECT (self, "Using %d buffers", min);
-         } else {
-@@ -1090,7 +1165,7 @@ gst_omx_video_dec_allocate_output_buffers (GstOMXVideoDec * self)
-       }
-     }
- 
--    if (self->use_buffers) {
-+    if (self->use_buffers && !self->gbm) {
-       GST_DEBUG_OBJECT (self, "Populating internal buffer pool");
-       GST_OMX_BUFFER_POOL (self->out_port_pool)->other_pool =
-           GST_BUFFER_POOL (gst_object_ref (pool));
-@@ -1203,6 +1278,8 @@ gst_omx_video_dec_reconfigure_output_port (GstOMXVideoDec * self)
+@@ -1203,6 +1245,8 @@ gst_omx_video_dec_reconfigure_output_port (GstOMXVideoDec * self)
        err = OMX_ErrorNone;
        goto enable_port;
      } else {
@@ -983,7 +936,7 @@ index 812eb29..ce6632a 100644
        /* Set up egl_render */
  
        self->eglimage = TRUE;
-@@ -1216,10 +1293,28 @@ gst_omx_video_dec_reconfigure_output_port (GstOMXVideoDec * self)
+@@ -1216,10 +1260,28 @@ gst_omx_video_dec_reconfigure_output_port (GstOMXVideoDec * self)
        /* at this point state->caps is NULL */
        if (state->caps)
          gst_caps_unref (state->caps);
@@ -1014,7 +967,7 @@ index 812eb29..ce6632a 100644
        /* try to negotiate with caps feature */
        if (!gst_video_decoder_negotiate (GST_VIDEO_DECODER (self))) {
  
-@@ -1416,6 +1511,30 @@ gst_omx_video_dec_reconfigure_output_port (GstOMXVideoDec * self)
+@@ -1416,6 +1478,30 @@ gst_omx_video_dec_reconfigure_output_port (GstOMXVideoDec * self)
        format, port_def.format.video.nFrameWidth,
        port_def.format.video.nFrameHeight, self->input_state);
  
@@ -1045,7 +998,7 @@ index 812eb29..ce6632a 100644
    if (!gst_video_decoder_negotiate (GST_VIDEO_DECODER (self))) {
      gst_video_codec_state_unref (state);
      GST_ERROR_OBJECT (self, "Failed to negotiate");
-@@ -1621,6 +1740,30 @@ gst_omx_video_dec_loop (GstOMXVideoDec * self)
+@@ -1621,6 +1707,30 @@ gst_omx_video_dec_loop (GstOMXVideoDec * self)
            format, port_def.format.video.nFrameWidth,
            port_def.format.video.nFrameHeight, self->input_state);
  
@@ -1076,7 +1029,7 @@ index 812eb29..ce6632a 100644
        /* Take framerate and pixel-aspect-ratio from sinkpad caps */
  
        if (!gst_video_decoder_negotiate (GST_VIDEO_DECODER (self))) {
-@@ -2028,6 +2171,7 @@ gst_omx_video_dec_negotiate (GstOMXVideoDec * self)
+@@ -2028,6 +2138,7 @@ gst_omx_video_dec_negotiate (GstOMXVideoDec * self)
    GstVideoFormat format;
    GstStructure *s;
    const gchar *format_str;
@@ -1084,7 +1037,7 @@ index 812eb29..ce6632a 100644
  
    GST_DEBUG_OBJECT (self, "Trying to negotiate a video format with downstream");
  
-@@ -2078,6 +2222,10 @@ gst_omx_video_dec_negotiate (GstOMXVideoDec * self)
+@@ -2078,6 +2189,10 @@ gst_omx_video_dec_negotiate (GstOMXVideoDec * self)
      return FALSE;
    }
  
@@ -1095,7 +1048,7 @@ index 812eb29..ce6632a 100644
    GST_OMX_INIT_STRUCT (&param);
    param.nPortIndex = self->dec_out_port->index;
  
-@@ -2092,6 +2240,27 @@ gst_omx_video_dec_negotiate (GstOMXVideoDec * self)
+@@ -2092,6 +2207,27 @@ gst_omx_video_dec_negotiate (GstOMXVideoDec * self)
    for (l = negotiation_map; l; l = l->next) {
      GstOMXVideoNegotiationMap *m = l->data;
  
@@ -1123,7 +1076,7 @@ index 812eb29..ce6632a 100644
      if (m->format == format) {
        param.eColorFormat = m->type;
        break;
-@@ -2329,6 +2498,22 @@ gst_omx_video_dec_pick_input_allocation_mode (GstOMXVideoDec * self,
+@@ -2329,6 +2465,22 @@ gst_omx_video_dec_pick_input_allocation_mode (GstOMXVideoDec * self,
    if (!gst_omx_is_dynamic_allocation_supported ())
      return GST_OMX_BUFFER_ALLOCATION_ALLOCATE_BUFFER;
  
@@ -1146,7 +1099,7 @@ index 812eb29..ce6632a 100644
    if (can_use_dynamic_buffer_mode (self, inbuf)) {
      GST_DEBUG_OBJECT (self,
          "input buffer is properly aligned, use dynamic allocation");
-@@ -2358,8 +2543,13 @@ gst_omx_video_dec_enable (GstOMXVideoDec * self, GstBuffer * input)
+@@ -2358,8 +2510,13 @@ gst_omx_video_dec_enable (GstOMXVideoDec * self, GstBuffer * input)
      if ((klass->cdata.hacks & GST_OMX_HACK_NO_DISABLE_OUTPORT)) {
        if (gst_omx_port_set_enabled (self->dec_out_port, TRUE) != OMX_ErrorNone)
          return FALSE;
@@ -1160,7 +1113,7 @@ index 812eb29..ce6632a 100644
  
        if (gst_omx_port_wait_enabled (self->dec_out_port,
                5 * GST_SECOND) != OMX_ErrorNone)
-@@ -2399,8 +2589,13 @@ gst_omx_video_dec_enable (GstOMXVideoDec * self, GstBuffer * input)
+@@ -2399,8 +2556,13 @@ gst_omx_video_dec_enable (GstOMXVideoDec * self, GstBuffer * input)
        /* Need to allocate buffers to reach Idle state */
        if (!gst_omx_video_dec_allocate_in_buffers (self))
          return FALSE;
@@ -1174,7 +1127,7 @@ index 812eb29..ce6632a 100644
      }
  
      if (gst_omx_component_get_state (self->dec,
-@@ -2497,6 +2692,14 @@ gst_omx_video_dec_set_format (GstVideoDecoder * decoder,
+@@ -2497,6 +2659,14 @@ gst_omx_video_dec_set_format (GstVideoDecoder * decoder,
  
    GST_DEBUG_OBJECT (self, "Setting new caps %" GST_PTR_FORMAT, state->caps);
  
@@ -1189,7 +1142,7 @@ index 812eb29..ce6632a 100644
    if (!self->dmabuf
        && gst_caps_features_contains (gst_caps_get_features (state->caps, 0),
            GST_CAPS_FEATURE_MEMORY_DMABUF)) {
-@@ -2604,6 +2807,73 @@ gst_omx_video_dec_set_format (GstVideoDecoder * decoder,
+@@ -2604,6 +2774,73 @@ gst_omx_video_dec_set_format (GstVideoDecoder * decoder,
    gst_buffer_replace (&self->codec_data, state->codec_data);
    self->input_state = gst_video_codec_state_ref (state);
  
@@ -1263,6 +1216,21 @@ index 812eb29..ce6632a 100644
  #ifdef USE_OMX_TARGET_ZYNQ_USCALE_PLUS
    gst_omx_video_dec_set_latency (self);
  #endif
+@@ -3202,6 +3439,14 @@ gst_omx_video_dec_decide_allocation (GstVideoDecoder * bdec, GstQuery * query)
+     }
+   }
+ 
++#if defined (HAVE_GBM) && defined (USE_OMX_TARGET_QTI)
++  /* Downstream buffer pools are not supported in GBM mode */
++  while (self->gbm && (gst_query_get_n_allocation_pools (query) != 0))
++    gst_query_remove_nth_allocation_pool (query, 0);
++
++  self->use_buffers &= self->gbm ? FALSE : TRUE;
++#endif
++
+   if (!GST_VIDEO_DECODER_CLASS
+       (gst_omx_video_dec_parent_class)->decide_allocation (bdec, query))
+     return FALSE;
 diff --git a/omx/gstomxvideodec.h b/omx/gstomxvideodec.h
 index cb70e02..0f46258 100644
 --- a/omx/gstomxvideodec.h
