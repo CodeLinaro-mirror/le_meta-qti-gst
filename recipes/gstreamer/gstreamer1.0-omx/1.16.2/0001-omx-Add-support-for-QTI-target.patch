@@ -1,8 +1,9 @@
-From f3e617568e64103c50b079e1916918461f6fdcb7 Mon Sep 17 00:00:00 2001
-From: Jeremy Hao <jinghao@codeaurora.org>
-Date: Wed, 21 Oct 2020 14:32:52 +0530
+From f30da35635614b5555ed6b99549b872fa62abc24 Mon Sep 17 00:00:00 2001
+From: "Petar G. Georgiev" <quic_petarg@quicinc.com>
+Date: Mon, 22 Aug 2022 19:19:57 +0300
 Subject: [PATCH] omx: Add support for QTI target
 
+Signed-off-by: Petar G. Georgiev <quic_petarg@quicinc.com>
 Signed-off-by: Jeremy Hao <jinghao@codeaurora.org>
 ---
  config/Makefile.am      |  2 +-
