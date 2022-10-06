@@ -1,8 +1,9 @@
-From 6c2d92bd1a9dd7e4614c8f69190570eaa3162391 Mon Sep 17 00:00:00 2001
-From: "Petar G. Georgiev" <petarg@codeaurora.org>
-Date: Wed, 1 Apr 2020 14:05:58 +0100
+From 2180708b0ae2aff3515ed676e84a10501f0d1d7f Mon Sep 17 00:00:00 2001
+From: "Petar G. Georgiev" <quic_petarg@quicinc.com>
+Date: Mon, 22 Aug 2022 19:16:35 +0300
 Subject: [PATCH] omx: Add support for QTI target
 
+Signed-off-by: Petar G. Georgiev <quic_petarg@quicinc.com>
 ---
  config/Makefile.am      |  2 +-
  config/meson.build      |  2 ++

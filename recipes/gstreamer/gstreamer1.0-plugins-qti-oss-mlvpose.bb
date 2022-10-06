@@ -1,6 +1,6 @@
 inherit cmake
 
-SUMMARY = "QTI open-source GStreamer Plug-in for ML Posenet"
+SUMMARY = "QTI open-source GStreamer Plug-in for ML Pose Estimation"
 SECTION = "multimedia"
 
 LICENSE = "BSD-3-Clause-Clear"
@@ -10,13 +10,12 @@ LIC_FILES_CHKSUM = "file://${COREBASE}/meta-qti-bsp/files/common-licenses/${LICE
 DEPENDS := "gstreamer1.0"
 DEPENDS += "gstreamer1.0-plugins-base"
 DEPENDS += "gstreamer1.0-plugins-qti-oss-base"
-DEPENDS += "gstreamer1.0-plugins-qti-oss-mlmeta"
 DEPENDS += "cairo"
 
 FILESPATH =+ "${WORKSPACE}/vendor/qcom/opensource/gst-plugins-qti-oss/:"
 
-SRC_URI = "file://gst-plugin-mlvposenet/"
-S = "${WORKDIR}/gst-plugin-mlvposenet"
+SRC_URI = "file://gst-plugin-mlvpose/"
+S = "${WORKDIR}/gst-plugin-mlvpose"
 
 # Install directories.
 INSTALL_INCDIR := "${includedir}"

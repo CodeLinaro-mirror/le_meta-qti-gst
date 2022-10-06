@@ -1,0 +1,32 @@
+From 31dbc340bc2921da57e5ed49a5ac4b01ff6d8155 Mon Sep 17 00:00:00 2001
+From: Haihua Hu <jared.hu@nxp.com>
+Date: Wed, 7 Sep 2022 17:18:40 +0530
+Subject: [PATCH] waylandsink: fix for video playback crash after HPD operation
+
+Added wl_registry.global_remove listener similar to GStreamer 1.18 code to avoid crash.
+https://github.com/GStreamer/gst-plugins-bad/commit/d77de13ca6028d0011f5a2a285a2a6f751b5d8da
+---
+ ext/wayland/wldisplay.c | 9 ++++++++-
+ 1 file changed, 8 insertions(+), 1 deletion(-)
+
+diff --git a/ext/wayland/wldisplay.c b/ext/wayland/wldisplay.c
+index 2464e77..021350b 100644
+--- a/ext/wayland/wldisplay.c
++++ b/ext/wayland/wldisplay.c
+@@ -285,8 +285,15 @@ registry_handle_global (void *data, struct wl_registry *registry,
+   }
+ }
+ 
++static void
++registry_handle_global_remove (void *data, struct wl_registry *registry,
++    uint32_t name)
++{
++  /* temporarily do nothing */
++}
+ static const struct wl_registry_listener registry_listener = {
+-  registry_handle_global
++  registry_handle_global,
++  registry_handle_global_remove
+ };
+ 
+ static gpointer
