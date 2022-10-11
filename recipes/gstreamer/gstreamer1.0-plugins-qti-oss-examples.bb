@@ -16,6 +16,8 @@ DEPENDS_append_qrb5165 += "${@bb.utils.contains('DISTRO_FEATURES', 'qti-camera',
 DEPENDS_append_qrb5165 += "${@bb.utils.contains('DISTRO_FEATURES', 'qti-camera', 'camera-metadata', '', d)}"
 DEPENDS_append_qrbx210 += "${@bb.utils.contains('DISTRO_FEATURES', 'qti-camera', 'libhardware', '', d)}"
 DEPENDS_append_qrbx210 += "${@bb.utils.contains('DISTRO_FEATURES', 'qti-camera', 'camera-metadata', '', d)}"
+DEPENDS_append_sdmsteppe += "${@bb.utils.contains('MACHINE_FEATURES', 'hibernate', 'data', '', d)}"
+DEPENDS_append_sdmsteppe += "${@bb.utils.contains('MACHINE_FEATURES', 'hibernate', 'dbus', '', d)}"
 
 FILESPATH =+ "${WORKSPACE}/vendor/qcom/opensource/gst-plugins-qti-oss/:"
 SRC_URI = "file://gst-plugin-examples/"
@@ -39,13 +41,19 @@ CAMERA_CLIENT_DISABLED_qrbx210 := "TRUE"
 CODEC2_ENCODE := "FALSE"
 CODEC2_ENCODE_qrbx210 := "TRUE"
 
+# S2D stands for "Suspend to Disk"
+TARGET_SUPPORTS_S2D := "FALSE"
+TARGET_SUPPORTS_S2D_sdmsteppe := "${@bb.utils.contains('MACHINE_FEATURES', 'hibernate', 'TRUE', 'FALSE', d)}"
+
 EXTRA_OECMAKE += "-DGST_VERSION_REQUIRED=1.14.4"
 EXTRA_OECMAKE += "-DSYSROOT_INCDIR=${STAGING_INCDIR}"
 EXTRA_OECMAKE += "-DSYSROOT_LIBDIR=${STAGING_LIBDIR}"
+EXTRA_OECMAKE += "-DKERNEL_BUILDDIR=${STAGING_KERNEL_BUILDDIR}"
 EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_INSTALL_BINDIR=${INSTALL_BINDIR}"
 EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_INSTALL_LIBDIR=${INSTALL_LIBDIR}"
 EXTRA_OECMAKE += "-DCAMERA_CLIENT_DISABLED=${CAMERA_CLIENT_DISABLED}"
 EXTRA_OECMAKE += "-DCODEC2_ENCODE=${CODEC2_ENCODE}"
+EXTRA_OECMAKE += "-DTARGET_SUPPORTS_S2D=${TARGET_SUPPORTS_S2D}"
 
 FILES_${PN} += "${INSTALL_BINDIR}"
 FILES_${PN} += "${INSTALL_LIBDIR}"
