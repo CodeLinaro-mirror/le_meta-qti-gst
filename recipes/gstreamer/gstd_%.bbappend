@@ -30,7 +30,7 @@ do_configure_prepend() {
 
 do_install_append() {
         install -d ${D}${sysconfdir}/default
-        echo "OPTARGS=\"-a 172.17.0.1\"" >> ${D}${sysconfdir}/default/gstd
+        echo "OPTARGS=\"-a 0.0.0.0\"" >> ${D}${sysconfdir}/default/gstd
         echo "XDG_RUNTIME_DIR=/dev/socket/weston" >> ${D}${sysconfdir}/default/gstd
         echo "GST_REGISTRY=${sysconfdir}/gstreamer1.0/.cache/registry.${TUNE_ARCH}.bin" >> \
         ${D}${sysconfdir}/default/gstd
