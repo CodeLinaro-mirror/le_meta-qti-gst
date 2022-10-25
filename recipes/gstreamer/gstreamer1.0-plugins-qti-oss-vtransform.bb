@@ -11,12 +11,13 @@ DEPENDS := "gstreamer1.0"
 DEPENDS += "gstreamer1.0-plugins-base"
 DEPENDS += "gstreamer1.0-plugins-qti-oss-base"
 
-do_configure[depends] += "virtual/kernel:do_shared_workdir"
-
 FILESPATH =+ "${WORKSPACE}/vendor/qcom/opensource/gst-plugins-qti-oss/:"
 
 SRC_URI = "file://gst-plugin-vtransform/"
 S = "${WORKDIR}/gst-plugin-vtransform"
+
+# Default platform definitions.
+VIDEO_CONVERTER_ENGINE := "C2D"
 
 # Install directries.
 INSTALL_BINDIR := "${bindir}"
@@ -34,6 +35,8 @@ EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_VERSION=${PV}"
 EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_PACKAGE=${PN}"
 EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_SUMMARY="${SUMMARY}""
 EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_ORIGIN="Unknown package origin""
+
+EXTRA_OECMAKE += "-DGST_VIDEO_CONVERTER_ENGINE=${VIDEO_CONVERTER_ENGINE}"
 
 FILES_${PN} += "${INSTALL_BINDIR}"
 FILES_${PN} += "${INSTALL_LIBDIR}"

@@ -19,10 +19,6 @@ RDEPENDS_${PN} += "gbm"
 # Add path to the kernel headers.
 EXTRA_OECONF += "--with-sanitized-headers=${STAGING_KERNEL_BUILDDIR}/usr/include"
 
-# Including ML metadata dependecy
-DEPENDS += "gstreamer1.0-plugins-qti-oss-mlmeta"
-RDEPENDS_${PN} += "gstreamer1.0-plugins-qti-oss-mlmeta"
-
 LICENSE_FLAGS_WHITELIST = "commercial"
 
 GSTREAMER_1_0_OMX_TARGET = "qti"

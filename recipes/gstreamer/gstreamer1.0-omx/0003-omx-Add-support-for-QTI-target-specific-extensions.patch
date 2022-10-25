@@ -1,21 +1,23 @@
-From 232f5b86e2b95d221919cc74aa7113ac5791b54d Mon Sep 17 00:00:00 2001
-From: "Petar G. Georgiev" <petarg@codeaurora.org>
-Date: Tue, 30 Jun 2020 18:51:59 +0300
+From f69a563408684f9cabacb34a0521ce42f49394b6 Mon Sep 17 00:00:00 2001
+From: "Petar G. Georgiev" <quic_petarg@quicinc.com>
+Date: Mon, 22 Aug 2022 19:17:04 +0300
 Subject: [PATCH] omx: Add support for QTI target specific extensions
 
+Signed-off-by: Petar G. Georgiev <quic_petarg@quicinc.com>
+Signed-off-by: Aashish Patel <quic_paashish@quicinc.com>
 ---
  omx/gstomx.c         |  14 +-
  omx/gstomxaacdec.c   |  13 ++
  omx/gstomxaudiodec.c |   1 +
- omx/gstomxh264enc.c  |  16 +++
- omx/gstomxh265enc.c  | 148 +++++++++++++++++++
+ omx/gstomxh264enc.c  |  16 ++
+ omx/gstomxh265enc.c  | 148 ++++++++++++++++++
  omx/gstomxh265enc.h  |   5 +-
- omx/gstomxvideoenc.c | 330 +++++++++++++++++++++++++++++++++++++++++++
+ omx/gstomxvideoenc.c | 350 +++++++++++++++++++++++++++++++++++++++++++
  omx/gstomxvideoenc.h |  11 ++
- 8 files changed, 534 insertions(+), 4 deletions(-)
+ 8 files changed, 554 insertions(+), 4 deletions(-)
 
 diff --git a/omx/gstomx.c b/omx/gstomx.c
-index 386fece..7b9817e 100644
+index 0c88818..7718f8c 100644
 --- a/omx/gstomx.c
 +++ b/omx/gstomx.c
 @@ -864,9 +864,18 @@ EventHandler (OMX_HANDLETYPE hComponent, OMX_PTR pAppData, OMX_EVENTTYPE eEvent,
@@ -90,7 +92,7 @@ index 8275b72..3f375c8 100644
          gst_omx_component_get_parameter (self->dec, OMX_IndexParamAudioPcm,
          &pcm_param);
 diff --git a/omx/gstomxh264enc.c b/omx/gstomxh264enc.c
-index f75fff0..733faef 100644
+index 4341d63..733dea3 100644
 --- a/omx/gstomxh264enc.c
 +++ b/omx/gstomxh264enc.c
 @@ -624,6 +624,22 @@ gst_omx_h264_enc_set_format (GstOMXVideoEnc * enc, GstOMXPort * port,
@@ -336,7 +338,7 @@ index c53be18..d8fec7f 100644
    guint32 periodicity_idr;
    guint32 b_frames;
 diff --git a/omx/gstomxvideoenc.c b/omx/gstomxvideoenc.c
-index eee33c6..0c6cb67 100644
+index b41674c..4a12de1 100644
 --- a/omx/gstomxvideoenc.c
 +++ b/omx/gstomxvideoenc.c
 @@ -51,10 +51,17 @@ gst_omx_video_enc_control_rate_get_type (void)
@@ -504,7 +506,7 @@ index eee33c6..0c6cb67 100644
  #ifdef USE_OMX_TARGET_ZYNQ_USCALE_PLUS
    self->qp_mode = GST_OMX_VIDEO_ENC_QP_MODE_DEFAULT;
    self->min_qp = GST_OMX_VIDEO_ENC_MIN_QP_DEFAULT;
-@@ -920,6 +1039,159 @@ gst_omx_video_enc_open (GstVideoEncoder * encoder)
+@@ -920,11 +1039,184 @@ gst_omx_video_enc_open (GstVideoEncoder * encoder)
        }
      }
    }
@@ -664,7 +666,32 @@ index eee33c6..0c6cb67 100644
  #ifdef USE_OMX_TARGET_ZYNQ_USCALE_PLUS
    if (!set_zynqultrascaleplus_props (self))
      return FALSE;
-@@ -1037,6 +1309,35 @@ gst_omx_video_enc_set_property (GObject * object, guint prop_id,
+ #endif
+ 
++  {
++    /* Set realtime session priority */
++    OMX_ERRORTYPE err;
++    OMX_PARAM_U32TYPE priority;
++
++    GST_OMX_INIT_STRUCT (&priority);
++    priority.nPortIndex = self->enc_out_port->index;
++    priority.nU32 = 0;
++
++    err =
++        gst_omx_component_set_config (self->enc,
++        OMX_IndexConfigPriority, &priority);
++
++    GST_LOG_OBJECT (self, "Session priority set to %u", priority.nU32);
++    if (err != OMX_ErrorNone)
++      GST_ERROR_OBJECT (self,
++          "Failed to configure realtime session priority: %s (0x%08x)",
++          gst_omx_error_to_string (err), err);
++  }
++
+   return TRUE;
+ }
+ 
+@@ -1037,6 +1329,35 @@ gst_omx_video_enc_set_property (GObject * object, guint prop_id,
      case PROP_QUANT_B_FRAMES:
        self->quant_b_frames = g_value_get_uint (value);
        break;
@@ -700,7 +727,7 @@ index eee33c6..0c6cb67 100644
  #ifdef USE_OMX_TARGET_ZYNQ_USCALE_PLUS
      case PROP_QP_MODE:
        self->qp_mode = g_value_get_enum (value);
-@@ -1117,6 +1418,35 @@ gst_omx_video_enc_get_property (GObject * object, guint prop_id, GValue * value,
+@@ -1117,6 +1438,35 @@ gst_omx_video_enc_get_property (GObject * object, guint prop_id, GValue * value,
      case PROP_QUANT_B_FRAMES:
        g_value_set_uint (value, self->quant_b_frames);
        break;

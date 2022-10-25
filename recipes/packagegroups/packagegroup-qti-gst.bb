@@ -34,7 +34,7 @@ RDEPENDS_packagegroup-qti-gst = " \
       gstreamer1.0-plugins-qti-oss-mlvdetection \
       gstreamer1.0-plugins-qti-oss-mlvclassification \
       gstreamer1.0-plugins-qti-oss-mlvsegmentation \
-      gstreamer1.0-plugins-qti-oss-mlvposenet \
+      gstreamer1.0-plugins-qti-oss-mlvpose \
       gstreamer1.0-plugins-qti-oss-mldemux \
       ${@bb.utils.contains("MACHINE_FEATURES", "qti-aic", "gstreamer1.0-plugins-qti-oss-mlaic", "", d)} \
       ${@bb.utils.contains("DISTRO_FEATURES", "tensorflow-lite", "gstreamer1.0-plugins-qti-oss-mltflite", "", d)} \
@@ -44,9 +44,9 @@ RDEPENDS_packagegroup-qti-gst = " \
       ${@bb.utils.contains_any("COMBINED_FEATURES", "qti-video qti-audio", "gstreamer1.0-libav", "", d)} \
       ${@bb.utils.contains("COMBINED_FEATURES", "qti-cdsp", "gstreamer1.0-plugins-qti-oss-hexagon-nn", "", d)} \
       ${@bb.utils.contains("DISTRO_FEATURES", "qti-qmmf", "gstreamer1.0-plugins-qti-oss-qmmfsrc", "", d)} \
-      ${@bb.utils.contains_any("DISTRO_FEATURES", "tensorflow-lite qti-snpe", "gstreamer1.0-plugins-qti-oss-mle", "", d)} \
       ${@bb.utils.contains("DISTRO_FEATURES", "qti-dfs", "gstreamer1.0-plugins-qti-oss-dfs", "", d)} \
       ${@bb.utils.contains("MACHINE_FEATURES", "qti-cvp", "gstreamer1.0-plugins-qti-oss-cvp-optclflow", "", d)} \
       ${@bb.utils.contains("BASEMACHINE", "sdmsteppe", "gstreamer1.0-plugins-qti-oss-jpegenc", "", d)} \
       ${@bb.utils.contains("BASEMACHINE", "qrbx210", "gstreamer1.0-plugins-qti-oss-codec2", "", d)} \
+      ${@bb.utils.contains("BASEMACHINE", "sdmsteppe", "gstd", "", d)} \
     "
