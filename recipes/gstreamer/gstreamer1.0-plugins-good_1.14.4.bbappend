@@ -15,6 +15,7 @@ SRC_URI += "\
   file://0001-add-support-to-set-prebuf-in-properties.patch \
   file://0001-gstreamer1.0-plugins-good-Adding-dsd-compressed-playback.patch \
   file://0001-pulse-Add-a-pulsedirectsrc-without-audioringbuffer.patch \
+  file://0001-qtdemux-fix-allocation-explosion-with-stsd-entries.patch \
 "
 PACKAGECONFIG[v4l2] = "--enable-gst_v4l2,--disable-gst_v4l2"
 
