@@ -10,7 +10,7 @@ PACKAGES = " \
       packagegroup-qti-gst \
     "
 
-RDEPENDS_packagegroup-qti-gst = " \
+RDEPENDS:packagegroup-qti-gst = " \
       gstd \
       gstreamer1.0 \
       gstreamer1.0-plugins-base \

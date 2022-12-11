@@ -36,13 +36,13 @@ EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_PACKAGE=${PN}"
 EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_SUMMARY="${SUMMARY}""
 EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_ORIGIN="Unknown package origin""
 
-FILES_${PN} += "${INSTALL_BINDIR}"
-FILES_${PN} += "${INSTALL_LIBDIR}"
+FILES:${PN} += "${INSTALL_BINDIR}"
+FILES:${PN} += "${INSTALL_LIBDIR}"
 
-FILES_${PN}-dbg += "${INSTALL_LIBDIR}/gstreamer-1.0/.debug"
+FILES:${PN}-dbg += "${INSTALL_LIBDIR}/gstreamer-1.0/.debug"
 
 SOLIBS = ".so*"
 FILES_SOLIBSDEV = ""
 
 # Since the qaic-rt recipe is not installing any libraries we need to skip rdeps check.
-INSANE_SKIP_${PN} += "file-rdeps"
+INSANE_SKIP:${PN} += "file-rdeps"
