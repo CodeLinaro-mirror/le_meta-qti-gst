@@ -1,4 +1,4 @@
-FILESEXTRAPATHS_prepend := "${THISDIR}/gstreamer1.0-omx:${THISDIR}/gstreamer1.0-omx/1.16.2:"
+FILESEXTRAPATHS:prepend := "${THISDIR}/gstreamer1.0-omx:${THISDIR}/gstreamer1.0-omx/1.16.2:"
 
 DEPENDS_remove = "virtual/libomxil"
 
@@ -12,11 +12,11 @@ SRC_URI += "file://0004-omxvideoenc-property-to-support-rotation-using-VPU.patch
 SRC_URI += "file://0005-omxvideodec-Support-for-dynamic-resolution-change.patch"
 
 DEPENDS += "media"
-RDEPENDS_${PN} = "media"
+RDEPENDS:${PN} = "media"
 
 # Including gbm and kernel dependency as we need libgbm and some kernel headers
 DEPENDS += "gbm linux-msm-headers"
-RDEPENDS_${PN} += "gbm"
+RDEPENDS:${PN} += "gbm"
 
 # Add path to the kernel headers.
 EXTRA_OEMESON += "-Dsanitized_headers=${STAGING_INCDIR}/linux-msm/usr/include"

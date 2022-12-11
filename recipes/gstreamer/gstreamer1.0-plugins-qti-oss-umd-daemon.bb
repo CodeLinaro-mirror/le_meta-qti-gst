@@ -11,7 +11,7 @@ DEPENDS := "gstreamer1.0"
 DEPENDS += "gstreamer1.0-plugins-qti-oss-mlmeta"
 DEPENDS += "qti-umd-gadget"
 
-RDEPENDS_${PN} := "qti-umd-gadget"
+RDEPENDS:${PN} := "qti-umd-gadget"
 
 FILESPATH =+ "${WORKSPACE}/vendor/qcom/opensource/gst-plugins-qti-oss/:"
 SRC_URI = "file://gst-umd-daemon/"
@@ -27,8 +27,8 @@ EXTRA_OECMAKE += "-DSYSROOT_LIBDIR=${STAGING_LIBDIR}"
 EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_INSTALL_BINDIR=${INSTALL_BINDIR}"
 EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_INSTALL_LIBDIR=${INSTALL_LIBDIR}"
 
-FILES_${PN} += "${INSTALL_BINDIR}"
-FILES_${PN} += "${INSTALL_LIBDIR}"
+FILES:${PN} += "${INSTALL_BINDIR}"
+FILES:${PN} += "${INSTALL_LIBDIR}"
 
 SOLIBS = ".so*"
 FILES_SOLIBSDEV = ""

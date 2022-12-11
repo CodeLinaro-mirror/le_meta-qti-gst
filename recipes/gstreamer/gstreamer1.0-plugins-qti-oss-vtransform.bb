@@ -1,4 +1,4 @@
-inherit cmake
+inherit cmake pkgconfig
 
 SUMMARY = "QTI open-source GStreamer Plug-in for video transformation"
 SECTION = "multimedia"
@@ -17,7 +17,7 @@ SRC_URI = "file://gst-plugin-vtransform/"
 S = "${WORKDIR}/gst-plugin-vtransform"
 
 # Default platform definitions.
-VIDEO_CONVERTER_ENGINE := "C2D"
+VIDEO_CONVERTER_ENGINE := "${@bb.utils.contains('DISTRO_FEATURES', 'qti-ib2c', 'GLES', 'C2D', d)}"
 
 # Install directries.
 INSTALL_BINDIR := "${bindir}"
@@ -38,10 +38,10 @@ EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_ORIGIN="Unknown package origin""
 
 EXTRA_OECMAKE += "-DGST_VIDEO_CONVERTER_ENGINE=${VIDEO_CONVERTER_ENGINE}"
 
-FILES_${PN} += "${INSTALL_BINDIR}"
-FILES_${PN} += "${INSTALL_LIBDIR}"
+FILES:${PN} += "${INSTALL_BINDIR}"
+FILES:${PN} += "${INSTALL_LIBDIR}"
 
-FILES_${PN}-dbg += "${INSTALL_LIBDIR}/gstreamer-1.0/.debug"
+FILES:${PN}-dbg += "${INSTALL_LIBDIR}/gstreamer-1.0/.debug"
 
 SOLIBS = ".so*"
 FILES_SOLIBSDEV = ""
