@@ -1,0 +1,52 @@
+From a68682d46512ad833a7671b502b5e3b45909d50e Mon Sep 17 00:00:00 2001
+From: skomakul <quic_skomakul@quicinc.com>
+Date: Wed, 19 Oct 2022 14:06:12 +0530
+Subject: [PATCH] omxvideodec: Support for dynamic resolution change
+
+---
+ omx/gstomxvideodec.c | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
+
+diff --git a/omx/gstomxvideodec.c b/omx/gstomxvideodec.c
+index 2ac1230..79eea47 100644
+--- a/omx/gstomxvideodec.c
++++ b/omx/gstomxvideodec.c
+@@ -1698,6 +1698,8 @@ gst_omx_video_dec_loop (GstOMXVideoDec * self)
+     /* Reallocate all buffers */
+     if (acq_return == GST_OMX_ACQUIRE_BUFFER_RECONFIGURE
+         && gst_omx_port_is_enabled (port)) {
++      gst_omx_port_set_flushing (self->dec_out_port, 5 * GST_SECOND, TRUE);
++
+       err = gst_omx_port_set_enabled (port, FALSE);
+       if (err != OMX_ErrorNone)
+         goto reconfigure_error;
+@@ -1712,6 +1714,8 @@ gst_omx_video_dec_loop (GstOMXVideoDec * self)
+       err = gst_omx_port_wait_enabled (port, 1 * GST_SECOND);
+       if (err != OMX_ErrorNone)
+         goto reconfigure_error;
++
++      gst_omx_port_set_flushing (self->dec_out_port, 5 * GST_SECOND, FALSE);
+     }
+ 
+     if (acq_return == GST_OMX_ACQUIRE_BUFFER_RECONFIGURE) {
+@@ -2729,6 +2733,7 @@ gst_omx_video_dec_set_format (GstVideoDecoder * decoder,
+   }
+ 
+   if (needs_disable && is_format_change) {
++#ifndef USE_OMX_TARGET_QTI
+     if (!gst_omx_video_dec_disable (self))
+       return FALSE;
+ 
+@@ -2736,6 +2741,12 @@ gst_omx_video_dec_set_format (GstVideoDecoder * decoder,
+       /* The local port_def is now obsolete so get it again. */
+       gst_omx_port_get_port_definition (self->dec_in_port, &port_def);
+     }
++#else
++    if (gst_omx_video_dec_finish (decoder) != OMX_ErrorNone)
++      return FALSE;
++
++    return TRUE;
++#endif
+   }
+ 
+   port_def.format.video.nFrameWidth = info->width;
