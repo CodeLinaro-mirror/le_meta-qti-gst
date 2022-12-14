@@ -1,3 +1,19 @@
+From 3e26692cf1a9e90ddeee75bc03319eb600e5305a Mon Sep 17 00:00:00 2001
+From: Guangde Zhang <quic_guangde@quicinc.com>
+Date: Wed, 14 Dec 2022 17:52:03 +0800
+Subject: [PATCH] qtmux: Don't calculate PTS offset and DTS with
+ GST_CLOCK_TIME_NONE
+
+The current code assumes that there is always a PTS, which is not
+necessarily true. Handle the cases where either PTS or DTS are not
+avaiable, and error out properly if neither are, instead of
+calculating completely wrong value.
+
+Signed-off-by: Guangde Zhang <quic_guangde@quicinc.com>
+---
+ gst/isomp4/gstqtmux.c | 27 +++++++++++++++++++++++++++
+ 1 file changed, 27 insertions(+)
+
 diff --git a/gst/isomp4/gstqtmux.c b/gst/isomp4/gstqtmux.c
 index 3fa682c..0739e63 100644
 --- a/gst/isomp4/gstqtmux.c
@@ -59,3 +75,6 @@ index 3fa682c..0739e63 100644
  not_negotiated:
    {
      GST_ELEMENT_ERROR (qtmux, CORE, NEGOTIATION, (NULL),
+--
+2.7.4
+
