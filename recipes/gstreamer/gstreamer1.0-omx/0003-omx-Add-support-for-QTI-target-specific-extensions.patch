@@ -6,16 +6,17 @@ Subject: [PATCH] omx: Add support for QTI target specific extensions
 Signed-off-by: Petar G. Georgiev <quic_petarg@quicinc.com>
 Signed-off-by: Aashish Patel <quic_paashish@quicinc.com>
 Signed-off-by: Amrutha Sai Gattu <quic_agattu@quicinc.com>
+Signed-off-by: Shyam Komakula <quic_skomakul@quicinc.com>
 ---
- omx/gstomx.c         |  14 +-
- omx/gstomxaacdec.c   |  13 ++
+ omx/gstomx.c         |  14 ++-
+ omx/gstomxaacdec.c   |  13 +++
  omx/gstomxaudiodec.c |   1 +
- omx/gstomxh264enc.c  |  20 +++
- omx/gstomxh265enc.c  | 148 ++++++++++++++++++
+ omx/gstomxh264enc.c  |  20 ++++
+ omx/gstomxh265enc.c  | 148 ++++++++++++++++++++++++
  omx/gstomxh265enc.h  |   5 +-
- omx/gstomxvideoenc.c | 350 +++++++++++++++++++++++++++++++++++++++++++
+ omx/gstomxvideoenc.c | 314 +++++++++++++++++++++++++++++++++++++++++++++++++++
  omx/gstomxvideoenc.h |  11 ++
- 8 files changed, 558 insertions(+), 4 deletions(-)
+ 8 files changed, 522 insertions(+), 4 deletions(-)
 
 diff --git a/omx/gstomx.c b/omx/gstomx.c
 index 64de90f..5ca4be0 100644
@@ -93,10 +94,10 @@ index d482391..eb3e977 100644
          gst_omx_component_get_parameter (self->dec, OMX_IndexParamAudioPcm,
          &pcm_param);
 diff --git a/omx/gstomxh264enc.c b/omx/gstomxh264enc.c
-index 042223a..cf03b3c 100644
+index b2230cc..64cea8e 100644
 --- a/omx/gstomxh264enc.c
 +++ b/omx/gstomxh264enc.c
-@@ -459,6 +459,10 @@ update_param_avc (GstOMXH264Enc * self,
+@@ -474,6 +474,10 @@ update_param_avc (GstOMXH264Enc * self,
      param.eLoopFilterMode = self->loop_filter_mode;
    }
  
@@ -107,7 +108,7 @@ index 042223a..cf03b3c 100644
    err =
        gst_omx_component_set_parameter (GST_OMX_VIDEO_ENC (self)->enc,
        OMX_IndexParamVideoAvc, &param);
-@@ -624,6 +628,22 @@ gst_omx_h264_enc_set_format (GstOMXVideoEnc * enc, GstOMXPort * port,
+@@ -678,6 +682,22 @@ gst_omx_h264_enc_set_format (GstOMXVideoEnc * enc, GstOMXPort * port,
    }
  #endif
  
@@ -131,10 +132,10 @@ index 042223a..cf03b3c 100644
    if (self->periodicty_idr !=
        GST_OMX_H264_VIDEO_ENC_PERIODICITY_OF_IDR_FRAMES_DEFAULT
 diff --git a/omx/gstomxh265enc.c b/omx/gstomxh265enc.c
-index 4849c62..646b189 100644
+index 20d1a6d..15732cc 100644
 --- a/omx/gstomxh265enc.c
 +++ b/omx/gstomxh265enc.c
-@@ -127,6 +127,23 @@ gst_omx_h265_enc_class_init (GstOMXH265EncClass * klass)
+@@ -128,6 +128,23 @@ gst_omx_h265_enc_class_init (GstOMXH265EncClass * klass)
            G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS |
            GST_PARAM_MUTABLE_READY));
  
@@ -158,7 +159,7 @@ index 4849c62..646b189 100644
  #ifdef USE_OMX_TARGET_ZYNQ_USCALE_PLUS
    g_object_class_install_property (gobject_class, PROP_PERIODICITYOFIDRFRAMES,
        g_param_spec_uint ("periodicity-idr", "IDR periodicity",
-@@ -186,6 +203,14 @@ gst_omx_h265_enc_set_property (GObject * object, guint prop_id,
+@@ -194,6 +211,14 @@ gst_omx_h265_enc_set_property (GObject * object, guint prop_id,
      case PROP_INTERVALOFCODINGINTRAFRAMES:
        self->interval_intraframes = g_value_get_uint (value);
        break;
@@ -173,7 +174,7 @@ index 4849c62..646b189 100644
  #ifdef USE_OMX_TARGET_ZYNQ_USCALE_PLUS
      case PROP_PERIODICITYOFIDRFRAMES:
        self->periodicity_idr = g_value_get_uint (value);
-@@ -216,6 +241,14 @@ gst_omx_h265_enc_get_property (GObject * object, guint prop_id, GValue * value,
+@@ -227,6 +252,14 @@ gst_omx_h265_enc_get_property (GObject * object, guint prop_id, GValue * value,
      case PROP_INTERVALOFCODINGINTRAFRAMES:
        g_value_set_uint (value, self->interval_intraframes);
        break;
@@ -188,7 +189,7 @@ index 4849c62..646b189 100644
  #ifdef USE_OMX_TARGET_ZYNQ_USCALE_PLUS
      case PROP_PERIODICITYOFIDRFRAMES:
        g_value_set_uint (value, self->periodicity_idr);
-@@ -241,6 +274,11 @@ gst_omx_h265_enc_init (GstOMXH265Enc * self)
+@@ -255,6 +288,11 @@ gst_omx_h265_enc_init (GstOMXH265Enc * self)
  {
    self->interval_intraframes =
        GST_OMX_H265_VIDEO_ENC_INTERVAL_OF_CODING_INTRA_FRAMES_DEFAULT;
@@ -200,7 +201,7 @@ index 4849c62..646b189 100644
  #ifdef USE_OMX_TARGET_ZYNQ_USCALE_PLUS
    self->periodicity_idr =
        GST_OMX_H265_VIDEO_ENC_PERIODICITY_OF_IDR_FRAMES_DEFAULT;
-@@ -405,6 +443,86 @@ update_param_hevc (GstOMXH265Enc * self,
+@@ -420,6 +458,86 @@ update_param_hevc (GstOMXH265Enc * self,
    return TRUE;
  }
  
@@ -287,7 +288,7 @@ index 4849c62..646b189 100644
  #ifdef USE_OMX_TARGET_ZYNQ_USCALE_PLUS
  static gboolean
  set_intra_period (GstOMXH265Enc * self)
-@@ -447,6 +565,16 @@ gst_omx_h265_enc_set_format (GstOMXVideoEnc * enc, GstOMXPort * port,
+@@ -501,6 +619,16 @@ gst_omx_h265_enc_set_format (GstOMXVideoEnc * enc, GstOMXPort * port,
    OMX_VIDEO_HEVCPROFILETYPE profile = OMX_VIDEO_HEVCProfileUnknown;
    OMX_VIDEO_HEVCLEVELTYPE level = OMX_VIDEO_HEVCLevelUnknown;
  
@@ -304,7 +305,7 @@ index 4849c62..646b189 100644
  #ifdef USE_OMX_TARGET_ZYNQ_USCALE_PLUS
    if (self->periodicity_idr !=
        GST_OMX_H265_VIDEO_ENC_PERIODICITY_OF_IDR_FRAMES_DEFAULT)
-@@ -633,6 +761,26 @@ gst_omx_h265_enc_get_caps (GstOMXVideoEnc * enc, GstOMXPort * port,
+@@ -690,6 +818,26 @@ gst_omx_h265_enc_get_caps (GstOMXVideoEnc * enc, GstOMXPort * port,
          tier = "main";
          level = "6.2";
          break;
@@ -332,7 +333,7 @@ index 4849c62..646b189 100644
          tier = "high";
          level = "4";
 diff --git a/omx/gstomxh265enc.h b/omx/gstomxh265enc.h
-index c53be18..d8fec7f 100644
+index d914991..be16c32 100644
 --- a/omx/gstomxh265enc.h
 +++ b/omx/gstomxh265enc.h
 @@ -46,9 +46,12 @@ typedef struct _GstOMXH265EncClass GstOMXH265EncClass;
@@ -350,7 +351,7 @@ index c53be18..d8fec7f 100644
    guint32 periodicity_idr;
    guint32 b_frames;
 diff --git a/omx/gstomxvideoenc.c b/omx/gstomxvideoenc.c
-index 87ab6fe..d8f245f 100644
+index 41657cf..574a7c7 100644
 --- a/omx/gstomxvideoenc.c
 +++ b/omx/gstomxvideoenc.c
 @@ -50,10 +50,17 @@ gst_omx_video_enc_control_rate_get_type (void)
@@ -371,37 +372,7 @@ index 87ab6fe..d8f245f 100644
  #ifdef USE_OMX_TARGET_ZYNQ_USCALE_PLUS
        {OMX_ALG_Video_ControlRateLowLatency, "Low Latency", "low-latency"},
  #endif
-@@ -66,6 +73,29 @@ gst_omx_video_enc_control_rate_get_type (void)
-   return qtype;
- }
- 
-+#ifdef USE_OMX_TARGET_QTI
-+#define GST_TYPE_OMX_VIDEO_ENC_HIER_CODING (gst_omx_video_enc_hier_coding_get_type ())
-+static GType
-+gst_omx_video_enc_hier_coding_get_type (void)
-+{
-+  static GType qtype = 0;
-+
-+  if (qtype == 0) {
-+    static const GEnumValue values[] = {
-+      {QOMX_HIERARCHICALCODING_P, "Use P-frames for Hierarchical coding",
-+          "p-frames"},
-+      {QOMX_HIERARCHICALCODING_B, "Use B-frames for Hierarchical coding",
-+          "b-frames"},
-+      {0xffffffff, "Component Default", "default"},
-+      {0, NULL, NULL}
-+    };
-+
-+    qtype = g_enum_register_static ("GstOMXVideoEncHierCoding", values);
-+  }
-+  return qtype;
-+}
-+#endif
-+
- #ifdef USE_OMX_TARGET_ZYNQ_USCALE_PLUS
- #define GST_TYPE_OMX_VIDEO_ENC_QP_MODE (gst_omx_video_enc_qp_mode_get_type ())
- static GType
-@@ -240,6 +270,15 @@ enum
+@@ -240,6 +247,14 @@ enum
    PROP_QUANT_I_FRAMES,
    PROP_QUANT_P_FRAMES,
    PROP_QUANT_B_FRAMES,
@@ -413,21 +384,19 @@ index 87ab6fe..d8f245f 100644
 +  PROP_MAX_QUANT_B_FRAMES,
 +  PROP_NUM_LTR_FRAMES,
 +  PROP_NUM_HIER_LAYERS,
-+  PROP_HIER_CODING,
    PROP_QP_MODE,
    PROP_MIN_QP,
    PROP_MAX_QP,
-@@ -280,6 +319,9 @@ enum
+@@ -280,6 +295,8 @@ enum
  #define GST_OMX_VIDEO_ENC_SLICE_SIZE_DEFAULT (0)
  #define GST_OMX_VIDEO_ENC_DEPENDENT_SLICE_DEFAULT (FALSE)
  #define GST_OMX_VIDEO_ENC_DEFAULT_ROI_QUALITY OMX_ALG_ROI_QUALITY_HIGH
 +#define GST_OMX_VIDEO_ENC_NUM_LTR_FRAMES_DEFAULT (0xffffffff)
 +#define GST_OMX_VIDEO_ENC_NUM_HIER_LAYERS_DEFAULT (0xffffffff)
-+#define GST_OMX_VIDEO_ENC_HIER_CODING_DEFAULT (0xffffffff)
  
  /* class initialization */
  #define do_init \
-@@ -340,6 +382,72 @@ gst_omx_video_enc_class_init (GstOMXVideoEncClass * klass)
+@@ -340,6 +357,64 @@ gst_omx_video_enc_class_init (GstOMXVideoEncClass * klass)
            G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS |
            GST_PARAM_MUTABLE_READY));
  
@@ -487,20 +456,12 @@ index 87ab6fe..d8f245f 100644
 +          0, G_MAXUINT, GST_OMX_VIDEO_ENC_NUM_HIER_LAYERS_DEFAULT,
 +          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS |
 +          GST_PARAM_MUTABLE_READY));
-+
-+  g_object_class_install_property (gobject_class, PROP_HIER_CODING,
-+      g_param_spec_enum ("hierarchical-coding", "Hierarchical Coding",
-+          "Hierarchical coding method",
-+          GST_TYPE_OMX_VIDEO_ENC_HIER_CODING,
-+          GST_OMX_VIDEO_ENC_HIER_CODING_DEFAULT,
-+          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS |
-+          GST_PARAM_MUTABLE_READY));
 +#endif // USE_OMX_TARGET_QTI
 +
  #ifdef USE_OMX_TARGET_ZYNQ_USCALE_PLUS
    g_object_class_install_property (gobject_class, PROP_QP_MODE,
        g_param_spec_enum ("qp-mode", "QP mode",
-@@ -504,6 +612,17 @@ gst_omx_video_enc_init (GstOMXVideoEnc * self)
+@@ -504,6 +579,16 @@ gst_omx_video_enc_init (GstOMXVideoEnc * self)
    self->quant_i_frames = GST_OMX_VIDEO_ENC_QUANT_I_FRAMES_DEFAULT;
    self->quant_p_frames = GST_OMX_VIDEO_ENC_QUANT_P_FRAMES_DEFAULT;
    self->quant_b_frames = GST_OMX_VIDEO_ENC_QUANT_B_FRAMES_DEFAULT;
@@ -513,12 +474,11 @@ index 87ab6fe..d8f245f 100644
 +  self->max_quant_b_frames = GST_OMX_VIDEO_ENC_MAX_QP_DEFAULT;
 +  self->num_ltr_frames = GST_OMX_VIDEO_ENC_NUM_LTR_FRAMES_DEFAULT;
 +  self->num_hier_layers = GST_OMX_VIDEO_ENC_NUM_HIER_LAYERS_DEFAULT;
-+  self->hier_coding = GST_OMX_VIDEO_ENC_HIER_CODING_DEFAULT;
 +#endif
  #ifdef USE_OMX_TARGET_ZYNQ_USCALE_PLUS
    self->qp_mode = GST_OMX_VIDEO_ENC_QP_MODE_DEFAULT;
    self->min_qp = GST_OMX_VIDEO_ENC_MIN_QP_DEFAULT;
-@@ -890,11 +1009,184 @@ gst_omx_video_enc_open (GstVideoEncoder * encoder)
+@@ -890,11 +975,188 @@ gst_omx_video_enc_open (GstVideoEncoder * encoder)
        }
      }
    }
@@ -632,36 +592,40 @@ index 87ab6fe..d8f245f 100644
 +      }
 +    }
 +
-+    if (self->hier_coding != 0xffffffff || self->num_hier_layers != 0xffffffff) {
-+      QOMX_VIDEO_HIERARCHICALLAYERS hierlayers;
++    if (self->num_hier_layers != 0xffffffff) {
++      OMX_VIDEO_PARAM_ANDROID_TEMPORALLAYERINGTYPE layerparams;
 +
-+      GST_OMX_INIT_STRUCT (&hierlayers);
-+      hierlayers.nPortIndex = self->enc_out_port->index;
++      GST_OMX_INIT_STRUCT (&layerparams);
++      layerparams.nPortIndex = self->enc_out_port->index;
 +
 +      err =
 +          gst_omx_component_get_parameter (self->enc,
-+          OMX_QcomIndexHierarchicalStructure, &hierlayers);
++              (OMX_INDEXTYPE)OMX_IndexParamAndroidVideoTemporalLayering,
++              &layerparams);
 +
 +      if (err == OMX_ErrorNone) {
-+
-+        if (self->num_hier_layers != 0xffffffff)
-+          hierlayers.nNumLayers = self->num_hier_layers;
-+
-+        if (self->hier_coding != 0xffffffff)
-+          hierlayers.eHierarchicalCodingType = self->hier_coding;
++        layerparams.nLayerCountMax = self->num_hier_layers;
++        layerparams.nPLayerCountActual = self->num_hier_layers;
++        layerparams.nBLayerCountActual = 0;
++        layerparams.bBitrateRatiosSpecified = OMX_FALSE;
++        layerparams.ePattern = layerparams.eSupportedPatterns;
++        GST_DEBUG_OBJECT (self,
++            "Setting %u hierarchical P layers", self->num_hier_layers);
 +
 +        err =
 +            gst_omx_component_set_parameter (self->enc,
-+            OMX_QcomIndexHierarchicalStructure, &hierlayers);
++            (OMX_INDEXTYPE)OMX_IndexParamAndroidVideoTemporalLayering,
++            &layerparams);
++
 +        if (err == OMX_ErrorUnsupportedIndex) {
 +          GST_WARNING_OBJECT (self,
-+              "Setting OMX_QcomIndexHierarchicalStructure not supported by the component");
++              "Setting OMX_IndexParamAndroidVideoTemporalLayering not supported by the component");
 +        } else if (err == OMX_ErrorUnsupportedSetting) {
 +          GST_WARNING_OBJECT (self,
 +              "Setting hierarchical layers not supported by the component");
 +        } else if (err != OMX_ErrorNone) {
 +          GST_ERROR_OBJECT (self,
-+              "Failed to set OMX_QcomIndexHierarchicalStructure: %s (0x%08x)",
++              "Failed to set OMX_IndexParamAndroidVideoTemporalLayering: %s (0x%08x)",
 +              gst_omx_error_to_string (err), err);
 +          return FALSE;
 +        }
@@ -703,7 +667,7 @@ index 87ab6fe..d8f245f 100644
    return TRUE;
  }
  
-@@ -996,6 +1288,35 @@ gst_omx_video_enc_set_property (GObject * object, guint prop_id,
+@@ -996,6 +1258,32 @@ gst_omx_video_enc_set_property (GObject * object, guint prop_id,
      case PROP_QUANT_B_FRAMES:
        self->quant_b_frames = g_value_get_uint (value);
        break;
@@ -732,14 +696,11 @@ index 87ab6fe..d8f245f 100644
 +    case PROP_NUM_HIER_LAYERS:
 +      self->num_hier_layers = g_value_get_uint (value);
 +      break;
-+    case PROP_HIER_CODING:
-+      self->hier_coding = g_value_get_enum (value);
-+      break;
 +#endif
  #ifdef USE_OMX_TARGET_ZYNQ_USCALE_PLUS
      case PROP_QP_MODE:
        self->qp_mode = g_value_get_enum (value);
-@@ -1076,6 +1397,35 @@ gst_omx_video_enc_get_property (GObject * object, guint prop_id, GValue * value,
+@@ -1076,6 +1364,32 @@ gst_omx_video_enc_get_property (GObject * object, guint prop_id, GValue * value,
      case PROP_QUANT_B_FRAMES:
        g_value_set_uint (value, self->quant_b_frames);
        break;
@@ -768,18 +729,15 @@ index 87ab6fe..d8f245f 100644
 +    case PROP_NUM_HIER_LAYERS:
 +      g_value_set_uint (value, self->num_hier_layers);
 +      break;
-+    case PROP_HIER_CODING:
-+      g_value_set_enum (value, self->hier_coding);
-+      break;
 +#endif
  #ifdef USE_OMX_TARGET_ZYNQ_USCALE_PLUS
      case PROP_QP_MODE:
        g_value_set_enum (value, self->qp_mode);
 diff --git a/omx/gstomxvideoenc.h b/omx/gstomxvideoenc.h
-index d837140..3fda470 100644
+index 29ad766..8f05295 100644
 --- a/omx/gstomxvideoenc.h
 +++ b/omx/gstomxvideoenc.h
-@@ -75,6 +75,17 @@ struct _GstOMXVideoEnc
+@@ -75,6 +75,16 @@ struct _GstOMXVideoEnc
    guint32 quant_i_frames;
    guint32 quant_p_frames;
    guint32 quant_b_frames;
@@ -792,7 +750,6 @@ index d837140..3fda470 100644
 +  guint32 max_quant_b_frames;
 +  guint32 num_ltr_frames;
 +  guint32 num_hier_layers;
-+  guint32 hier_coding;
 +#endif
  #ifdef USE_OMX_TARGET_ZYNQ_USCALE_PLUS
    guint32 qp_mode;

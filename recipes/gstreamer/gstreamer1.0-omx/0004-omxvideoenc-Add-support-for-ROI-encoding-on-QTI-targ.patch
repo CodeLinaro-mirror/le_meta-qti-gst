@@ -3,21 +3,21 @@ From: "Petar G. Georgiev" <quic_petarg@quicinc.com>
 Date: Mon, 22 Aug 2022 19:17:27 +0300
 Subject: [PATCH] omxvideoenc: Add support for ROI encoding on QTI target
 
-Signed-off-by: Petar G. Georgiev <quic_petarg@quicinc.com>
+Signed-off-by: Petar G. Georgiev <quic_petarg@quicinc.com>s
 ---
- omx/gstomxvideoenc.c | 261 +++++++++++++++++++++++++++++++++++++++++++
- omx/gstomxvideoenc.h |   3 +
- 2 files changed, 264 insertions(+)
+ omx/gstomxvideoenc.c | 263 +++++++++++++++++++++++++++++++++++++++++++++++++++
+ omx/gstomxvideoenc.h |   4 +-
+ 2 files changed, 266 insertions(+), 1 deletion(-)
 
 diff --git a/omx/gstomxvideoenc.c b/omx/gstomxvideoenc.c
-index 0c6cb67..85d552f 100644
+index 574a7c7..14e70b5 100644
 --- a/omx/gstomxvideoenc.c
 +++ b/omx/gstomxvideoenc.c
-@@ -95,6 +95,15 @@ gst_omx_video_enc_hier_coding_get_type (void)
-   }
+@@ -73,6 +73,17 @@ gst_omx_video_enc_control_rate_get_type (void)
    return qtype;
  }
-+
+ 
++#ifdef USE_OMX_TARGET_QTI
 +typedef struct _GstQuantRectangle GstQuantRectangle;
 +struct _GstQuantRectangle {
 +  gint x;
@@ -26,10 +26,12 @@ index 0c6cb67..85d552f 100644
 +  gint h;
 +  gint qp;
 +};
- #endif
- 
++#endif
++
  #ifdef USE_OMX_TARGET_ZYNQ_USCALE_PLUS
-@@ -281,6 +290,9 @@ enum
+ #define GST_TYPE_OMX_VIDEO_ENC_QP_MODE (gst_omx_video_enc_qp_mode_get_type ())
+ static GType
+@@ -253,6 +264,9 @@ enum
    PROP_MAX_QUANT_P_FRAMES,
    PROP_MIN_QUANT_B_FRAMES,
    PROP_MAX_QUANT_B_FRAMES,
@@ -38,8 +40,8 @@ index 0c6cb67..85d552f 100644
 +  PROP_ROI_QUANT_BOXES,
    PROP_NUM_LTR_FRAMES,
    PROP_NUM_HIER_LAYERS,
-   PROP_HIER_CODING,
-@@ -324,6 +336,8 @@ enum
+   PROP_QP_MODE,
+@@ -295,6 +309,8 @@ enum
  #define GST_OMX_VIDEO_ENC_SLICE_SIZE_DEFAULT (0)
  #define GST_OMX_VIDEO_ENC_DEPENDENT_SLICE_DEFAULT (FALSE)
  #define GST_OMX_VIDEO_ENC_DEFAULT_ROI_QUALITY OMX_ALG_ROI_QUALITY_HIGH
@@ -47,8 +49,8 @@ index 0c6cb67..85d552f 100644
 +#define GST_OMX_VIDEO_ENC_ROI_QUANT_DELTA_DEFAULT (-15)
  #define GST_OMX_VIDEO_ENC_NUM_LTR_FRAMES_DEFAULT (0xffffffff)
  #define GST_OMX_VIDEO_ENC_NUM_HIER_LAYERS_DEFAULT (0xffffffff)
- #define GST_OMX_VIDEO_ENC_HIER_CODING_DEFAULT (0xffffffff)
-@@ -430,6 +444,38 @@ gst_omx_video_enc_class_init (GstOMXVideoEncClass * klass)
+ 
+@@ -400,6 +416,38 @@ gst_omx_video_enc_class_init (GstOMXVideoEncClass * klass)
            G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS |
            GST_PARAM_MUTABLE_READY));
  
@@ -87,7 +89,7 @@ index 0c6cb67..85d552f 100644
    g_object_class_install_property (gobject_class, PROP_NUM_LTR_FRAMES,
        g_param_spec_uint ("num-ltr-frames", "LTR Frames Count",
            "Number of Long Term Reference Frames (0xffffffff=component default)",
-@@ -624,6 +670,9 @@ gst_omx_video_enc_init (GstOMXVideoEnc * self)
+@@ -586,6 +634,9 @@ gst_omx_video_enc_init (GstOMXVideoEnc * self)
    self->max_quant_p_frames = GST_OMX_VIDEO_ENC_MAX_QP_DEFAULT;
    self->min_quant_b_frames = GST_OMX_VIDEO_ENC_MIN_QP_DEFAULT;
    self->max_quant_b_frames = GST_OMX_VIDEO_ENC_MAX_QP_DEFAULT;
@@ -96,8 +98,8 @@ index 0c6cb67..85d552f 100644
 +  self->roi_quant_boxes = g_array_new (FALSE, FALSE, sizeof (GstQuantRectangle));
    self->num_ltr_frames = GST_OMX_VIDEO_ENC_NUM_LTR_FRAMES_DEFAULT;
    self->num_hier_layers = GST_OMX_VIDEO_ENC_NUM_HIER_LAYERS_DEFAULT;
-   self->hier_coding = GST_OMX_VIDEO_ENC_HIER_CODING_DEFAULT;
-@@ -1047,6 +1096,7 @@ gst_omx_video_enc_open (GstVideoEncoder * encoder)
+ #endif
+@@ -983,6 +1034,7 @@ gst_omx_video_enc_open (GstVideoEncoder * encoder)
      OMX_CONFIG_BOOLEANTYPE prepend_sps_pps_headers;
      OMX_QCOM_VIDEO_CONFIG_AUD audelimiter;
      OMX_QCOM_VIDEO_PARAM_IPB_QPRANGETYPE qprange;
@@ -105,7 +107,7 @@ index 0c6cb67..85d552f 100644
  
      GST_OMX_INIT_STRUCT (&prepend_sps_pps_headers);
      prepend_sps_pps_headers.bEnabled = OMX_TRUE;
-@@ -1112,6 +1162,25 @@ gst_omx_video_enc_open (GstVideoEncoder * encoder)
+@@ -1048,6 +1100,25 @@ gst_omx_video_enc_open (GstVideoEncoder * encoder)
        return FALSE;
      }
  
@@ -131,7 +133,7 @@ index 0c6cb67..85d552f 100644
      if (self->num_ltr_frames != 0xffffffff) {
        QOMX_VIDEO_PARAM_LTRCOUNT_TYPE ltrframes;
  
-@@ -1267,6 +1336,11 @@ gst_omx_video_enc_finalize (GObject * object)
+@@ -1216,6 +1287,11 @@ gst_omx_video_enc_finalize (GObject * object)
    g_clear_pointer (&self->alg_roi_quality_enum_class, g_type_class_unref);
  #endif
  
@@ -143,7 +145,7 @@ index 0c6cb67..85d552f 100644
    G_OBJECT_CLASS (gst_omx_video_enc_parent_class)->finalize (object);
  }
  
-@@ -1328,6 +1402,52 @@ gst_omx_video_enc_set_property (GObject * object, guint prop_id,
+@@ -1277,6 +1353,52 @@ gst_omx_video_enc_set_property (GObject * object, guint prop_id,
      case PROP_MAX_QUANT_B_FRAMES:
        self->max_quant_b_frames = g_value_get_uint (value);
        break;
@@ -196,7 +198,7 @@ index 0c6cb67..85d552f 100644
      case PROP_NUM_LTR_FRAMES:
        self->num_ltr_frames = g_value_get_uint (value);
        break;
-@@ -1437,6 +1557,49 @@ gst_omx_video_enc_get_property (GObject * object, guint prop_id, GValue * value,
+@@ -1383,6 +1505,49 @@ gst_omx_video_enc_get_property (GObject * object, guint prop_id, GValue * value,
      case PROP_MAX_QUANT_B_FRAMES:
        g_value_set_uint (value, self->max_quant_b_frames);
        break;
@@ -246,7 +248,7 @@ index 0c6cb67..85d552f 100644
      case PROP_NUM_LTR_FRAMES:
        g_value_set_uint (value, self->num_ltr_frames);
        break;
-@@ -3171,6 +3334,100 @@ handle_roi_metadata (GstOMXVideoEnc * self, GstBuffer * input)
+@@ -3013,6 +3178,100 @@ handle_roi_metadata (GstOMXVideoEnc * self, GstBuffer * input)
  }
  #endif
  
@@ -347,7 +349,7 @@ index 0c6cb67..85d552f 100644
  static GstFlowReturn
  gst_omx_video_enc_handle_frame (GstVideoEncoder * encoder,
      GstVideoCodecFrame * frame)
-@@ -3364,6 +3621,10 @@ gst_omx_video_enc_handle_frame (GstVideoEncoder * encoder,
+@@ -3172,6 +3431,10 @@ gst_omx_video_enc_handle_frame (GstVideoEncoder * encoder,
      handle_roi_metadata (self, frame->input_buffer);
  #endif
  
@@ -357,9 +359,9 @@ index 0c6cb67..85d552f 100644
 +
      /* Copy the buffer content in chunks of size as requested
       * by the port */
-     if (fill_buffer
+     if (!gst_omx_video_enc_fill_buffer (self, frame->input_buffer, buf)) {
 diff --git a/omx/gstomxvideoenc.h b/omx/gstomxvideoenc.h
-index bc5d8b1..4dff1e2 100644
+index 8f05295..4de11fa 100644
 --- a/omx/gstomxvideoenc.h
 +++ b/omx/gstomxvideoenc.h
 @@ -82,6 +82,9 @@ struct _GstOMXVideoEnc
@@ -371,7 +373,7 @@ index bc5d8b1..4dff1e2 100644
 +  GArray *roi_quant_boxes;
    guint32 num_ltr_frames;
    guint32 num_hier_layers;
-   guint32 hier_coding;
+ #endif
 -- 
 2.17.1
 

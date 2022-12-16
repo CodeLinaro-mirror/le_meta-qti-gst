@@ -1,0 +1,26 @@
+From 647fdb67a5b61b494d1937325a41c9e53ed64d58 Mon Sep 17 00:00:00 2001
+From: Justin Chadwell <justin.chadwell@pexip.com>
+Date: Mon, 22 Aug 2022 10:19:24 +0530
+Subject: [PATCH] qtdemux: fix allocation explosion with stsd entries
+
+---
+ gst/isomp4/qtdemux.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/gst/isomp4/qtdemux.c b/gst/isomp4/qtdemux.c
+index 705bdf7..a11675d 100644
+--- a/gst/isomp4/qtdemux.c
++++ b/gst/isomp4/qtdemux.c
+@@ -9880,6 +9880,12 @@ qtdemux_parse_trak (GstQTDemux * qtdemux, GNode * trak)
+   }
+ 
+   stream->stsd_entries_length = stsd_entry_count = QT_UINT32 (stsd_data + 12);
++  /* each stsd entry must contain at least 8 bytes */
++  if (stream->stsd_entries_length == 0
++      || stream->stsd_entries_length > stsd_len / 8) {
++    stream->stsd_entries_length = 0;
++    goto corrupt_file;
++  }
+   stream->stsd_entries = g_new0 (QtDemuxStreamStsdEntry, stsd_entry_count);
+   GST_LOG_OBJECT (qtdemux, "stsd len:           %d", stsd_len);
+   GST_LOG_OBJECT (qtdemux, "stsd entry count:   %u", stsd_entry_count);
