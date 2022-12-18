@@ -1,4 +1,4 @@
-From 6af0845355ba9973bfef56c972d7e3ca403b9008 Mon Sep 17 00:00:00 2001
+From 8a928839348f5cd15a89bd92a342ce3bf9cbdf99 Mon Sep 17 00:00:00 2001
 From: "Petar G. Georgiev" <quic_petarg@quicinc.com>
 Date: Mon, 22 Aug 2022 19:16:51 +0300
 Subject: [PATCH] omxvideo: Add support for GBM memory
@@ -16,13 +16,13 @@ Signed-off-by: Petar G. Georgiev <quic_petarg@quicinc.com>
  omx/gstomxvideo.c      |  15 +++
  omx/gstomxvideodec.c   | 259 ++++++++++++++++++++++++++++++++++++++--
  omx/gstomxvideodec.h   |   4 +-
- omx/gstomxvideoenc.c   | 160 ++++++++++++++++++++++++-
+ omx/gstomxvideoenc.c   | 184 ++++++++++++++++++++++++++++-
  omx/gstomxvideoenc.h   |   2 +
  omx/meson.build        |   6 +-
- 14 files changed, 948 insertions(+), 19 deletions(-)
+ 14 files changed, 972 insertions(+), 19 deletions(-)
 
 diff --git a/configure.ac b/configure.ac
-index 787ee22..872cb0b 100644
+index 8200da3..55648c0 100644
 --- a/configure.ac
 +++ b/configure.ac
 @@ -184,6 +184,13 @@ PKG_CHECK_MODULES([X11], [x11], [
@@ -51,7 +51,7 @@ index 787ee22..872cb0b 100644
              AS_HELP_STRING([--with-omx-header-path],[path of external OpenMAX IL header files]),
          [omx_header_path="$withval"], [omx_header_path="none"])
 diff --git a/meson.build b/meson.build
-index 3f68c9f..73c411f 100644
+index 0171388..b65ff08 100644
 --- a/meson.build
 +++ b/meson.build
 @@ -156,6 +156,7 @@ if host_machine.system() != 'windows'
@@ -829,7 +829,7 @@ index 151b3b4..a37e159 100644
          gst_structure_new ("video/x-raw",
              "format", G_TYPE_STRING,
 diff --git a/omx/gstomxvideodec.c b/omx/gstomxvideodec.c
-index 576c211..e056d27 100644
+index 812eb29..f933d33 100644
 --- a/omx/gstomxvideodec.c
 +++ b/omx/gstomxvideodec.c
 @@ -181,6 +181,10 @@ gst_omx_video_dec_class_init (GstOMXVideoDecClass * klass)
@@ -1254,7 +1254,7 @@ index cb70e02..0f46258 100644
    gboolean dmabuf;
    GstOMXBufferAllocation input_allocation;
 diff --git a/omx/gstomxvideoenc.c b/omx/gstomxvideoenc.c
-index 2079bba..87ab6fe 100644
+index 2079bba..c2ec13c 100644
 --- a/omx/gstomxvideoenc.c
 +++ b/omx/gstomxvideoenc.c
 @@ -483,7 +483,12 @@ gst_omx_video_enc_class_init (GstOMXVideoEncClass * klass)
@@ -1371,7 +1371,34 @@ index 2079bba..87ab6fe 100644
    if (can_use_dynamic_buffer_mode (self, inbuf)) {
      GST_DEBUG_OBJECT (self,
          "input buffer is properly aligned, use dynamic allocation");
-@@ -1957,6 +2032,7 @@ gst_omx_video_enc_enable (GstOMXVideoEnc * self, GstBuffer * input)
+@@ -1954,9 +2029,34 @@ gst_omx_video_enc_enable (GstOMXVideoEnc * self, GstBuffer * input)
+   if (!gst_omx_video_enc_configure_input_buffer (self, input))
+     return FALSE;
+
++#if defined (HAVE_GBM) && defined (USE_OMX_TARGET_QTI)
++  // Disable/reset the dynamic buffer allocation each time on start in order
++  // to be enable it again if needed.
++  // This resolves the issue where the size from the backend doesn't match
++  // with the size of the buffer.
++  if (self->input_allocation == GST_OMX_BUFFER_ALLOCATION_USE_BUFFER_DYNAMIC) {
++    struct StoreMetaDataInBuffersParams buffer_mode;
++    OMX_ERRORTYPE err;
++
++    GST_OMX_INIT_STRUCT (&buffer_mode);
++    buffer_mode.nPortIndex = self->enc_in_port->index;
++    buffer_mode.bStoreMetaData = OMX_FALSE;
++
++    err =
++        gst_omx_component_set_parameter (self->enc,
++        (OMX_INDEXTYPE) OMX_QcomIndexParamVideoMetaBufferMode, &buffer_mode);
++    if (err != OMX_ErrorNone)
++      GST_WARNING_OBJECT (self,
++          "Failed to set metadata mode: %s (0x%08x)",
++          gst_omx_error_to_string (err), err);
++    self->input_gbm = FALSE;
++  }
++#endif
++
    self->input_allocation = gst_omx_video_enc_pick_input_allocation_mode (self,
        input);
    self->input_dmabuf = FALSE;
@@ -1379,7 +1406,7 @@ index 2079bba..87ab6fe 100644
  
  #ifdef USE_OMX_TARGET_ZYNQ_USCALE_PLUS
    if (gst_is_dmabuf_memory (gst_buffer_peek_memory (input, 0))) {
-@@ -1987,6 +2063,35 @@ gst_omx_video_enc_enable (GstOMXVideoEnc * self, GstBuffer * input)
+@@ -1987,6 +2087,35 @@ gst_omx_video_enc_enable (GstOMXVideoEnc * self, GstBuffer * input)
    }
  #endif
  
@@ -1415,7 +1442,7 @@ index 2079bba..87ab6fe 100644
    GST_DEBUG_OBJECT (self, "Enabling component");
    if (self->disabled) {
      if (gst_omx_port_set_enabled (self->enc_in_port, TRUE) != OMX_ErrorNone)
-@@ -2078,6 +2183,7 @@ gst_omx_video_enc_set_format (GstVideoEncoder * encoder,
+@@ -2078,6 +2207,7 @@ gst_omx_video_enc_set_format (GstVideoEncoder * encoder,
    OMX_PARAM_PORTDEFINITIONTYPE port_def;
    GstVideoInfo *info = &state->info;
    GList *negotiation_map = NULL, *l;
@@ -1423,7 +1450,7 @@ index 2079bba..87ab6fe 100644
  
    self = GST_OMX_VIDEO_ENC (encoder);
    klass = GST_OMX_VIDEO_ENC_GET_CLASS (encoder);
-@@ -2104,6 +2210,9 @@ gst_omx_video_enc_set_format (GstVideoEncoder * encoder,
+@@ -2104,6 +2234,9 @@ gst_omx_video_enc_set_format (GstVideoEncoder * encoder,
      }
    }
  
@@ -1433,7 +1460,7 @@ index 2079bba..87ab6fe 100644
    negotiation_map =
        gst_omx_video_get_supported_colorformats (self->enc_in_port,
        self->input_state);
-@@ -2115,6 +2224,16 @@ gst_omx_video_enc_set_format (GstVideoEncoder * encoder,
+@@ -2115,6 +2248,16 @@ gst_omx_video_enc_set_format (GstVideoEncoder * encoder,
          break;
        case GST_VIDEO_FORMAT_NV12:
          port_def.format.video.eColorFormat = OMX_COLOR_FormatYUV420SemiPlanar;
@@ -1450,7 +1477,7 @@ index 2079bba..87ab6fe 100644
          break;
        case GST_VIDEO_FORMAT_ABGR:
          port_def.format.video.eColorFormat = OMX_COLOR_Format32bitARGB8888;
-@@ -2132,6 +2251,27 @@ gst_omx_video_enc_set_format (GstVideoEncoder * encoder,
+@@ -2132,6 +2275,27 @@ gst_omx_video_enc_set_format (GstVideoEncoder * encoder,
      for (l = negotiation_map; l; l = l->next) {
        GstOMXVideoNegotiationMap *m = l->data;
  
@@ -1478,7 +1505,7 @@ index 2079bba..87ab6fe 100644
        if (m->format == info->finfo->format) {
          port_def.format.video.eColorFormat = m->type;
          break;
-@@ -2353,7 +2493,7 @@ gst_omx_video_enc_fill_buffer (GstOMXVideoEnc * self, GstBuffer * inbuf,
+@@ -2353,7 +2517,7 @@ gst_omx_video_enc_fill_buffer (GstOMXVideoEnc * self, GstBuffer * inbuf,
        return FALSE;
      }
  
@@ -1487,7 +1514,7 @@ index 2079bba..87ab6fe 100644
        /* Map and keep a ref on the buffer while it's being processed
         * by the OMX component. */
        if (!gst_omx_buffer_map_frame (outbuf, inbuf, info)) {
-@@ -2370,7 +2510,7 @@ gst_omx_video_enc_fill_buffer (GstOMXVideoEnc * self, GstBuffer * inbuf,
+@@ -2370,7 +2534,7 @@ gst_omx_video_enc_fill_buffer (GstOMXVideoEnc * self, GstBuffer * inbuf,
  
        GST_LOG_OBJECT (self, "Transfer buffer of %" G_GSIZE_FORMAT " bytes",
            gst_buffer_get_size (inbuf));
@@ -1496,7 +1523,7 @@ index 2079bba..87ab6fe 100644
        /* dmabuf input */
        if (!gst_omx_buffer_import_fd (outbuf, inbuf)) {
          GST_ELEMENT_ERROR (self, STREAM, FORMAT, (NULL),
-@@ -2380,6 +2520,16 @@ gst_omx_video_enc_fill_buffer (GstOMXVideoEnc * self, GstBuffer * inbuf,
+@@ -2380,6 +2544,16 @@ gst_omx_video_enc_fill_buffer (GstOMXVideoEnc * self, GstBuffer * inbuf,
  
        GST_LOG_OBJECT (self, "Import dmabuf of %" G_GSIZE_FORMAT " bytes",
            gst_buffer_get_size (inbuf));
