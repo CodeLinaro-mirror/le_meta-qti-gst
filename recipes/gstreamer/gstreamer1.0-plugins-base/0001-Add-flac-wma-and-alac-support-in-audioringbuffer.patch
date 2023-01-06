@@ -48,9 +48,9 @@ index c447c0e..d3c0254 100644
 --- a/gst-libs/gst/audio/gstaudioringbuffer.h
 +++ b/gst-libs/gst/audio/gstaudioringbuffer.h
 @@ -88,6 +88,9 @@ typedef enum {
-  * @GST_AUDIO_RING_BUFFER_FORMAT_TYPE_MPEG2_AAC_RAW: samples in MPEG-2 AAC raw format (Since 1.12)
-  * @GST_AUDIO_RING_BUFFER_FORMAT_TYPE_MPEG4_AAC_RAW: samples in MPEG-4 AAC raw format (Since 1.12)
-  * @GST_AUDIO_RING_BUFFER_FORMAT_TYPE_FLAC: samples in FLAC format (Since 1.12)
+  * @GST_AUDIO_RING_BUFFER_FORMAT_TYPE_MPEG2_AAC_RAW: samples in MPEG-2 AAC raw format (Since: 1.12)
+  * @GST_AUDIO_RING_BUFFER_FORMAT_TYPE_MPEG4_AAC_RAW: samples in MPEG-4 AAC raw format (Since: 1.12)
+  * @GST_AUDIO_RING_BUFFER_FORMAT_TYPE_FLAC: samples in FLAC format (Since: 1.12)
 + * @GST_AUDIO_RING_BUFFER_FORMAT_TYPE_VORBIS: samples in Vorbis format
 + * @GST_AUDIO_RING_BUFFER_FORMAT_TYPE_ALAC: samples in ALAC format
 + * @GST_AUDIO_RING_BUFFER_FORMAT_TYPE_WMA: samples in WMA format
