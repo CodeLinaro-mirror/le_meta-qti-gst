@@ -4,8 +4,8 @@ SUMMARY = "QTI open-source GStreamer Plug-in for overlay"
 HOMEPAGE = "https://git.codelinaro.org"
 SECTION = "multimedia"
 
-LICENSE = "BSD"
-LIC_FILES_CHKSUM = "file://${COMMON_LICENSE_DIR}/${LICENSE};md5=3775480a712fc46a69647678acb234cb"
+LICENSE = "BSD-3-Clause"
+LIC_FILES_CHKSUM = "file://${COMMON_LICENSE_DIR}/${LICENSE};md5=550794465ba0ec5312d6919e203a55f9"
 
 # Dependencies.
 DEPENDS := "gstreamer1.0"
