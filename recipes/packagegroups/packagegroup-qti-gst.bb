@@ -1,5 +1,5 @@
 SUMMARY = "QTI Gstreamer package groups"
-LICENSE = "BSD-3-Clause"
+LICENSE = "BSD-3-Clause-Clear"
 
 PROVIDES = "${PACKAGES}"
 PACKAGE_ARCH = "${MACHINE_ARCH}"
