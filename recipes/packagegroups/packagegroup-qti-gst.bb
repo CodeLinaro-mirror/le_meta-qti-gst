@@ -47,4 +47,5 @@ RDEPENDS:packagegroup-qti-gst = " \
       ${@bb.utils.contains("MACHINE_FEATURES", "qti-cvp", "gstreamer1.0-plugins-qti-oss-cvp-optclflow", "", d)} \
       ${@bb.utils.contains("BASEMACHINE", "sdmsteppe", "gstreamer1.0-plugins-qti-oss-jpegenc", "", d)} \
       ${@bb.utils.contains("BASEMACHINE", "qrbx210", "gstreamer1.0-plugins-qti-oss-codec2", "", d)} \
+      ${@bb.utils.contains("BASEMACHINE", "kalama", "gstreamer1.0-plugins-qti-oss-codec2", "", d)} \
     "
