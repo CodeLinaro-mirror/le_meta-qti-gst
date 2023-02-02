@@ -11,6 +11,7 @@ PACKAGES = " \
     "
 
 RDEPENDS_packagegroup-qti-gst = " \
+      gstd \
       gstreamer1.0 \
       gstreamer1.0-plugins-base \
       gstreamer1.0-plugins-good \
@@ -46,5 +47,4 @@ RDEPENDS_packagegroup-qti-gst = " \
       ${@bb.utils.contains("MACHINE_FEATURES", "qti-cvp", "gstreamer1.0-plugins-qti-oss-cvp-optclflow", "", d)} \
       ${@bb.utils.contains("BASEMACHINE", "sdmsteppe", "gstreamer1.0-plugins-qti-oss-jpegenc", "", d)} \
       ${@bb.utils.contains("BASEMACHINE", "qrbx210", "gstreamer1.0-plugins-qti-oss-codec2", "", d)} \
-      ${@bb.utils.contains("BASEMACHINE", "sdmsteppe", "gstd", "", d)} \
     "
