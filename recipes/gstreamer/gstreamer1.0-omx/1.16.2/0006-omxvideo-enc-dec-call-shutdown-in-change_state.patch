@@ -1,0 +1,46 @@
+From f6bc5f0c0fbab91ce980bc0366890904d5927b9d Mon Sep 17 00:00:00 2001
+From: Deepali Reddy Karra <quic_dkarra@quicinc.com>
+Date: Tue, 3 Jan 2023 06:04:55 +0000
+Subject: [PATCH] omxvideo{enc,dec}: call shutdown() in change_state
+
+Issue:   When the pipeline transitions from
+PLAYING->READY->PLAYING state, omxvideoenc/omxvideodec
+is not able to transition to OMX_StateExecuting.
+
+Fix:     Change the omx state to OMX_StateLoaded
+when pipeline transitions from PLAYING->READY.
+
+Signed-off-by: Deepali Reddy Karra <quic_dkarra@quicinc.com>
+---
+ omx/gstomxvideodec.c | 3 +++
+ omx/gstomxvideoenc.c | 3 +++
+ 2 files changed, 6 insertions(+)
+
+diff --git a/omx/gstomxvideodec.c b/omx/gstomxvideodec.c
+index 79eea47..58c67ab 100644
+--- a/omx/gstomxvideodec.c
++++ b/omx/gstomxvideodec.c
+@@ -527,6 +527,9 @@ gst_omx_video_dec_change_state (GstElement * element, GstStateChange transition)
+     case GST_STATE_CHANGE_PAUSED_TO_READY:
+       self->downstream_flow_ret = GST_FLOW_FLUSHING;
+       self->started = FALSE;
++
++      if (!gst_omx_video_dec_shutdown (self))
++        ret = GST_STATE_CHANGE_FAILURE;
+       break;
+     case GST_STATE_CHANGE_READY_TO_NULL:
+       break;
+diff --git a/omx/gstomxvideoenc.c b/omx/gstomxvideoenc.c
+index caab3c6..8cb5b3d 100644
+--- a/omx/gstomxvideoenc.c
++++ b/omx/gstomxvideoenc.c
+@@ -1704,6 +1704,9 @@ gst_omx_video_enc_change_state (GstElement * element, GstStateChange transition)
+     case GST_STATE_CHANGE_PAUSED_TO_READY:
+       self->downstream_flow_ret = GST_FLOW_FLUSHING;
+       self->started = FALSE;
++
++      if (!gst_omx_video_enc_shutdown (self))
++        ret = GST_STATE_CHANGE_FAILURE;
+       break;
+     case GST_STATE_CHANGE_READY_TO_NULL:
+       break;
