@@ -28,6 +28,11 @@ do_configure:prepend() {
         echo -n "" > ${WORKDIR}/git/libgstc/python/Makefile.am
 }
 
+do_install:prepend:kalama() {
+        install -d ${D}${localstatedir}/run/gstd
+        install -d ${D}${localstatedir}/log/gstd
+}
+
 do_install:append() {
         install -d ${D}${sysconfdir}/default
         echo "OPTARGS=\"-a 0.0.0.0\"" >> ${D}${sysconfdir}/default/gstd
@@ -50,3 +55,5 @@ SYSTEMD_SERVICE:${PN} = "gstd.service"
 FILES:${PN} += "/run \
                 ${localstatedir}/log \
                "
+
+INSANE_SKIP:${PN} += "useless-rpaths empty-dirs"
