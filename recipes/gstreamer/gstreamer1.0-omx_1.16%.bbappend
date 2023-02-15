@@ -10,6 +10,7 @@ SRC_URI += "file://0003-omx-Add-support-for-QTI-target-specific-extensions.patch
 SRC_URI += "file://0004-omxvideoenc-Add-support-for-ROI-encoding-on-QTI-targ.patch"
 SRC_URI += "file://0004-omxvideoenc-property-to-support-rotation-using-VPU.patch"
 SRC_URI += "file://0005-omxvideodec-Support-for-dynamic-resolution-change.patch"
+SRC_URI += "file://0006-omxvideo-enc-dec-call-shutdown-in-change_state.patch"
 
 DEPENDS += "media"
 RDEPENDS_${PN} = "media"
