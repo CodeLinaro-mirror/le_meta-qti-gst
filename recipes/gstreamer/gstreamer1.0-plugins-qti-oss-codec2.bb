@@ -1,4 +1,4 @@
-inherit cmake
+inherit cmake sdllvm
 
 SUMMARY = "QTI open-source GStreamer Plug-in for video encoding decoding with Codec 2.0"
 SECTION = "multimedia"
@@ -10,7 +10,8 @@ LIC_FILES_CHKSUM = "file://${COREBASE}/meta-qti-bsp/files/common-licenses/${LICE
 DEPENDS := "gstreamer1.0"
 DEPENDS += "gstreamer1.0-plugins-base"
 DEPENDS += "codec2"
-DEPENDS += "media-codec2"
+DEPENDS += "media"
+DEPENDS += "llvm-arm-toolchain-native"
 
 FILESPATH =+ "${WORKSPACE}/vendor/qcom/opensource/gst-plugins-qti-oss/:"
 
@@ -21,10 +22,11 @@ S = "${WORKDIR}/gst-plugin-codec2"
 INSTALL_BINDIR := "${bindir}"
 INSTALL_LIBDIR := "${libdir}"
 
-EXTRA_OECMAKE += "-DGST_VERSION_REQUIRED=1.14.4"
+EXTRA_OECMAKE += "-DGST_VERSION_REQUIRED=1.16.3"
 EXTRA_OECMAKE += "-DSYSROOT_INCDIR=${STAGING_INCDIR}"
 EXTRA_OECMAKE += "-DSYSROOT_LIBDIR=${STAGING_LIBDIR}"
 EXTRA_OECMAKE += "-DKERNEL_BUILDDIR=${STAGING_KERNEL_BUILDDIR}"
+EXTRA_OECMAKE += "-DKERNEL_DIR=${STAGING_KERNEL_DIR}/include/media/"
 EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_INSTALL_BINDIR=${INSTALL_BINDIR}"
 EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_INSTALL_LIBDIR=${INSTALL_LIBDIR}"
 
@@ -39,4 +41,4 @@ FILES_${PN} += "${INSTALL_LIBDIR}"
 
 SOLIBS = ".so*"
 FILES_SOLIBSDEV = ""
-TOOLCHAIN = "clang"
+TOOLCHAIN = "sdllvm"
