@@ -1,4 +1,4 @@
-From d42a66f2bea76f03484f1a45fb32f2053800edce Mon Sep 17 00:00:00 2001
+From 17a35f39ca106e10c0d9fab0dbc741fad51ac9a8 Mon Sep 17 00:00:00 2001
 From: "Petar G. Georgiev" <quic_petarg@quicinc.com>
 Date: Mon, 22 Aug 2022 19:17:04 +0300
 Subject: [PATCH] omx: Add support for QTI target specific extensions
@@ -8,16 +8,17 @@ Signed-off-by: Aashish Patel <quic_paashish@quicinc.com>
 Signed-off-by: Amrutha Sai Gattu <quic_agattu@quicinc.com>
 Signed-off-by: Shyam Komakula <quic_skomakul@quicinc.com>
 Signed-off-by: Xinzheng Long <quic_xinzlong@quicinc.com>
+Signed-off-by: Ishu Raj <quic_iraj@quicinc.com>
 ---
  omx/gstomx.c         |  14 +-
  omx/gstomxaacdec.c   |  13 ++
  omx/gstomxaudiodec.c |   1 +
- omx/gstomxh264enc.c  |  20 +++
- omx/gstomxh265enc.c  | 148 +++++++++++++++++
+ omx/gstomxh264enc.c  |  20 ++
+ omx/gstomxh265enc.c  | 148 ++++++++++++++
  omx/gstomxh265enc.h  |   5 +-
- omx/gstomxvideoenc.c | 384 +++++++++++++++++++++++++++++++++++++++++++
- omx/gstomxvideoenc.h |  11 ++
- 8 files changed, 592 insertions(+), 4 deletions(-)
+ omx/gstomxvideoenc.c | 471 +++++++++++++++++++++++++++++++++++++++++++
+ omx/gstomxvideoenc.h |  12 ++
+ 8 files changed, 680 insertions(+), 4 deletions(-)
 
 diff --git a/omx/gstomx.c b/omx/gstomx.c
 index 0c88818..7718f8c 100644
@@ -95,7 +96,7 @@ index 8275b72..3f375c8 100644
          gst_omx_component_get_parameter (self->dec, OMX_IndexParamAudioPcm,
          &pcm_param);
 diff --git a/omx/gstomxh264enc.c b/omx/gstomxh264enc.c
-index f75fff0..ccdfd23 100644
+index 4341d63..f94450a 100644
 --- a/omx/gstomxh264enc.c
 +++ b/omx/gstomxh264enc.c
 @@ -459,6 +459,10 @@ update_param_avc (GstOMXH264Enc * self,
@@ -352,7 +353,7 @@ index c53be18..d8fec7f 100644
    guint32 periodicity_idr;
    guint32 b_frames;
 diff --git a/omx/gstomxvideoenc.c b/omx/gstomxvideoenc.c
-index 8bf9a46..bce9774 100644
+index 8bf9a46..c378ea9 100644
 --- a/omx/gstomxvideoenc.c
 +++ b/omx/gstomxvideoenc.c
 @@ -51,10 +51,17 @@ gst_omx_video_enc_control_rate_get_type (void)
@@ -373,7 +374,7 @@ index 8bf9a46..bce9774 100644
  #ifdef USE_OMX_TARGET_ZYNQ_USCALE_PLUS
        {OMX_ALG_Video_ControlRateLowLatency, "Low Latency", "low-latency"},
  #endif
-@@ -67,6 +74,26 @@ gst_omx_video_enc_control_rate_get_type (void)
+@@ -67,6 +74,46 @@ gst_omx_video_enc_control_rate_get_type (void)
    return qtype;
  }
  
@@ -397,14 +398,35 @@ index 8bf9a46..bce9774 100644
 +  return qtype;
 +}
 +
++#define GST_TYPE_OMX_VIDEO_ENC_FLIP (gst_omx_video_enc_flip_get_type ())
++static GType
++gst_omx_video_enc_flip_get_type (void)
++{
++  static GType qtype = 0;
++
++  if (qtype == 0) {
++    static const GEnumValue values[] = {
++      {0, "No Flip", "none"},
++      {1, "Horizontal Flip", "horizontal"},
++      {2, "Vertical Flip", "vertical"},
++      {3, "Both Horizontal and Vertical Flips", "both"},
++      {0, NULL, NULL}
++    };
++
++    qtype = g_enum_register_static ("GstOMXVideoEncFlip", values);
++  }
++  return qtype;
++}
++
  #ifdef USE_OMX_TARGET_ZYNQ_USCALE_PLUS
  #define GST_TYPE_OMX_VIDEO_ENC_QP_MODE (gst_omx_video_enc_qp_mode_get_type ())
  static GType
-@@ -242,9 +269,18 @@ enum
+@@ -242,9 +289,19 @@ enum
    PROP_0,
    PROP_CONTROL_RATE,
    PROP_TARGET_BITRATE,
 +  PROP_ROTATE,
++  PROP_FLIP,
    PROP_QUANT_I_FRAMES,
    PROP_QUANT_P_FRAMES,
    PROP_QUANT_B_FRAMES,
@@ -419,15 +441,16 @@ index 8bf9a46..bce9774 100644
    PROP_QP_MODE,
    PROP_MIN_QP,
    PROP_MAX_QP,
-@@ -266,6 +302,7 @@ enum
+@@ -266,6 +323,8 @@ enum
  /* FIXME: Better defaults */
  #define GST_OMX_VIDEO_ENC_CONTROL_RATE_DEFAULT (0xffffffff)
  #define GST_OMX_VIDEO_ENC_TARGET_BITRATE_DEFAULT (0xffffffff)
 +#define GST_OMX_VIDEO_ENC_ROTATE_DEFAULT (0)
++#define GST_OMX_VIDEO_ENC_FLIP_DEFAULT (0)
  #define GST_OMX_VIDEO_ENC_QUANT_I_FRAMES_DEFAULT (0xffffffff)
  #define GST_OMX_VIDEO_ENC_QUANT_P_FRAMES_DEFAULT (0xffffffff)
  #define GST_OMX_VIDEO_ENC_QUANT_B_FRAMES_DEFAULT (0xffffffff)
-@@ -285,6 +322,8 @@ enum
+@@ -285,6 +344,8 @@ enum
  #define GST_OMX_VIDEO_ENC_SLICE_SIZE_DEFAULT (0)
  #define GST_OMX_VIDEO_ENC_DEPENDENT_SLICE_DEFAULT (FALSE)
  #define GST_OMX_VIDEO_ENC_DEFAULT_ROI_QUALITY OMX_ALG_ROI_QUALITY_HIGH
@@ -436,7 +459,7 @@ index 8bf9a46..bce9774 100644
  
  /* class initialization */
  #define do_init \
-@@ -324,6 +363,14 @@ gst_omx_video_enc_class_init (GstOMXVideoEncClass * klass)
+@@ -324,6 +385,22 @@ gst_omx_video_enc_class_init (GstOMXVideoEncClass * klass)
            G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS |
            GST_PARAM_MUTABLE_PLAYING));
  
@@ -448,10 +471,18 @@ index 8bf9a46..bce9774 100644
 +          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS |
 +          GST_PARAM_MUTABLE_READY));
 +
++  g_object_class_install_property (gobject_class, PROP_FLIP,
++      g_param_spec_enum ("flip", "Flip",
++          "Flip video image",
++          GST_TYPE_OMX_VIDEO_ENC_FLIP,
++          GST_OMX_VIDEO_ENC_FLIP_DEFAULT,
++          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS |
++          GST_PARAM_MUTABLE_PLAYING));
++
    g_object_class_install_property (gobject_class, PROP_QUANT_I_FRAMES,
        g_param_spec_uint ("quant-i-frames", "I-Frame Quantization",
            "Quantization parameter for I-frames (0xffffffff=component default)",
-@@ -345,6 +392,64 @@ gst_omx_video_enc_class_init (GstOMXVideoEncClass * klass)
+@@ -345,6 +422,64 @@ gst_omx_video_enc_class_init (GstOMXVideoEncClass * klass)
            G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS |
            GST_PARAM_MUTABLE_READY));
  
@@ -516,11 +547,12 @@ index 8bf9a46..bce9774 100644
  #ifdef USE_OMX_TARGET_ZYNQ_USCALE_PLUS
    g_object_class_install_property (gobject_class, PROP_QP_MODE,
        g_param_spec_enum ("qp-mode", "QP mode",
-@@ -506,9 +611,20 @@ gst_omx_video_enc_init (GstOMXVideoEnc * self)
+@@ -506,9 +641,21 @@ gst_omx_video_enc_init (GstOMXVideoEnc * self)
  {
    self->control_rate = GST_OMX_VIDEO_ENC_CONTROL_RATE_DEFAULT;
    self->target_bitrate = GST_OMX_VIDEO_ENC_TARGET_BITRATE_DEFAULT;
 +  self->rotate = GST_OMX_VIDEO_ENC_ROTATE_DEFAULT;
++  self->flip = GST_OMX_VIDEO_ENC_FLIP_DEFAULT;
    self->quant_i_frames = GST_OMX_VIDEO_ENC_QUANT_I_FRAMES_DEFAULT;
    self->quant_p_frames = GST_OMX_VIDEO_ENC_QUANT_P_FRAMES_DEFAULT;
    self->quant_b_frames = GST_OMX_VIDEO_ENC_QUANT_B_FRAMES_DEFAULT;
@@ -537,7 +569,59 @@ index 8bf9a46..bce9774 100644
  #ifdef USE_OMX_TARGET_ZYNQ_USCALE_PLUS
    self->qp_mode = GST_OMX_VIDEO_ENC_QP_MODE_DEFAULT;
    self->min_qp = GST_OMX_VIDEO_ENC_MIN_QP_DEFAULT;
-@@ -920,11 +1036,221 @@ gst_omx_video_enc_open (GstVideoEncoder * encoder)
+@@ -817,6 +964,51 @@ gst_omx_video_enc_set_bitrate (GstOMXVideoEnc * self)
+   return result;
+ }
+
++static void
++gst_omx_video_enc_set_flip (GstOMXVideoEnc * self)
++{
++  OMX_ERRORTYPE err;
++  OMX_CONFIG_MIRRORTYPE config;
++  guint32 prev_flip;
++
++  GST_OMX_INIT_STRUCT (&config);
++  config.nPortIndex = self->enc_out_port->index;
++
++  err =
++      gst_omx_component_get_config (self->enc,
++      OMX_IndexConfigCommonMirror, &config);
++  if (err == OMX_ErrorUnsupportedIndex) {
++    GST_WARNING_OBJECT (self,
++        "OMX_IndexConfigCommonMirror not supported by component");
++    return;
++  } else if (err != OMX_ErrorNone) {
++    GST_WARNING_OBJECT (self,
++        "can't get OMX_IndexConfigMirror %s (0x%08x)",
++        gst_omx_error_to_string (err), err);
++    return;
++  }
++
++  if (self->flip == config.eMirror)
++    return;
++
++  // Backing up prev flip type value
++  prev_flip = config.eMirror;
++  config.eMirror = self->flip;
++
++  err =
++      gst_omx_component_set_config (self->enc,
++      OMX_IndexConfigCommonMirror, &config);
++  if (err != OMX_ErrorNone) {
++    GST_WARNING_OBJECT (self,
++        "Failed to set flip type: %s (0x%08x)",
++        gst_omx_error_to_string (err), err);
++
++    // Resetting self->flip to actual flip type
++    self->flip = prev_flip;
++  } else
++    GST_LOG_OBJECT (self, "Flip set to %u", config.eMirror);
++}
++
+ static gboolean
+ gst_omx_video_enc_open (GstVideoEncoder * encoder)
+ {
+@@ -920,11 +1112,222 @@ gst_omx_video_enc_open (GstVideoEncoder * encoder)
        }
      }
    }
@@ -755,21 +839,29 @@ index 8bf9a46..bce9774 100644
 +          "Failed to configure realtime session priority: %s (0x%08x)",
 +          gst_omx_error_to_string (err), err);
 +  }
++  gst_omx_video_enc_set_flip (self);
 +
    return TRUE;
  }
  
-@@ -1028,6 +1354,9 @@ gst_omx_video_enc_set_property (GObject * object, guint prop_id,
+@@ -1028,6 +1431,16 @@ gst_omx_video_enc_set_property (GObject * object, guint prop_id,
        }
        GST_OBJECT_UNLOCK (self);
        break;
 +    case PROP_ROTATE:
 +      self->rotate = g_value_get_enum (value);
 +      break;
++    case PROP_FLIP:
++      GST_OBJECT_LOCK (self);
++      self->flip = g_value_get_enum (value);
++      if (self->enc)
++        gst_omx_video_enc_set_flip (self);
++      GST_OBJECT_UNLOCK (self);
++      break;
      case PROP_QUANT_I_FRAMES:
        self->quant_i_frames = g_value_get_uint (value);
        break;
-@@ -1037,6 +1366,32 @@ gst_omx_video_enc_set_property (GObject * object, guint prop_id,
+@@ -1037,6 +1450,32 @@ gst_omx_video_enc_set_property (GObject * object, guint prop_id,
      case PROP_QUANT_B_FRAMES:
        self->quant_b_frames = g_value_get_uint (value);
        break;
@@ -802,17 +894,20 @@ index 8bf9a46..bce9774 100644
  #ifdef USE_OMX_TARGET_ZYNQ_USCALE_PLUS
      case PROP_QP_MODE:
        self->qp_mode = g_value_get_enum (value);
-@@ -1108,6 +1463,9 @@ gst_omx_video_enc_get_property (GObject * object, guint prop_id, GValue * value,
+@@ -1108,6 +1547,12 @@ gst_omx_video_enc_get_property (GObject * object, guint prop_id, GValue * value,
        g_value_set_uint (value, self->target_bitrate);
        GST_OBJECT_UNLOCK (self);
        break;
 +    case PROP_ROTATE:
 +      g_value_set_enum (value, self->rotate);
 +      break;
++    case PROP_FLIP:
++      g_value_set_enum (value, self->flip);
++      break;
      case PROP_QUANT_I_FRAMES:
        g_value_set_uint (value, self->quant_i_frames);
        break;
-@@ -1117,6 +1475,32 @@ gst_omx_video_enc_get_property (GObject * object, guint prop_id, GValue * value,
+@@ -1117,6 +1562,32 @@ gst_omx_video_enc_get_property (GObject * object, guint prop_id, GValue * value,
      case PROP_QUANT_B_FRAMES:
        g_value_set_uint (value, self->quant_b_frames);
        break;
@@ -846,14 +941,15 @@ index 8bf9a46..bce9774 100644
      case PROP_QP_MODE:
        g_value_set_enum (value, self->qp_mode);
 diff --git a/omx/gstomxvideoenc.h b/omx/gstomxvideoenc.h
-index 2209534..b066285 100644
+index 2209534..962b811 100644
 --- a/omx/gstomxvideoenc.h
 +++ b/omx/gstomxvideoenc.h
-@@ -72,9 +72,20 @@ struct _GstOMXVideoEnc
+@@ -72,9 +72,21 @@ struct _GstOMXVideoEnc
    /* properties */
    guint32 control_rate;
    guint32 target_bitrate; /* protected by object lock */
 +  guint32 rotate;
++  guint32 flip;
    guint32 quant_i_frames;
    guint32 quant_p_frames;
    guint32 quant_b_frames;
@@ -870,6 +966,3 @@ index 2209534..b066285 100644
  #ifdef USE_OMX_TARGET_ZYNQ_USCALE_PLUS
    guint32 qp_mode;
    guint32 min_qp;
--- 
-2.17.1
-
