@@ -10,6 +10,7 @@ LIC_FILES_CHKSUM = "file://${COREBASE}/meta-qti-bsp/files/common-licenses/${LICE
 DEPENDS := "gstreamer1.0"
 DEPENDS += "gstreamer1.0-plugins-qti-oss-mlmeta"
 DEPENDS += "binder"
+DEPENDS += "gstreamer1.0-plugins-qti-oss-base"
 
 DEPENDS:append:sdmsteppe += "${@bb.utils.contains('DISTRO_FEATURES', 'qti-camera', bb.utils.contains('DISTRO_FEATURES', 'qti-camera-metadata', 'camera-metadata', 'libcamera-client', d), '', d)}"
 DEPENDS:append:qrb5165 += "${@bb.utils.contains('DISTRO_FEATURES', 'qti-camera', 'libhardware', '', d)}"
