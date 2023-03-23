@@ -1,5 +1,5 @@
 SUMMARY = "QTI Gstreamer package groups"
-LICENSE = "BSD-3-Clause"
+LICENSE = "BSD-3-Clause-Clear"
 
 PROVIDES = "${PACKAGES}"
 PACKAGE_ARCH = "${MACHINE_ARCH}"
@@ -49,7 +49,3 @@ RDEPENDS:packagegroup-qti-gst = " \
       ${@bb.utils.contains("BASEMACHINE", "qrbx210", "gstreamer1.0-plugins-qti-oss-codec2", "", d)} \
       ${@bb.utils.contains("BASEMACHINE", "kalama", "gstreamer1.0-plugins-qti-oss-codec2", "", d)} \
     "
-
-RDEPENDS:packagegroup-qti-gst:remove:kalama = "gstreamer1.0-plugins-qti-oss-overlay"
-RDEPENDS:packagegroup-qti-gst:remove:kalama = "gstreamer1.0-plugins-qti-oss-vcrop"
-RDEPENDS:packagegroup-qti-gst:remove:kalama = "gstd"

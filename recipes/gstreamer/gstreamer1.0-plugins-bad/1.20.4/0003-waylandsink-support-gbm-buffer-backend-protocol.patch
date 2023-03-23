@@ -1,31 +1,29 @@
-From 4fd434bcc0fc0a6a3826a5974a66cfc0e33d1438 Mon Sep 17 00:00:00 2001
-From: Kai Xing <kxing@codeaurora.org>
-Date: Thu, 24 Dec 2020 12:27:02 +0530
-Subject: [PATCH 2/4] waylandsink: support gbm buffer backend protocol
+From 8f5a1a78de627bac4534735138224697cfdecdcb Mon Sep 17 00:00:00 2001
+From: "Petar G. Georgiev" <quic_petarg@quicinc.com>
+Date: Tue, 7 Mar 2023 17:25:59 +0200
+Subject: [PATCH] waylandsink: support gbm buffer backend protocol
 
 Support the wayland gbm_buffer_backend protocol.
 SHM formats, DMABuf formats and GBM formats are exposed differently
 in caps: the GBM formats are flagged with GST_CAPS_FEATURE_MEMORY_GBM.
 No buffer pool is proposed for GBM buffers, it is the upstream
 element responsibility to provide with such buffers
-
-Signed-off-by: Kai Xing <kxing@codeaurora.org>
 ---
- ext/wayland/gstwaylandsink.c |  43 ++++++++-
- ext/wayland/gstwaylandsink.h |   3 +
- ext/wayland/meson.build      |   5 +-
- ext/wayland/wldisplay.c      |  55 ++++++++++++
- ext/wayland/wldisplay.h      |  10 +++
- ext/wayland/wlgbmallocator.c | 167 +++++++++++++++++++++++++++++++++++
- ext/wayland/wlgbmallocator.h |  38 ++++++++
- ext/wayland/wlvideoformat.c  |  65 ++++++++++++++
- ext/wayland/wlvideoformat.h  |   3 +
- 9 files changed, 385 insertions(+), 4 deletions(-)
+ ext/wayland/gstwaylandsink.c    |  40 ++++-
+ ext/wayland/gstwaylandsink.h    |   3 +
+ ext/wayland/meson.build         |   8 +-
+ ext/wayland/wldisplay.c         |  55 ++++++
+ ext/wayland/wldisplay.h         |  10 ++
+ ext/wayland/wlgbmallocator.c    | 167 ++++++++++++++++++
+ ext/wayland/wlgbmallocator.h    |  38 ++++
+ ext/wayland/wlvideoformat.c     |  93 +++++++---
+ ext/wayland/wlvideoformat.h     |   4 +-
+ 9 files changed, 385 insertions(+), 33 deletions(-)
  create mode 100644 ext/wayland/wlgbmallocator.c
  create mode 100644 ext/wayland/wlgbmallocator.h
 
 diff --git a/ext/wayland/gstwaylandsink.c b/ext/wayland/gstwaylandsink.c
-index 4105744..235fdee 100644
+index bb98d6c13b..09839a9289 100644
 --- a/ext/wayland/gstwaylandsink.c
 +++ b/ext/wayland/gstwaylandsink.c
 @@ -47,6 +47,7 @@
@@ -36,14 +34,7 @@ index 4105744..235fdee 100644
  
  #include <gst/wayland/wayland.h>
  #include <gst/video/videooverlay.h>
-@@ -78,11 +79,15 @@ GST_DEBUG_CATEGORY (gstwayland_debug);
-     "RGB16, BGR16, YUY2, YVYU, UYVY, AYUV, NV12, NV21, NV16, NV61, " \
-     "YUV9, YVU9, Y41B, I420, YV12, Y42B, v308 }"
- 
-+gboolean use_dmabuf, use_gbm;
-+
- static GstStaticPadTemplate sink_template = GST_STATIC_PAD_TEMPLATE ("sink",
-     GST_PAD_SINK,
+@@ -83,6 +84,8 @@ static GstStaticPadTemplate sink_template = GST_STATIC_PAD_TEMPLATE ("sink",
      GST_PAD_ALWAYS,
      GST_STATIC_CAPS (GST_VIDEO_CAPS_MAKE (WL_VIDEO_FORMATS) ";"
          GST_VIDEO_CAPS_MAKE_WITH_FEATURES (GST_CAPS_FEATURE_MEMORY_DMABUF,
@@ -52,7 +43,7 @@ index 4105744..235fdee 100644
              WL_VIDEO_FORMATS))
      );
  
-@@ -540,7 +545,7 @@ gst_wayland_sink_get_caps (GstBaseSink * bsink, GstCaps * filter)
+@@ -579,7 +582,7 @@ gst_wayland_sink_get_caps (GstBaseSink * bsink, GstCaps * filter)
  
    if (sink->display) {
      GValue shm_list = G_VALUE_INIT, dmabuf_list = G_VALUE_INIT;
@@ -61,7 +52,7 @@ index 4105744..235fdee 100644
      GArray *formats;
      gint i;
      guint fmt;
-@@ -548,6 +553,7 @@ gst_wayland_sink_get_caps (GstBaseSink * bsink, GstCaps * filter)
+@@ -587,6 +590,7 @@ gst_wayland_sink_get_caps (GstBaseSink * bsink, GstCaps * filter)
  
      g_value_init (&shm_list, GST_TYPE_LIST);
      g_value_init (&dmabuf_list, GST_TYPE_LIST);
@@ -69,7 +60,7 @@ index 4105744..235fdee 100644
  
      /* Add corresponding shm formats */
      formats = sink->display->shm_formats;
-@@ -579,6 +585,17 @@ gst_wayland_sink_get_caps (GstBaseSink * bsink, GstCaps * filter)
+@@ -618,6 +622,17 @@ gst_wayland_sink_get_caps (GstBaseSink * bsink, GstCaps * filter)
      gst_structure_take_value (gst_caps_get_structure (caps, 1), "format",
          &dmabuf_list);
  
@@ -77,7 +68,7 @@ index 4105744..235fdee 100644
 +    formats = sink->display->gbm_formats;
 +    for (i = 0; i < formats->len; i++) {
 +      g_value_init (&value, G_TYPE_STRING);
-+      fmt = g_array_index (formats, guint, i);
++      fmt = g_array_index (formats, uint32_t, i);
 +      g_value_set_static_string (&value, gst_wl_gbm_format_to_string (fmt));
 +      gst_value_list_append_and_take_value (&gbm_list, &value);
 +    }
@@ -87,16 +78,17 @@ index 4105744..235fdee 100644
      GST_DEBUG_OBJECT (sink, "display caps: %" GST_PTR_FORMAT, caps);
    }
  
-@@ -624,7 +641,7 @@ static gboolean
+@@ -663,7 +678,8 @@ static gboolean
  gst_wayland_sink_set_caps (GstBaseSink * bsink, GstCaps * caps)
  {
    GstWaylandSink *sink;
 -  gboolean use_dmabuf;
 +  GstStructure *structure;
++  gboolean use_dmabuf, use_gbm;
    GstVideoFormat format;
  
    sink = GST_WAYLAND_SINK (bsink);
-@@ -646,15 +663,31 @@ gst_wayland_sink_set_caps (GstBaseSink * bsink, GstCaps * caps)
+@@ -685,15 +701,31 @@ gst_wayland_sink_set_caps (GstBaseSink * bsink, GstCaps * caps)
    use_dmabuf = gst_caps_features_contains (gst_caps_get_features (caps, 0),
        GST_CAPS_FEATURE_MEMORY_DMABUF);
  
@@ -128,20 +120,11 @@ index 4105744..235fdee 100644
  
    return TRUE;
  
-@@ -826,7 +859,7 @@ gst_wayland_sink_show_frame (GstVideoSink * vsink, GstBuffer * buffer)
-       "display, creating it", buffer);
- 
-   format = GST_VIDEO_INFO_FORMAT (&sink->video_info);
--  if (gst_wl_display_check_format_for_dmabuf (sink->display, format)) {
-+  if (use_dmabuf && gst_wl_display_check_format_for_dmabuf (sink->display, format)) {
-     guint i, nb_dmabuf = 0;
- 
-     for (i = 0; i < gst_buffer_n_memory (buffer); i++)
-@@ -836,6 +869,10 @@ gst_wayland_sink_show_frame (GstVideoSink * vsink, GstBuffer * buffer)
+@@ -875,6 +907,10 @@ gst_wayland_sink_show_frame (GstVideoSink * vsink, GstBuffer * buffer)
      if (nb_dmabuf && (nb_dmabuf == gst_buffer_n_memory (buffer)))
        wbuf = gst_wl_linux_dmabuf_construct_wl_buffer (buffer, sink->display,
            &sink->video_info);
-+  } else if (use_gbm && gst_wl_display_check_format_for_gbm (sink->display, format)) {
++  } else if (gst_wl_display_check_format_for_gbm (sink->display, format)) {
 +    if (gst_buffer_n_memory (buffer) == 1 && gst_is_fd_memory (mem))
 +      wbuf = gst_wl_gbm_memory_construct_wl_buffer (buffer, sink->display,
 +          &sink->video_info, sink->isubwc);
@@ -149,7 +132,7 @@ index 4105744..235fdee 100644
  
    if (!wbuf && gst_wl_display_check_format_for_shm (sink->display, format)) {
 diff --git a/ext/wayland/gstwaylandsink.h b/ext/wayland/gstwaylandsink.h
-index faaa14a..ab2944c 100644
+index 690e8f2996..65d75c3567 100644
 --- a/ext/wayland/gstwaylandsink.h
 +++ b/ext/wayland/gstwaylandsink.h
 @@ -57,6 +57,9 @@ struct _GstWaylandSink
@@ -163,35 +146,34 @@ index faaa14a..ab2944c 100644
    gboolean video_info_changed;
    GstVideoInfo video_info;
 diff --git a/ext/wayland/meson.build b/ext/wayland/meson.build
-index a3ffb70..0c5d304 100644
+index 0ec0199ddc..3a0bc5a363 100644
 --- a/ext/wayland/meson.build
 +++ b/ext/wayland/meson.build
-@@ -1,6 +1,7 @@
- wl_sources = [
-     'gstwaylandsink.c',
-     'wlshmallocator.c',
-+    'wlgbmallocator.c',
-     'wlbuffer.c',
+@@ -5,10 +5,12 @@ wl_sources = [
      'wldisplay.c',
      'wlwindow.c',
-@@ -9,6 +10,7 @@ wl_sources = [
+     'wlvideoformat.c',
+-    'wllinuxdmabuf.c'
++    'wllinuxdmabuf.c',
++    'wlgbmallocator.c'
  ]
  
  libdrm_dep = dependency('libdrm', version: '>= 2.4.55', required:get_option('wayland'))
-+libgbm_dep = dependency('gbm')
++libgbm_dep = dependency('gbm', version: '>= 21.1.1', required:true)
  
  if use_wayland
      protocols_datadir = wl_protocol_dep.get_variable('pkgdatadir')
-@@ -20,6 +22,7 @@ if use_wayland
+@@ -17,6 +19,8 @@ if use_wayland
+         ['/stable/viewporter/viewporter.xml', 'viewporter-protocol.c', 'viewporter-client-protocol.h'],
+         ['/unstable/linux-dmabuf/linux-dmabuf-unstable-v1.xml',
+          'linux-dmabuf-unstable-v1-protocol.c', 'linux-dmabuf-unstable-v1-client-protocol.h'],
++        ['/stable/gbm-buffer-backend/gbm-buffer-backend.xml',
++         'gbm-buffer-backend-protocol.c', 'gbm-buffer-backend-client-protocol.h'],
          ['/unstable/fullscreen-shell/fullscreen-shell-unstable-v1.xml',
           'fullscreen-shell-unstable-v1-protocol.c', 'fullscreen-shell-unstable-v1-client-protocol.h'],
          ['/stable/xdg-shell/xdg-shell.xml', 'xdg-shell-protocol.c', 'xdg-shell-client-protocol.h'],
-+        ['/stable/gbm-buffer-backend/gbm-buffer-backend.xml', 'gbm-buffer-backend-protocol.c', 'gbm-buffer-backend-client-protocol.h'],
-     ]
-     protocols_files = []
- 
-@@ -42,7 +45,7 @@ if use_wayland
-         c_args : gst_plugins_bad_args + ['-DGST_USE_UNSTABLE_API'],
+@@ -52,7 +56,7 @@ if use_wayland
+         c_args : gst_plugins_bad_args + wayland_cargs + ['-DGST_USE_UNSTABLE_API'],
          include_directories : [configinc],
          dependencies : [gst_dep, gstvideo_dep, gstwayland_dep, gstallocators_dep,
 -                        wl_client_dep, wl_protocol_dep, libdrm_dep],
@@ -200,7 +182,7 @@ index a3ffb70..0c5d304 100644
          install_dir : plugins_install_dir,
      )
 diff --git a/ext/wayland/wldisplay.c b/ext/wayland/wldisplay.c
-index f326091..3f2ac41 100644
+index 0e6264260d..a12656148b 100644
 --- a/ext/wayland/wldisplay.c
 +++ b/ext/wayland/wldisplay.c
 @@ -27,6 +27,8 @@
@@ -228,7 +210,7 @@ index f326091..3f2ac41 100644
    gst_poll_free (self->wl_fd_poll);
    g_hash_table_unref (self->buffers);
    g_mutex_clear (&self->buffers_mutex);
-@@ -93,6 +97,9 @@ gst_wl_display_finalize (GObject * gobject)
+@@ -98,6 +102,9 @@ gst_wl_display_finalize (GObject * gobject)
    if (self->dmabuf)
      zwp_linux_dmabuf_v1_destroy (self->dmabuf);
  
@@ -238,19 +220,19 @@ index f326091..3f2ac41 100644
    if (self->wl_shell)
      wl_shell_destroy (self->wl_shell);
  
-@@ -122,6 +129,11 @@ gst_wl_display_finalize (GObject * gobject)
+@@ -127,6 +134,11 @@ gst_wl_display_finalize (GObject * gobject)
      wl_display_disconnect (self->display);
    }
  
 +  if (self->gbmfd) {
-+    gbm_device_destroy(self->gbmdevice);
-+    close(self->gbmfd);
++    gbm_device_destroy (self->gbmdevice);
++    close (self->gbmfd);
 +  }
 +
    G_OBJECT_CLASS (gst_wl_display_parent_class)->finalize (gobject);
  }
  
-@@ -195,6 +207,29 @@ gst_wl_display_check_format_for_dmabuf (GstWlDisplay * display,
+@@ -200,6 +212,29 @@ gst_wl_display_check_format_for_dmabuf (GstWlDisplay * display,
    return FALSE;
  }
  
@@ -270,7 +252,7 @@ index f326091..3f2ac41 100644
 +
 +  formats = display->gbm_formats;
 +  for (i = 0; i < formats->len; i++) {
-+    if (g_array_index (formats, guint, i) == gbm_fmt)
++    if (g_array_index (formats, uint32_t, i) == gbm_fmt)
 +      return TRUE;
 +  }
 +
@@ -280,30 +262,30 @@ index f326091..3f2ac41 100644
  static void
  handle_xdg_wm_base_ping (void *user_data, struct xdg_wm_base *xdg_wm_base,
      uint32_t serial)
-@@ -237,6 +272,22 @@ registry_handle_global (void *data, struct wl_registry *registry,
+@@ -247,6 +282,22 @@ registry_handle_global (void *data, struct wl_registry *registry,
      self->dmabuf =
          wl_registry_bind (registry, id, &zwp_linux_dmabuf_v1_interface, 1);
      zwp_linux_dmabuf_v1_add_listener (self->dmabuf, &dmabuf_listener, self);
 +  } else if (g_strcmp0 (interface, "gbm_buffer_backend") == 0) {
 +    self->gbm =
-+        wl_registry_bind(registry, id, &gbm_buffer_backend_interface, 1);
++        wl_registry_bind (registry, id, &gbm_buffer_backend_interface, 1);
 +
-+    self->gbmfd = open("/dev/dri/card0", O_RDWR);
++    if ((self->gbmfd = open ("/dev/dri/card0", O_RDWR)) < 0) {
++      self->gbmfd = open ("/dev/fb0", O_RDWR);
++      g_return_if_fail (self->gbmfd >= 0);
++    }
 +
-+    g_return_if_fail(self->gbmfd >= 0);
-+
-+    self->gbmdevice = gbm_create_device(self->gbmfd);
-+    g_return_if_fail(self->gbmdevice != NULL);
++    self->gbmdevice = gbm_create_device (self->gbmfd);
++    g_return_if_fail (self->gbmdevice != NULL);
 +
 +    guint formats[] = {
 +        GBM_FORMAT_NV12,
 +    };
 +    g_array_append_vals (self->gbm_formats, formats, G_N_ELEMENTS (formats));
-+
    }
  }
  
-@@ -363,6 +414,10 @@ gst_wl_display_new_existing (struct wl_display * display,
+@@ -380,6 +431,10 @@ gst_wl_display_new_existing (struct wl_display * display,
      g_warning ("Could not bind to zwp_linux_dmabuf_v1");
    }
  
@@ -315,7 +297,7 @@ index f326091..3f2ac41 100644
      /* If wl_surface and wl_display are passed via GstContext
       * wl_shell, xdg_shell and zwp_fullscreen_shell are not used.
 diff --git a/ext/wayland/wldisplay.h b/ext/wayland/wldisplay.h
-index f2025a6..e8dfa4f 100644
+index 9c82e179aa..bdd00ba249 100644
 --- a/ext/wayland/wldisplay.h
 +++ b/ext/wayland/wldisplay.h
 @@ -23,10 +23,12 @@
@@ -329,11 +311,11 @@ index f2025a6..e8dfa4f 100644
  #include "linux-dmabuf-unstable-v1-client-protocol.h"
 +#include "gbm-buffer-backend-client-protocol.h"
  #include "fullscreen-shell-unstable-v1-client-protocol.h"
- 
- G_BEGIN_DECLS
-@@ -60,14 +62,20 @@ struct _GstWlDisplay
-   struct wl_shm *shm;
-   struct wp_viewporter *viewporter;
+ #ifdef HAVE_SCALER_PROTOCOL_H
+ #include "scaler-client-protocol.h"
+@@ -66,14 +68,20 @@ struct _GstWlDisplay
+   struct wl_scaler *scaler;
+ #endif /* HAVE_SCALER_PROTOCOL_H */
    struct zwp_linux_dmabuf_v1 *dmabuf;
 +  struct gbm_buffer_backend *gbm;
    GArray *shm_formats;
@@ -352,7 +334,7 @@ index f2025a6..e8dfa4f 100644
    GMutex buffers_mutex;
    GHashTable *buffers;
    gboolean shutting_down;
-@@ -94,6 +102,8 @@ gboolean gst_wl_display_check_format_for_shm (GstWlDisplay * display,
+@@ -100,6 +108,8 @@ gboolean gst_wl_display_check_format_for_shm (GstWlDisplay * display,
      GstVideoFormat format);
  gboolean gst_wl_display_check_format_for_dmabuf (GstWlDisplay * display,
      GstVideoFormat format);
@@ -363,7 +345,7 @@ index f2025a6..e8dfa4f 100644
  
 diff --git a/ext/wayland/wlgbmallocator.c b/ext/wayland/wlgbmallocator.c
 new file mode 100644
-index 0000000..1b13bfc
+index 0000000000..1b13bfc9bb
 --- /dev/null
 +++ b/ext/wayland/wlgbmallocator.c
 @@ -0,0 +1,167 @@
@@ -536,7 +518,7 @@ index 0000000..1b13bfc
 +}
 diff --git a/ext/wayland/wlgbmallocator.h b/ext/wayland/wlgbmallocator.h
 new file mode 100644
-index 0000000..b512c5a
+index 0000000000..b512c5aff8
 --- /dev/null
 +++ b/ext/wayland/wlgbmallocator.h
 @@ -0,0 +1,38 @@
@@ -579,64 +561,89 @@ index 0000000..b512c5a
 +
 +#endif /* __GST_WL_GBM_ALLOCATOR_H__ */
 diff --git a/ext/wayland/wlvideoformat.c b/ext/wayland/wlvideoformat.c
-index 68cec50..4f15f48 100644
+index 68cec50932..df27ccb4d2 100644
 --- a/ext/wayland/wlvideoformat.c
 +++ b/ext/wayland/wlvideoformat.c
-@@ -25,6 +25,8 @@
+@@ -25,6 +25,10 @@
  #include <config.h>
  #endif
  
++#include <drm_fourcc.h>
 +#include <gbm.h>
++#include <gbm_priv.h>
 +
  #include "wlvideoformat.h"
  
  GST_DEBUG_CATEGORY_EXTERN (gstwayland_debug);
-@@ -37,6 +39,12 @@ typedef struct
+@@ -34,38 +38,39 @@ typedef struct
+ {
+   enum wl_shm_format wl_shm_format;
+   guint dma_format;
++  guint gbm_format;
    GstVideoFormat gst_format;
  } wl_VideoFormat;
  
-+typedef struct
-+{
-+  guint wl_format;
-+  GstVideoFormat gst_format;
-+} wl_GbmVideoFormat;
-+
  static const wl_VideoFormat wl_formats[] = {
-   {WL_SHM_FORMAT_XRGB8888, DRM_FORMAT_XRGB8888, GST_VIDEO_FORMAT_BGRx},
-   {WL_SHM_FORMAT_ARGB8888, DRM_FORMAT_ARGB8888, GST_VIDEO_FORMAT_BGRA},
-@@ -68,6 +76,31 @@ static const wl_VideoFormat wl_formats[] = {
-   {WL_SHM_FORMAT_YUV444, DRM_FORMAT_YUV444, GST_VIDEO_FORMAT_v308},
+-  {WL_SHM_FORMAT_XRGB8888, DRM_FORMAT_XRGB8888, GST_VIDEO_FORMAT_BGRx},
+-  {WL_SHM_FORMAT_ARGB8888, DRM_FORMAT_ARGB8888, GST_VIDEO_FORMAT_BGRA},
+-  {WL_SHM_FORMAT_XBGR8888, DRM_FORMAT_XBGR8888, GST_VIDEO_FORMAT_RGBx},
+-  {WL_SHM_FORMAT_RGBX8888, DRM_FORMAT_RGBX8888, GST_VIDEO_FORMAT_xBGR},
+-  {WL_SHM_FORMAT_BGRX8888, DRM_FORMAT_BGRX8888, GST_VIDEO_FORMAT_xRGB},
+-  {WL_SHM_FORMAT_ABGR8888, DRM_FORMAT_ABGR8888, GST_VIDEO_FORMAT_RGBA},
+-  {WL_SHM_FORMAT_RGBA8888, DRM_FORMAT_RGBA8888, GST_VIDEO_FORMAT_ABGR},
+-  {WL_SHM_FORMAT_BGRA8888, DRM_FORMAT_BGRA8888, GST_VIDEO_FORMAT_ARGB},
+-  {WL_SHM_FORMAT_RGB888, DRM_FORMAT_RGB888, GST_VIDEO_FORMAT_RGB},
+-  {WL_SHM_FORMAT_BGR888, DRM_FORMAT_BGR888, GST_VIDEO_FORMAT_BGR},
+-  {WL_SHM_FORMAT_RGB565, DRM_FORMAT_RGB565, GST_VIDEO_FORMAT_RGB16},
+-  {WL_SHM_FORMAT_BGR565, DRM_FORMAT_BGR565, GST_VIDEO_FORMAT_BGR16},
+-
+-  {WL_SHM_FORMAT_YUYV, DRM_FORMAT_YUYV, GST_VIDEO_FORMAT_YUY2},
+-  {WL_SHM_FORMAT_YVYU, DRM_FORMAT_YVYU, GST_VIDEO_FORMAT_YVYU},
+-  {WL_SHM_FORMAT_UYVY, DRM_FORMAT_UYVY, GST_VIDEO_FORMAT_UYVY},
+-  {WL_SHM_FORMAT_AYUV, DRM_FORMAT_AYUV, GST_VIDEO_FORMAT_AYUV},
+-  {WL_SHM_FORMAT_NV12, DRM_FORMAT_NV12, GST_VIDEO_FORMAT_NV12},
+-  {WL_SHM_FORMAT_NV21, DRM_FORMAT_NV21, GST_VIDEO_FORMAT_NV21},
+-  {WL_SHM_FORMAT_NV16, DRM_FORMAT_NV16, GST_VIDEO_FORMAT_NV16},
+-  {WL_SHM_FORMAT_NV61, DRM_FORMAT_NV61, GST_VIDEO_FORMAT_NV61},
+-  {WL_SHM_FORMAT_YUV410, DRM_FORMAT_YUV410, GST_VIDEO_FORMAT_YUV9},
+-  {WL_SHM_FORMAT_YVU410, DRM_FORMAT_YVU410, GST_VIDEO_FORMAT_YVU9},
+-  {WL_SHM_FORMAT_YUV411, DRM_FORMAT_YUV411, GST_VIDEO_FORMAT_Y41B},
+-  {WL_SHM_FORMAT_YUV420, DRM_FORMAT_YUV420, GST_VIDEO_FORMAT_I420},
+-  {WL_SHM_FORMAT_YVU420, DRM_FORMAT_YVU420, GST_VIDEO_FORMAT_YV12},
+-  {WL_SHM_FORMAT_YUV422, DRM_FORMAT_YUV422, GST_VIDEO_FORMAT_Y42B},
+-  {WL_SHM_FORMAT_YUV444, DRM_FORMAT_YUV444, GST_VIDEO_FORMAT_v308},
++  {WL_SHM_FORMAT_XRGB8888, DRM_FORMAT_XRGB8888, GBM_FORMAT_XRGB8888, GST_VIDEO_FORMAT_BGRx},
++  {WL_SHM_FORMAT_ARGB8888, DRM_FORMAT_ARGB8888, GBM_FORMAT_ARGB8888, GST_VIDEO_FORMAT_BGRA},
++  {WL_SHM_FORMAT_XBGR8888, DRM_FORMAT_XBGR8888, GBM_FORMAT_XBGR8888, GST_VIDEO_FORMAT_RGBx},
++  {WL_SHM_FORMAT_RGBX8888, DRM_FORMAT_RGBX8888, GBM_FORMAT_RGBX8888, GST_VIDEO_FORMAT_xBGR},
++  {WL_SHM_FORMAT_BGRX8888, DRM_FORMAT_BGRX8888, GBM_FORMAT_BGRX8888, GST_VIDEO_FORMAT_xRGB},
++  {WL_SHM_FORMAT_ABGR8888, DRM_FORMAT_ABGR8888, GBM_FORMAT_ABGR8888, GST_VIDEO_FORMAT_RGBA},
++  {WL_SHM_FORMAT_RGBA8888, DRM_FORMAT_RGBA8888, GBM_FORMAT_RGBA8888, GST_VIDEO_FORMAT_ABGR},
++  {WL_SHM_FORMAT_BGRA8888, DRM_FORMAT_BGRA8888, GBM_FORMAT_BGRA8888, GST_VIDEO_FORMAT_ARGB},
++  {WL_SHM_FORMAT_RGB888, DRM_FORMAT_RGB888, GBM_FORMAT_BGR888, GST_VIDEO_FORMAT_RGB},
++  {WL_SHM_FORMAT_BGR888, DRM_FORMAT_BGR888, GBM_FORMAT_RGB888, GST_VIDEO_FORMAT_BGR},
++  {WL_SHM_FORMAT_RGB565, DRM_FORMAT_RGB565, GBM_FORMAT_BGR565, GST_VIDEO_FORMAT_RGB16},
++  {WL_SHM_FORMAT_BGR565, DRM_FORMAT_BGR565, GBM_FORMAT_RGB565, GST_VIDEO_FORMAT_BGR16},
++
++  {WL_SHM_FORMAT_YUYV, DRM_FORMAT_YUYV, GBM_FORMAT_YUYV, GST_VIDEO_FORMAT_YUY2},
++  {WL_SHM_FORMAT_YVYU, DRM_FORMAT_YVYU, GBM_FORMAT_YVYU, GST_VIDEO_FORMAT_YVYU},
++  {WL_SHM_FORMAT_UYVY, DRM_FORMAT_UYVY, GBM_FORMAT_UYVY, GST_VIDEO_FORMAT_UYVY},
++  {WL_SHM_FORMAT_AYUV, DRM_FORMAT_AYUV, GBM_FORMAT_AYUV, GST_VIDEO_FORMAT_AYUV},
++  {WL_SHM_FORMAT_NV12, DRM_FORMAT_NV12, GBM_FORMAT_NV12, GST_VIDEO_FORMAT_NV12},
++  {WL_SHM_FORMAT_NV21, DRM_FORMAT_NV21, GBM_FORMAT_NV21, GST_VIDEO_FORMAT_NV21},
++  {WL_SHM_FORMAT_NV16, DRM_FORMAT_NV16, GBM_FORMAT_NV16, GST_VIDEO_FORMAT_NV16},
++  {WL_SHM_FORMAT_NV61, DRM_FORMAT_NV61, GBM_FORMAT_NV61, GST_VIDEO_FORMAT_NV61},
++  {WL_SHM_FORMAT_YUV410, DRM_FORMAT_YUV410, GBM_FORMAT_YUV410, GST_VIDEO_FORMAT_YUV9},
++  {WL_SHM_FORMAT_YVU410, DRM_FORMAT_YVU410, GBM_FORMAT_YVU410, GST_VIDEO_FORMAT_YVU9},
++  {WL_SHM_FORMAT_YUV411, DRM_FORMAT_YUV411, GBM_FORMAT_YUV411, GST_VIDEO_FORMAT_Y41B},
++  {WL_SHM_FORMAT_YUV420, DRM_FORMAT_YUV420, GBM_FORMAT_YUV420, GST_VIDEO_FORMAT_I420},
++  {WL_SHM_FORMAT_YVU420, DRM_FORMAT_YVU420, GBM_FORMAT_YVU420, GST_VIDEO_FORMAT_YV12},
++  {WL_SHM_FORMAT_YUV422, DRM_FORMAT_YUV422, GBM_FORMAT_YUV422, GST_VIDEO_FORMAT_Y42B},
++  {WL_SHM_FORMAT_YUV444, DRM_FORMAT_YUV444, GBM_FORMAT_YUV444, GST_VIDEO_FORMAT_v308},
  };
  
-+static const wl_GbmVideoFormat gbm_formats[] = {
-+#if G_BYTE_ORDER == G_BIG_ENDIAN
-+  {GBM_FORMAT_XRGB8888, GST_VIDEO_FORMAT_xRGB},
-+  {GBM_FORMAT_ARGB8888, GST_VIDEO_FORMAT_ARGB},
-+  {GBM_FORMAT_XBGR8888, GST_VIDEO_FORMAT_xBGR},
-+  {GBM_FORMAT_RGBX8888, GST_VIDEO_FORMAT_RGBx},
-+  {GBM_FORMAT_ABGR8888, GST_VIDEO_FORMAT_ABGR},
-+  {GBM_FORMAT_RGBA8888, GST_VIDEO_FORMAT_RGBA},
-+  {GBM_FORMAT_RGB888, GST_VIDEO_FORMAT_RGB},
-+  {GBM_FORMAT_RGB565, GST_VIDEO_FORMAT_RGB16},
-+  {GBM_FORMAT_BGR565, GST_VIDEO_FORMAT_BGR16},
-+#else
-+  {GBM_FORMAT_XRGB8888, GST_VIDEO_FORMAT_BGRx},
-+  {GBM_FORMAT_ARGB8888, GST_VIDEO_FORMAT_BGRA},
-+  {GBM_FORMAT_XBGR8888, GST_VIDEO_FORMAT_RGBx},
-+  {GBM_FORMAT_RGBX8888, GST_VIDEO_FORMAT_xBGR},
-+  {GBM_FORMAT_ABGR8888, GST_VIDEO_FORMAT_RGBA},
-+  {GBM_FORMAT_RGBA8888, GST_VIDEO_FORMAT_ABGR},
-+  {GBM_FORMAT_RGB888, GST_VIDEO_FORMAT_BGR},
-+  {GBM_FORMAT_RGB565, GST_VIDEO_FORMAT_BGR16},
-+  {GBM_FORMAT_BGR565, GST_VIDEO_FORMAT_RGB16},
-+#endif
-+  {GBM_FORMAT_NV12, GST_VIDEO_FORMAT_NV12},
-+};
-+
  enum wl_shm_format
- gst_video_format_to_wl_shm_format (GstVideoFormat format)
- {
-@@ -94,6 +127,19 @@ gst_video_format_to_wl_dmabuf_format (GstVideoFormat format)
+@@ -94,6 +99,19 @@ gst_video_format_to_wl_dmabuf_format (GstVideoFormat format)
    return -1;
  }
  
@@ -645,9 +652,9 @@ index 68cec50..4f15f48 100644
 +{
 +  guint i;
 +
-+  for (i = 0; i < G_N_ELEMENTS (gbm_formats); i++)
-+    if (gbm_formats[i].gst_format == format)
-+      return gbm_formats[i].wl_format;
++  for (i = 0; i < G_N_ELEMENTS (wl_formats); i++)
++    if (wl_formats[i].gst_format == format)
++      return wl_formats[i].gbm_format;
 +
 +  GST_WARNING ("wayland gbm video format not found");
 +  return -1;
@@ -656,7 +663,7 @@ index 68cec50..4f15f48 100644
  GstVideoFormat
  gst_wl_shm_format_to_video_format (enum wl_shm_format wl_format)
  {
-@@ -118,6 +164,18 @@ gst_wl_dmabuf_format_to_video_format (guint wl_format)
+@@ -118,6 +136,18 @@ gst_wl_dmabuf_format_to_video_format (guint wl_format)
    return GST_VIDEO_FORMAT_UNKNOWN;
  }
  
@@ -665,9 +672,9 @@ index 68cec50..4f15f48 100644
 +{
 +  guint i;
 +
-+  for (i = 0; i < G_N_ELEMENTS (gbm_formats); i++)
-+    if (gbm_formats[i].wl_format == wl_format)
-+      return gbm_formats[i].gst_format;
++  for (i = 0; i < G_N_ELEMENTS (wl_formats); i++)
++    if (wl_formats[i].gbm_format == wl_format)
++      return wl_formats[i].gst_format;
 +
 +  return GST_VIDEO_FORMAT_UNKNOWN;
 +}
@@ -675,7 +682,7 @@ index 68cec50..4f15f48 100644
  const gchar *
  gst_wl_shm_format_to_string (enum wl_shm_format wl_format)
  {
-@@ -131,3 +189,10 @@ gst_wl_dmabuf_format_to_string (guint wl_format)
+@@ -131,3 +161,10 @@ gst_wl_dmabuf_format_to_string (guint wl_format)
    return gst_video_format_to_string
        (gst_wl_dmabuf_format_to_video_format (wl_format));
  }
@@ -687,10 +694,16 @@ index 68cec50..4f15f48 100644
 +      (gst_wl_gbm_format_to_video_format (wl_format));
 +}
 diff --git a/ext/wayland/wlvideoformat.h b/ext/wayland/wlvideoformat.h
-index 331f582..2c91cb6 100644
+index 331f582b1b..bcf3835e15 100644
 --- a/ext/wayland/wlvideoformat.h
 +++ b/ext/wayland/wlvideoformat.h
-@@ -32,10 +32,13 @@ G_BEGIN_DECLS
+@@ -26,16 +26,18 @@
+ 
+ #include <wayland-client-protocol.h>
+ #include <gst/video/video.h>
+-#include <drm_fourcc.h>
+ 
+ G_BEGIN_DECLS
  
  enum wl_shm_format gst_video_format_to_wl_shm_format (GstVideoFormat format);
  gint gst_video_format_to_wl_dmabuf_format (GstVideoFormat format);
@@ -705,5 +718,5 @@ index 331f582..2c91cb6 100644
  G_END_DECLS
  
 -- 
-2.25.1
+2.17.1
 

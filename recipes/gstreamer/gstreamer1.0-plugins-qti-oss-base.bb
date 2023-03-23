@@ -3,8 +3,8 @@ inherit cmake pkgconfig
 SUMMARY = "QTI open-source GStreamer base"
 SECTION = "multimedia"
 
-LICENSE = "BSD-3-Clause"
-LIC_FILES_CHKSUM = "file://${COMMON_LICENSE_DIR}/${LICENSE};md5=550794465ba0ec5312d6919e203a55f9"
+LICENSE = "BSD-3-Clause-Clear"
+LIC_FILES_CHKSUM = "file://${COREBASE}/meta-qti-bsp/files/common-licenses/${LICENSE};md5=3771d4920bd6cdb8cbdf1e8344489ee0"
 
 # Dependencies.
 DEPENDS := "gstreamer1.0"
@@ -23,11 +23,8 @@ S = "${WORKDIR}/gst-plugin-base"
 
 # Default platform definitions.
 C2D_CONVERTER := "TRUE"
-GLES_CONVERTER := "${@bb.utils.contains('DISTRO_FEATURES', 'qti-ib2c', 'TRUE', 'FALSE', d)}"
-ION_BUFFER_POOL := "TRUE"
 C2D_CONVERTER:kalama := "FALSE"
-ION_BUFFER_POOL:kalama := "FALSE"
-DISPLAY_MEDIA_HEADER_2:kalama := "TRUE"
+GLES_CONVERTER := "${@bb.utils.contains('DISTRO_FEATURES', 'qti-ib2c', 'TRUE', 'FALSE', d)}"
 
 # Install directries.
 INSTALL_INCDIR := "${includedir}"
@@ -44,8 +41,6 @@ EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_INSTALL_LIBDIR=${INSTALL_LIBDIR}"
 
 EXTRA_OECMAKE += "-DGST_C2D_CONVERTER:BOOL=${C2D_CONVERTER}"
 EXTRA_OECMAKE += "-DGST_GLES_CONVERTER:BOOL=${GLES_CONVERTER}"
-EXTRA_OECMAKE += "-DGST_ION_POOL:BOOL=${ION_BUFFER_POOL}"
-EXTRA_OECMAKE += "-DDISPLAY_MEDIA_HEADER_2=${DISPLAY_MEDIA_HEADER_2}"
 
 FILES:${PN} += "${INSTALL_BINDIR}"
 FILES:${PN} += "${INSTALL_LIBDIR}"
