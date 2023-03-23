@@ -1,5 +1,5 @@
 SUMMARY = "QTI Gstreamer package groups"
-LICENSE = "BSD-3-Clause"
+LICENSE = "BSD-3-Clause-Clear"
 
 PROVIDES = "${PACKAGES}"
 PACKAGE_ARCH = "${MACHINE_ARCH}"
@@ -10,7 +10,7 @@ PACKAGES = " \
       packagegroup-qti-gst \
     "
 
-RDEPENDS_packagegroup-qti-gst = " \
+RDEPENDS:packagegroup-qti-gst = " \
       gstd \
       gstreamer1.0 \
       gstreamer1.0-plugins-base \
@@ -47,4 +47,5 @@ RDEPENDS_packagegroup-qti-gst = " \
       ${@bb.utils.contains("MACHINE_FEATURES", "qti-cvp", "gstreamer1.0-plugins-qti-oss-cvp-optclflow", "", d)} \
       ${@bb.utils.contains("BASEMACHINE", "sdmsteppe", "gstreamer1.0-plugins-qti-oss-jpegenc", "", d)} \
       ${@bb.utils.contains("BASEMACHINE", "qrbx210", "gstreamer1.0-plugins-qti-oss-codec2", "", d)} \
+      ${@bb.utils.contains("BASEMACHINE", "kalama", "gstreamer1.0-plugins-qti-oss-codec2", "", d)} \
     "
