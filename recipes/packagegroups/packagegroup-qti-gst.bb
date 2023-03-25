@@ -24,7 +24,6 @@ RDEPENDS:packagegroup-qti-gst = " \
       gstreamer1.0-plugins-qti-oss-mlmeta \
       gstreamer1.0-plugins-qti-oss-overlay \
       gstreamer1.0-plugins-qti-oss-socket \
-      gstreamer1.0-plugins-qti-oss-vcrop \
       gstreamer1.0-plugins-qti-oss-vtransform \
       gstreamer1.0-plugins-qti-oss-vsplit \
       gstreamer1.0-plugins-qti-oss-vcomposer \

@@ -51,6 +51,10 @@ VIDEO_YUY2_FORMAT_ENABLE_sdmsteppe := "TRUE"
 VIDEO_UYVY_FORMAT_ENABLE_qrb5165 := "TRUE"
 
 # Overwrite the default platform definitions for kalama.
+IMAGE_MAX_WIDTH:kalama         := "9248"
+IMAGE_MAX_HEIGHT:kalama        := "6944"
+VIDEO_MAX_WIDTH:kalama         := "9248"
+VIDEO_MAX_HEIGHT:kalama        := "6944"
 CAMERA_METADATA_VERSION:kalama := "1.0ns"
 
 EXTRA_OECMAKE += "-DGST_VERSION_REQUIRED=1.14.4"
