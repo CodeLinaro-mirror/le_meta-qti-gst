@@ -19,6 +19,8 @@ DEPENDS_append_qrbx210 += "${@bb.utils.contains('DISTRO_FEATURES', 'qti-camera',
 DEPENDS_append_qrbx210 += "${@bb.utils.contains('DISTRO_FEATURES', 'qti-camera', 'camera-metadata', '', d)}"
 DEPENDS_append_sdmsteppe += "${@bb.utils.contains('MACHINE_FEATURES', 'hibernate', 'data', '', d)}"
 DEPENDS_append_sdmsteppe += "${@bb.utils.contains('MACHINE_FEATURES', 'hibernate', 'dbus', '', d)}"
+DEPENDS_append_qcs6490 += "${@bb.utils.contains('DISTRO_FEATURES', 'qti-camera', 'libhardware', '', d)}"
+DEPENDS_append_qcs6490 += "${@bb.utils.contains('DISTRO_FEATURES', 'qti-camera', 'camera-metadata', '', d)}"
 
 FILESPATH =+ "${WORKSPACE}/vendor/qcom/opensource/gst-plugins-qti-oss/:"
 SRC_URI = "file://gst-plugin-examples/"
@@ -38,9 +40,11 @@ CAMERA_CLIENT_DISABLED := "FALSE"
 CAMERA_CLIENT_DISABLED_sdmsteppe := "${@bb.utils.contains('DISTRO_FEATURES', 'qti-camera-metadata', 'TRUE', 'FALSE', d)}"
 CAMERA_CLIENT_DISABLED_qrb5165 := "TRUE"
 CAMERA_CLIENT_DISABLED_qrbx210 := "TRUE"
+CAMERA_CLIENT_DISABLED_qcs6490 := "TRUE"
 
 CODEC2_ENCODE := "FALSE"
 CODEC2_ENCODE_qrbx210 := "TRUE"
+CODEC2_ENCODE_qcs6490 := "TRUE"
 
 # S2D stands for "Suspend to Disk"
 TARGET_SUPPORTS_S2D := "FALSE"
