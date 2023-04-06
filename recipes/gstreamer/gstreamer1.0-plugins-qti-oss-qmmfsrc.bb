@@ -44,6 +44,9 @@ CAMERA_METADATA_VERSION_qrb5165 := "1.1"
 # Overwrite the default platform definitions for qrbx210.
 CAMERA_METADATA_VERSION_qrbx210 := "1.1"
 
+# Overwrite the default platform definitions for qcs6490.
+CAMERA_METADATA_VERSION_qcs6490 := "1.1"
+
 # Enable YUY2 format
 VIDEO_YUY2_FORMAT_ENABLE_sdmsteppe := "TRUE"
 
