@@ -4,6 +4,7 @@ SRC_URI:append = "\
   file://0001-waylandsink-support-position-and-dimensions.patch \
   file://0002-waylandsink-support-scaler-protocol.patch \
   file://0003-waylandsink-support-gbm-buffer-backend-protocol.patch \
+  file://0004-waylandsink-release-pending-buffers-in-composer.patch \
 "
 
 do_configure:prepend() {
