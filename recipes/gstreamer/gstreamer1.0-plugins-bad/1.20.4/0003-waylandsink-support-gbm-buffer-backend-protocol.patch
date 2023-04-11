@@ -8,6 +8,8 @@ SHM formats, DMABuf formats and GBM formats are exposed differently
 in caps: the GBM formats are flagged with GST_CAPS_FEATURE_MEMORY_GBM.
 No buffer pool is proposed for GBM buffers, it is the upstream
 element responsibility to provide with such buffers
+
+Signed-off-by: Petar G. Georgiev <quic_petarg@quicinc.com>
 ---
  ext/wayland/gstwaylandsink.c |  42 ++++++++-
  ext/wayland/gstwaylandsink.h |   3 +

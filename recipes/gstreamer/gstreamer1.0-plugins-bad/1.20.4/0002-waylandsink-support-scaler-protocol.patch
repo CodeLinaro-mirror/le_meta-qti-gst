@@ -3,6 +3,7 @@ From: Amrutha Sai Gattu <agattu@codeaurora.org>
 Date: Fri, 1 Nov 2019 09:56:20 +0530
 Subject: [PATCH] waylandsink: support scaler protocol
 
+Signed-off-by: Amrutha Sai Gattu <quic_agattu@quicinc.com>
 ---
  ext/wayland/meson.build   | 12 +++-
  ext/wayland/wldisplay.c   | 19 ++++++-
