@@ -25,7 +25,7 @@ EXTRA_OECONF = "--with-gstd-runstatedir=/run \
                 "
 
 do_configure_prepend() {
-        echo -n "" > ${WORKDIR}/git/libgstc/python/Makefile.am
+        echo -n "" > ${S}/libgstc/python/Makefile.am
 }
 
 do_install_append() {
