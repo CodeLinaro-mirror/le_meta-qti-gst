@@ -12,6 +12,7 @@ DEPENDS += "gstreamer1.0-plugins-base"
 DEPENDS += "codec2"
 DEPENDS += "media"
 DEPENDS += "llvm-arm-toolchain-native"
+DEPENDS += "displaydlkm-headers"
 
 FILESPATH =+ "${WORKSPACE}/vendor/qcom/opensource/gst-plugins-qti-oss/:"
 
