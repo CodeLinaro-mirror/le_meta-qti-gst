@@ -11,21 +11,21 @@ element responsibility to provide with such buffers
 
 Signed-off-by: Petar G. Georgiev <quic_petarg@quicinc.com>
 ---
- ext/wayland/gstwaylandsink.c |  42 ++++++++-
+ ext/wayland/gstwaylandsink.c |  46 ++++++++--
  ext/wayland/gstwaylandsink.h |   3 +
  ext/wayland/meson.build      |   8 +-
- ext/wayland/wldisplay.c      |  55 ++++++++++++
+ ext/wayland/wldisplay.c      |  57 ++++++++++++
  ext/wayland/wldisplay.h      |  10 +++
  ext/wayland/wlgbmallocator.c | 167 +++++++++++++++++++++++++++++++++++
  ext/wayland/wlgbmallocator.h |  38 ++++++++
- ext/wayland/wlvideoformat.c  |  93 +++++++++++++------
+ ext/wayland/wlvideoformat.c  |  95 ++++++++++++++------
  ext/wayland/wlvideoformat.h  |   4 +-
- 9 files changed, 386 insertions(+), 34 deletions(-)
+ 9 files changed, 392 insertions(+), 36 deletions(-)
  create mode 100644 ext/wayland/wlgbmallocator.c
  create mode 100644 ext/wayland/wlgbmallocator.h
 
 diff --git a/ext/wayland/gstwaylandsink.c b/ext/wayland/gstwaylandsink.c
-index bb98d6c..1527a28 100644
+index 21904b5..7674397 100644
 --- a/ext/wayland/gstwaylandsink.c
 +++ b/ext/wayland/gstwaylandsink.c
 @@ -47,6 +47,7 @@
@@ -36,7 +36,17 @@ index bb98d6c..1527a28 100644
  
  #include <gst/wayland/wayland.h>
  #include <gst/video/videooverlay.h>
-@@ -83,6 +84,8 @@ static GstStaticPadTemplate sink_template = GST_STATIC_PAD_TEMPLATE ("sink",
+@@ -75,14 +76,16 @@ GST_DEBUG_CATEGORY (gstwayland_debug);
+ 
+ #define WL_VIDEO_FORMATS \
+     "{ BGRx, BGRA, RGBx, xBGR, xRGB, RGBA, ABGR, ARGB, RGB, BGR, " \
+-    "RGB16, BGR16, YUY2, YVYU, UYVY, AYUV, NV12, NV21, NV16, NV61, " \
+-    "YUV9, YVU9, Y41B, I420, YV12, Y42B, v308 }"
++    "RGB16, BGR16, YUY2, YVYU, UYVY, AYUV, NV12, NV12_10LE32, P010_10LE, " \
++    "NV21, NV16, NV61,YUV9, YVU9, Y41B, I420, YV12, Y42B, v308 }"
+ 
+ static GstStaticPadTemplate sink_template = GST_STATIC_PAD_TEMPLATE ("sink",
+     GST_PAD_SINK,
      GST_PAD_ALWAYS,
      GST_STATIC_CAPS (GST_VIDEO_CAPS_MAKE (WL_VIDEO_FORMATS) ";"
          GST_VIDEO_CAPS_MAKE_WITH_FEATURES (GST_CAPS_FEATURE_MEMORY_DMABUF,
@@ -193,7 +203,7 @@ index 0ec0199..3a0bc5a 100644
          install_dir : plugins_install_dir,
      )
 diff --git a/ext/wayland/wldisplay.c b/ext/wayland/wldisplay.c
-index 0e62642..a126561 100644
+index 0e62642..27e071a 100644
 --- a/ext/wayland/wldisplay.c
 +++ b/ext/wayland/wldisplay.c
 @@ -27,6 +27,8 @@
@@ -273,7 +283,7 @@ index 0e62642..a126561 100644
  static void
  handle_xdg_wm_base_ping (void *user_data, struct xdg_wm_base *xdg_wm_base,
      uint32_t serial)
-@@ -247,6 +282,22 @@ registry_handle_global (void *data, struct wl_registry *registry,
+@@ -247,6 +282,24 @@ registry_handle_global (void *data, struct wl_registry *registry,
      self->dmabuf =
          wl_registry_bind (registry, id, &zwp_linux_dmabuf_v1_interface, 1);
      zwp_linux_dmabuf_v1_add_listener (self->dmabuf, &dmabuf_listener, self);
@@ -291,12 +301,14 @@ index 0e62642..a126561 100644
 +
 +    guint formats[] = {
 +        GBM_FORMAT_NV12,
++        GBM_FORMAT_YCbCr_420_P010_VENUS,
++        GBM_FORMAT_YCbCr_420_TP10_UBWC,
 +    };
 +    g_array_append_vals (self->gbm_formats, formats, G_N_ELEMENTS (formats));
    }
  }
  
-@@ -380,6 +431,10 @@ gst_wl_display_new_existing (struct wl_display * display,
+@@ -380,6 +433,10 @@ gst_wl_display_new_existing (struct wl_display * display,
      g_warning ("Could not bind to zwp_linux_dmabuf_v1");
    }
  
@@ -572,7 +584,7 @@ index 0000000..b512c5a
 +
 +#endif /* __GST_WL_GBM_ALLOCATOR_H__ */
 diff --git a/ext/wayland/wlvideoformat.c b/ext/wayland/wlvideoformat.c
-index 68cec50..df27ccb 100644
+index 68cec50..e7e9392 100644
 --- a/ext/wayland/wlvideoformat.c
 +++ b/ext/wayland/wlvideoformat.c
 @@ -25,6 +25,10 @@
@@ -586,7 +598,7 @@ index 68cec50..df27ccb 100644
  #include "wlvideoformat.h"
  
  GST_DEBUG_CATEGORY_EXTERN (gstwayland_debug);
-@@ -34,38 +38,39 @@ typedef struct
+@@ -34,38 +38,41 @@ typedef struct
  {
    enum wl_shm_format wl_shm_format;
    guint dma_format;
@@ -651,10 +663,12 @@ index 68cec50..df27ccb 100644
 +  {WL_SHM_FORMAT_YVU420, DRM_FORMAT_YVU420, GBM_FORMAT_YVU420, GST_VIDEO_FORMAT_YV12},
 +  {WL_SHM_FORMAT_YUV422, DRM_FORMAT_YUV422, GBM_FORMAT_YUV422, GST_VIDEO_FORMAT_Y42B},
 +  {WL_SHM_FORMAT_YUV444, DRM_FORMAT_YUV444, GBM_FORMAT_YUV444, GST_VIDEO_FORMAT_v308},
++  {0,DRM_FORMAT_INVALID,GBM_FORMAT_YCbCr_420_P010_VENUS, GST_VIDEO_FORMAT_P010_10LE},
++  {0,DRM_FORMAT_INVALID,GBM_FORMAT_YCbCr_420_TP10_UBWC, GST_VIDEO_FORMAT_NV12_10LE32},
  };
  
  enum wl_shm_format
-@@ -94,6 +99,19 @@ gst_video_format_to_wl_dmabuf_format (GstVideoFormat format)
+@@ -94,6 +101,19 @@ gst_video_format_to_wl_dmabuf_format (GstVideoFormat format)
    return -1;
  }
  
@@ -674,7 +688,7 @@ index 68cec50..df27ccb 100644
  GstVideoFormat
  gst_wl_shm_format_to_video_format (enum wl_shm_format wl_format)
  {
-@@ -118,6 +136,18 @@ gst_wl_dmabuf_format_to_video_format (guint wl_format)
+@@ -118,6 +138,18 @@ gst_wl_dmabuf_format_to_video_format (guint wl_format)
    return GST_VIDEO_FORMAT_UNKNOWN;
  }
  
@@ -693,7 +707,7 @@ index 68cec50..df27ccb 100644
  const gchar *
  gst_wl_shm_format_to_string (enum wl_shm_format wl_format)
  {
-@@ -131,3 +161,10 @@ gst_wl_dmabuf_format_to_string (guint wl_format)
+@@ -131,3 +163,10 @@ gst_wl_dmabuf_format_to_string (guint wl_format)
    return gst_video_format_to_string
        (gst_wl_dmabuf_format_to_video_format (wl_format));
  }
