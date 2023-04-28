@@ -1,4 +1,4 @@
-From 31dbc340bc2921da57e5ed49a5ac4b01ff6d8155 Mon Sep 17 00:00:00 2001
+From e591b8081755a44f40bb5fc25b583df04fda6abf Mon Sep 17 00:00:00 2001
 From: Haihua Hu <jared.hu@nxp.com>
 Date: Wed, 7 Sep 2022 17:18:40 +0530
 Subject: [PATCH] waylandsink: fix for video playback crash after HPD operation
@@ -10,7 +10,7 @@ https://github.com/GStreamer/gst-plugins-bad/commit/d77de13ca6028d0011f5a2a285a2
  1 file changed, 8 insertions(+), 1 deletion(-)
 
 diff --git a/ext/wayland/wldisplay.c b/ext/wayland/wldisplay.c
-index 2464e77..021350b 100644
+index f5d9cb800..7bf264c30 100644
 --- a/ext/wayland/wldisplay.c
 +++ b/ext/wayland/wldisplay.c
 @@ -285,8 +285,15 @@ registry_handle_global (void *data, struct wl_registry *registry,
@@ -30,3 +30,6 @@ index 2464e77..021350b 100644
  };
  
  static gpointer
+-- 
+2.17.1
+
