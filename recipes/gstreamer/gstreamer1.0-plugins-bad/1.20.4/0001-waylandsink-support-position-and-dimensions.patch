@@ -3,6 +3,7 @@ From: "Petar G. Georgiev" <quic_petarg@quicinc.com>
 Date: Wed, 8 Mar 2023 15:03:52 +0200
 Subject: [PATCH] waylandsink: support position and dimensions
 
+Signed-off-by: Petar G. Georgiev <quic_petarg@quicinc.com>
 ---
  ext/wayland/gstwaylandsink.c    | 107 +++++++++++++++++-
  ext/wayland/gstwaylandsink.h    |   1 +
@@ -33,22 +34,22 @@ index 0761304ce3..bb98d6c13b 100644
  
 +  g_object_class_install_property (gobject_class, PROP_X,
 +      g_param_spec_uint ("x", "X Position", "X postion for the content",
-+          0, 1920, 0, G_PARAM_READWRITE | G_PARAM_CONSTRUCT |
++          0, 3840, 0, G_PARAM_READWRITE | G_PARAM_CONSTRUCT |
 +          G_PARAM_STATIC_STRINGS | GST_PARAM_MUTABLE_PLAYING));
 +
 +  g_object_class_install_property (gobject_class, PROP_Y,
 +      g_param_spec_uint ("y", "Y Position", "Y postion for the content",
-+          0, 1080, 0, G_PARAM_READWRITE | G_PARAM_CONSTRUCT |
++          0, 2160, 0, G_PARAM_READWRITE | G_PARAM_CONSTRUCT |
 +          G_PARAM_STATIC_STRINGS | GST_PARAM_MUTABLE_PLAYING));
 +
 +  g_object_class_install_property (gobject_class, PROP_WIDTH,
 +      g_param_spec_uint ("width", "Destination Width", "Destination Width for "
-+          "the content", 0, 1920, 640, G_PARAM_READWRITE | G_PARAM_CONSTRUCT |
++          "the content", 0, 3840, 640, G_PARAM_READWRITE | G_PARAM_CONSTRUCT |
 +          G_PARAM_STATIC_STRINGS | GST_PARAM_MUTABLE_PLAYING));
 +
 +  g_object_class_install_property (gobject_class, PROP_HEIGHT,
 +      g_param_spec_uint ("height", "Destination Height", "Destination Height for"
-+          " the content", 0, 1080, 480, G_PARAM_READWRITE | G_PARAM_CONSTRUCT |
++          " the content", 0, 2160, 480, G_PARAM_READWRITE | G_PARAM_CONSTRUCT |
 +          G_PARAM_STATIC_STRINGS | GST_PARAM_MUTABLE_PLAYING));
 +
    gst_type_mark_as_plugin_api (GST_TYPE_WAYLAND_VIDEO, 0);
