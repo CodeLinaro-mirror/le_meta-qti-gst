@@ -36,11 +36,8 @@ PACKAGECONFIG ??= " \
 
 PACKAGECONFIG[auto-framing] = "-DENABLE_TRACKING_CAM=true, -DENABLE_TRACKING_CAM=false, qti-auto-framing-stabilization, qti-auto-framing-stabilization"
 
-CAMERA_CLIENT_DISABLED := "FALSE"
+CAMERA_CLIENT_DISABLED := "TRUE"
 CAMERA_CLIENT_DISABLED_sdmsteppe := "${@bb.utils.contains('DISTRO_FEATURES', 'qti-camera-metadata', 'TRUE', 'FALSE', d)}"
-CAMERA_CLIENT_DISABLED_qrb5165 := "TRUE"
-CAMERA_CLIENT_DISABLED:kalama  := "TRUE"
-CAMERA_CLIENT_DISABLED_qrbx210 := "TRUE"
 
 CODEC2_ENCODE := "FALSE"
 CODEC2_ENCODE_qrbx210 := "TRUE"
