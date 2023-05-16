@@ -51,6 +51,12 @@ VIDEO_YUY2_FORMAT_ENABLE_sdmsteppe := "TRUE"
 # Enable UYVY format
 VIDEO_UYVY_FORMAT_ENABLE_qrb5165 := "TRUE"
 
+# Enable P010_10LE format
+VIDEO_P010_10LE_FORMAT_ENABLE:kalama := "TRUE"
+
+#Enable NV12_10LE32 format
+VIDEO_NV12_10LE32_FORMAT_ENABLE:kalama := "TRUE"
+
 # Overwrite the default platform definitions for kalama.
 IMAGE_MAX_WIDTH:kalama         := "9248"
 IMAGE_MAX_HEIGHT:kalama        := "6944"
