@@ -1,4 +1,4 @@
-From 6b5fb2b69494fdc84660e9fc5433fc40c9c7b911 Mon Sep 17 00:00:00 2001
+From c7b81d085773f3f75dcf2e8103915f4c267f4203 Mon Sep 17 00:00:00 2001
 From: "Petar G. Georgiev" <petarg@codeaurora.org>
 Date: Fri, 29 Nov 2019 14:56:55 +0200
 Subject: [PATCH] waylandsink: release pending buffers in composer
@@ -14,13 +14,13 @@ Subject: [PATCH] waylandsink: release pending buffers in composer
 Signed-off-by: Petar G. Georgiev <quic_petarg@quicinc.com>
 Signed-off-by: skomakul <quic_skomakul@quicinc.com>
 ---
- ext/wayland/gstwaylandsink.c | 48 ++++++++++++++++++++++++++++++++++++
- ext/wayland/wldisplay.c      | 14 +++++++++++
+ ext/wayland/gstwaylandsink.c | 41 ++++++++++++++++++++++++++++++++++++
+ ext/wayland/wldisplay.c      | 14 ++++++++++++
  ext/wayland/wldisplay.h      |  1 +
- 3 files changed, 63 insertions(+)
+ 3 files changed, 56 insertions(+)
 
 diff --git a/ext/wayland/gstwaylandsink.c b/ext/wayland/gstwaylandsink.c
-index 228ed58c0..558dce792 100644
+index 228ed58c0..eb1ca6f0e 100644
 --- a/ext/wayland/gstwaylandsink.c
 +++ b/ext/wayland/gstwaylandsink.c
 @@ -106,6 +106,8 @@ static GstCaps *gst_wayland_sink_get_caps (GstBaseSink * bsink,
@@ -49,7 +49,7 @@ index 228ed58c0..558dce792 100644
        break;
      case GST_STATE_CHANGE_READY_TO_NULL:
        g_mutex_lock (&sink->display_lock);
-@@ -714,6 +719,49 @@ gst_wayland_sink_propose_allocation (GstBaseSink * bsink, GstQuery * query)
+@@ -714,6 +719,42 @@ gst_wayland_sink_propose_allocation (GstBaseSink * bsink, GstQuery * query)
    return TRUE;
  }
  
@@ -63,8 +63,10 @@ index 228ed58c0..558dce792 100644
 +  ret = GST_BASE_SINK_CLASS (parent_class)->query (bsink, query);
 +
 +  /* Force release any buffers in the wayland composer. */
-+  if (GST_QUERY_TYPE (query) == GST_QUERY_DRAIN)
++  if (GST_QUERY_TYPE (query) == GST_QUERY_DRAIN) {
++    gst_buffer_replace (&sink->last_buffer, NULL);
 +    gst_wl_display_force_release_buffers (sink->display);
++  }
 +
 +  return ret;
 +}
@@ -80,15 +82,6 @@ index 228ed58c0..558dce792 100644
 +  /* Force release any buffers in the wayland composer. */
 +  if (GST_EVENT_TYPE (event) == GST_EVENT_FLUSH_START) {
 +    gst_buffer_replace (&sink->last_buffer, NULL);
-+    if (sink->window) {
-+      if (gst_wl_window_is_toplevel (sink->window)) {
-+        g_clear_object (&sink->window);
-+      } else {
-+        /* remove buffer from surface, show nothing */
-+        gst_wl_window_render (sink->window, NULL, NULL);
-+      }
-+    }
-+    /* Force release any buffers in the wayland composer. */
 +    gst_wl_display_force_release_buffers (sink->display);
 +  }
 +
