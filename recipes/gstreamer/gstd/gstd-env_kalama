@@ -1,0 +1,4 @@
+OPTARGS="-a 0.0.0.0"
+XDG_RUNTIME_DIR=/run/user/root
+WAYLAND_DISPLAY=wayland-1
+GST_REGISTRY=/etc/gstreamer1.0/.cache/registry.aarch64.bin
