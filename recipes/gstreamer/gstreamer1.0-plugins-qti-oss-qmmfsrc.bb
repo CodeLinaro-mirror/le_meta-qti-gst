@@ -29,36 +29,27 @@ VIDEO_MAX_FPS           := "120/1"
 CAMERA_METADATA_VERSION := "1.0"
 VIDEO_TYPE_SUPPORT      := "FALSE"
 
-# Overwrite the default platform definitions for 8009.
-VIDEO_MAX_WIDTH_apq8009   := "1920"
-VIDEO_MAX_HEIGHT_apq8009  := "1080"
-VIDEO_MAX_FPS_apq8009     := "30/1"
-
 # Overwrite the default platform definitions for qrb5165.
-IMAGE_MAX_WIDTH_qrb5165         := "9248"
-IMAGE_MAX_HEIGHT_qrb5165        := "6944"
-VIDEO_MAX_WIDTH_qrb5165         := "9248"
-VIDEO_MAX_HEIGHT_qrb5165        := "6944"
-VIDEO_MAX_FPS_qrb5165           := "480/1"
-CAMERA_METADATA_VERSION_qrb5165 := "1.1"
-
-# Overwrite the default platform definitions for qrbx210.
-CAMERA_METADATA_VERSION_qrbx210 := "1.1"
-
-# Enable YUY2 format
-VIDEO_YUY2_FORMAT_ENABLE_sdmsteppe := "TRUE"
-
-# Enable UYVY format
-VIDEO_UYVY_FORMAT_ENABLE_qrb5165 := "TRUE"
+IMAGE_MAX_WIDTH:qrb5165          := "9248"
+IMAGE_MAX_HEIGHT:qrb5165         := "6944"
+VIDEO_MAX_WIDTH:qrb5165          := "9248"
+VIDEO_MAX_HEIGHT:qrb5165         := "6944"
+VIDEO_MAX_FPS:qrb5165            := "480/1"
+CAMERA_METADATA_VERSION:qrb5165  := "1.1"
+VIDEO_UYVY_FORMAT_ENABLE:qrb5165 := "TRUE"
+IMAGE_NV12_FORMAT_ENABLE:qrb5165 := "TRUE"
 
 # Overwrite the default platform definitions for kalama.
-IMAGE_MAX_WIDTH:kalama         := "9248"
-IMAGE_MAX_HEIGHT:kalama        := "6944"
-VIDEO_MAX_WIDTH:kalama         := "9248"
-VIDEO_MAX_HEIGHT:kalama        := "6944"
-VIDEO_MAX_FPS:kalama           := "480/1"
-CAMERA_METADATA_VERSION:kalama := "1.0ns"
-VIDEO_TYPE_SUPPORT:kalama      := "TRUE"
+IMAGE_MAX_WIDTH:kalama                 := "9248"
+IMAGE_MAX_HEIGHT:kalama                := "6944"
+VIDEO_MAX_WIDTH:kalama                 := "9248"
+VIDEO_MAX_HEIGHT:kalama                := "6944"
+VIDEO_MAX_FPS:kalama                   := "480/1"
+CAMERA_METADATA_VERSION:kalama         := "1.0ns"
+VIDEO_TYPE_SUPPORT:kalama              := "TRUE"
+VIDEO_P010_10LE_FORMAT_ENABLE:kalama   := "TRUE"
+VIDEO_NV12_10LE32_FORMAT_ENABLE:kalama := "TRUE"
+IMAGE_NV12_FORMAT_ENABLE:kalama        := "TRUE"
 
 EXTRA_OECMAKE += "-DGST_VERSION_REQUIRED=1.14.4"
 EXTRA_OECMAKE += "-DSYSROOT_INCDIR=${STAGING_INCDIR}"
@@ -84,6 +75,7 @@ EXTRA_OECMAKE += "-DGST_VIDEO_YUY2_FORMAT_ENABLE=${VIDEO_YUY2_FORMAT_ENABLE}"
 EXTRA_OECMAKE += "-DGST_VIDEO_UYVY_FORMAT_ENABLE=${VIDEO_UYVY_FORMAT_ENABLE}"
 EXTRA_OECMAKE += "-DGST_VIDEO_P010_10LE_FORMAT_ENABLE=${VIDEO_P010_10LE_FORMAT_ENABLE}"
 EXTRA_OECMAKE += "-DGST_VIDEO_NV12_10LE32_FORMAT_ENABLE=${VIDEO_NV12_10LE32_FORMAT_ENABLE}"
+EXTRA_OECMAKE += "-DGST_IMAGE_NV12_FORMAT_ENABLE=${IMAGE_NV12_FORMAT_ENABLE}"
 EXTRA_OECMAKE += "-DGST_VIDEO_TYPE_SUPPORT=${VIDEO_TYPE_SUPPORT}"
 
 FILES:${PN} += "${INSTALL_BINDIR}"

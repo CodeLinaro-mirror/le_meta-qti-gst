@@ -10,8 +10,9 @@ LIC_FILES_CHKSUM = "file://${COREBASE}/meta-qti-bsp/files/common-licenses/${LICE
 DEPENDS := "gstreamer1.0"
 DEPENDS += "gstreamer1.0-plugins-base"
 DEPENDS += "codec2"
-DEPENDS += "media"
-DEPENDS += "media-external"
+DEPENDS:append:kalama += "media"
+DEPENDS:append:kalama += "media-external"
+DEPENDS:append:qrb5165 += "media-codec2"
 
 FILESPATH =+ "${WORKSPACE}/vendor/qcom/opensource/gst-plugins-qti-oss/:"
 
@@ -44,5 +45,4 @@ FILES:${PN} += "${INSTALL_LIBDIR}"
 
 SOLIBS = ".so*"
 FILES_SOLIBSDEV = ""
-TOOLCHAIN = "clang"
-TOOLCHAIN:kalama = "sdllvm"
+TOOLCHAIN = "sdllvm"
