@@ -22,8 +22,7 @@ SRC_URI = "file://gst-plugin-base/"
 S = "${WORKDIR}/gst-plugin-base"
 
 # Default platform definitions.
-C2D_CONVERTER := "TRUE"
-C2D_CONVERTER:kalama := "FALSE"
+C2D_CONVERTER := "FALSE"
 GLES_CONVERTER := "${@bb.utils.contains('DISTRO_FEATURES', 'qti-ib2c', 'TRUE', 'FALSE', d)}"
 GBM_FREE_FD := "FALSE"
 GBM_FREE_FD:kalama := "TRUE"
