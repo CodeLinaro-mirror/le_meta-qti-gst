@@ -7,6 +7,7 @@ SRC_URI:append = "\
   file://0004-waylandsink-release-pending-buffers-in-composer.patch \
   file://0005-waylandsink-support-gap-buffers.patch \
   file://0005-videoparser-support-protected-content-caps.patch \
+  file://0006-videoparser-update-width-and-height-on-resolution-ch.patch \
 "
 
 do_configure:prepend() {
