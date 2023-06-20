@@ -1,6 +1,6 @@
 inherit cmake pkgconfig
 
-SUMMARY = "QTI open-source GStreamer Plug-in for video encoding decoding with Codec 2.0"
+SUMMARY = "QTI open-source GStreamer Plug-in for decryption"
 SECTION = "multimedia"
 
 LICENSE = "BSD-3-Clause-Clear"
@@ -9,43 +9,34 @@ LIC_FILES_CHKSUM = "file://${COREBASE}/meta-qti-bsp/files/common-licenses/${LICE
 # Dependencies.
 DEPENDS := "gstreamer1.0"
 DEPENDS += "gstreamer1.0-plugins-base"
-DEPENDS += "codec2"
-DEPENDS:append:kalama += "media"
-DEPENDS:append:kalama += "media-external"
-DEPENDS:append:qrb5165 += "media-codec2"
+DEPENDS += "securemsm"
+DEPENDS += "media-headers"
 
 FILESPATH =+ "${WORKSPACE}/vendor/qcom/opensource/gst-plugins-qti-oss/:"
 
-SRC_URI = "file://gst-plugin-codec2/"
-S = "${WORKDIR}/gst-plugin-codec2"
+SRC_URI = "file://gst-plugin-drmdecryptor/"
+S = "${WORKDIR}/gst-plugin-drmdecryptor"
 
 # Install directries.
 INSTALL_BINDIR := "${bindir}"
 INSTALL_LIBDIR := "${libdir}"
 
-CODEC2_CONFIG_VERSION := "1.0"
-CODEC2_CONFIG_VERSION:kalama := "2.0"
-
-ENABLE_LINEAR_DMABUF:qrb5165 := "TRUE"
-
 EXTRA_OECMAKE += "-DGST_VERSION_REQUIRED=1.14.4"
 EXTRA_OECMAKE += "-DSYSROOT_INCDIR=${STAGING_INCDIR}"
 EXTRA_OECMAKE += "-DSYSROOT_LIBDIR=${STAGING_LIBDIR}"
-EXTRA_OECMAKE += "-DKERNEL_BUILDDIR=${STAGING_INCDIR}/linux-msm"
+EXTRA_OECMAKE += "-DKERNEL_BUILDDIR=${STAGING_KERNEL_BUILDDIR}"
 EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_INSTALL_BINDIR=${INSTALL_BINDIR}"
 EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_INSTALL_LIBDIR=${INSTALL_LIBDIR}"
 
-EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_LICENSE=BSD"
+# Specifying license unknown as BSD-3-Clause-Clear is not in list of known licenses of Gstreamer
+EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_LICENSE="unknown""
 EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_VERSION=${PV}"
 EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_PACKAGE=${PN}"
 EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_SUMMARY="${SUMMARY}""
 EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_ORIGIN="Unknown package origin""
-EXTRA_OECMAKE += "-DGST_CODEC2_CONFIG_VERSION=${CODEC2_CONFIG_VERSION}"
-EXTRA_OECMAKE += "-DGST_ENABLE_LINEAR_DMABUF=${ENABLE_LINEAR_DMABUF}"
 
 FILES:${PN} += "${INSTALL_BINDIR}"
 FILES:${PN} += "${INSTALL_LIBDIR}"
 
 SOLIBS = ".so*"
-FILES_SOLIBSDEV = ""
-TOOLCHAIN = "sdllvm"
+FILES:SOLIBSDEV = ""

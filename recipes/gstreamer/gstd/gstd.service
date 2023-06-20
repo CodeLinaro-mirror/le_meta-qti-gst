@@ -64,10 +64,12 @@
 Description=GSTreamer Daemon
 
 [Service]
+User=system
+Group=video
 Type=forking
 EnvironmentFile=-/etc/default/gstd
 ExecStart=/usr/bin/gstd $OPTARGS
-PIDFile=/run/gstd.pid
+PIDFile=/tmp/gstd.pid
 Restart=always
 
 [Install]
