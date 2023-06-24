@@ -1,0 +1,29 @@
+From 8a4a1bd53eb803f8b40307ed7bb3e8acd697d043 Mon Sep 17 00:00:00 2001
+From: ppachang <quic_ppachang@quicinc.com>
+Date: Sat, 24 Jun 2023 21:27:03 +0530
+Subject: [PATCH] waylandsink: read width and height from video meta
+
+---
+ ext/wayland/gstwaylandsink.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/ext/wayland/gstwaylandsink.c b/ext/wayland/gstwaylandsink.c
+index 6e3e2d2..25c29cb 100644
+--- a/ext/wayland/gstwaylandsink.c
++++ b/ext/wayland/gstwaylandsink.c
+@@ -924,9 +924,15 @@ gst_wayland_sink_show_frame (GstVideoSink * vsink, GstBuffer * buffer)
+   if (vmeta) {
+     gint i;
+ 
++    sink->video_info.height = vmeta->height;
++    sink->video_info.width = vmeta->width;
++    GST_DEBUG_OBJECT (sink, "buffer video meta width:%d, height:%d",
++        sink->video_info.width,sink->video_info.height);
++
+     for (i = 0; i < vmeta->n_planes; i++) {
+       sink->video_info.offset[i] = vmeta->offset[i];
+       sink->video_info.stride[i] = vmeta->stride[i];
++      GST_DEBUG_OBJECT (sink, "stride on plane [%d]: %d",i,vmeta->stride[i]);
+     }
+     sink->video_info.size = gst_buffer_get_size (buffer);
+   }
