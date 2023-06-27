@@ -50,6 +50,5 @@ RDEPENDS:packagegroup-qti-gst = " \
 
 RDEPENDS:packagegroup-qti-gst:remove:qrb5165 = " \
       gstd \
-      gstreamer1.0-plugins-qti-oss-mltflite \
       gstreamer1.0-plugins-qti-oss-cvp-optclflow \
     "
