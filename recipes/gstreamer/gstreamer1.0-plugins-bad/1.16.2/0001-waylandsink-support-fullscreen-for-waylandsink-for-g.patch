@@ -1,4 +1,4 @@
-From 6df86ccccb242b1d065747c9b3ad3ad1f8436f61 Mon Sep 17 00:00:00 2001
+From 8bd3c2c18fc33f8c5e3884cddc3175c16409f886 Mon Sep 17 00:00:00 2001
 From: Kai Xing <kxing@codeaurora.org>
 Date: Fri, 11 Dec 2020 12:05:08 +0530
 Subject: [PATCH] waylandsink: support fullscreen for waylandsink for gstreamer
@@ -7,14 +7,14 @@ Add fullscreen property that makes the sink displayed all across the output
 
 Signed-off-by: Kai Xing <kxing@codeaurora.org>
 ---
- ext/wayland/gstwaylandsink.c | 68 ++++++++++++++++++++++++++++++++++++++++++--
+ ext/wayland/gstwaylandsink.c | 68 ++++++++++++++++++++++++++++++++++--
  ext/wayland/gstwaylandsink.h |  1 +
- ext/wayland/wlwindow.c       | 33 ++++++++++++++-------
+ ext/wayland/wlwindow.c       | 33 +++++++++++------
  ext/wayland/wlwindow.h       |  2 +-
  4 files changed, 90 insertions(+), 14 deletions(-)
 
 diff --git a/ext/wayland/gstwaylandsink.c b/ext/wayland/gstwaylandsink.c
-index 78dd294..452e150 100644
+index 78dd294a0..452e150ae 100644
 --- a/ext/wayland/gstwaylandsink.c
 +++ b/ext/wayland/gstwaylandsink.c
 @@ -62,7 +62,11 @@ enum
@@ -121,7 +121,7 @@ index 78dd294..452e150 100644
            G_CALLBACK (on_window_closed), sink, 0);
      }
 diff --git a/ext/wayland/gstwaylandsink.h b/ext/wayland/gstwaylandsink.h
-index be92fe7..4d1eaf8 100644
+index be92fe7f2..4d1eaf89e 100644
 --- a/ext/wayland/gstwaylandsink.h
 +++ b/ext/wayland/gstwaylandsink.h
 @@ -63,6 +63,7 @@ struct _GstWaylandSink
@@ -133,7 +133,7 @@ index be92fe7..4d1eaf8 100644
    gboolean redraw_pending;
    GMutex render_lock;
 diff --git a/ext/wayland/wlwindow.c b/ext/wayland/wlwindow.c
-index 3249d8e..962bfa5 100644
+index c3dc61d28..465a99781 100644
 --- a/ext/wayland/wlwindow.c
 +++ b/ext/wayland/wlwindow.c
 @@ -250,10 +250,9 @@ gst_wl_window_ensure_fullscreen (GstWlWindow * window, gboolean fullscreen)
@@ -202,7 +202,7 @@ index 3249d8e..962bfa5 100644
  
  error:
 diff --git a/ext/wayland/wlwindow.h b/ext/wayland/wlwindow.h
-index c3f0172..3a7d635 100644
+index c3f017216..3a7d635aa 100644
 --- a/ext/wayland/wlwindow.h
 +++ b/ext/wayland/wlwindow.h
 @@ -84,7 +84,7 @@ GType gst_wl_window_get_type (void);
@@ -215,5 +215,5 @@ index c3f0172..3a7d635 100644
          struct wl_surface * parent, GMutex * render_lock);
  
 -- 
-2.7.4
+2.17.1
 
