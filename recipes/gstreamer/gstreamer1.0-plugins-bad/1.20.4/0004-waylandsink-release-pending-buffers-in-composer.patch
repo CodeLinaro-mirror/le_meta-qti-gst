@@ -1,4 +1,4 @@
-From 81942b9797f32ab1f1173061f4d6fbf864510ca3 Mon Sep 17 00:00:00 2001
+From 0ca8a8fbcf1806a03d4f417f5e8f937899680bba Mon Sep 17 00:00:00 2001
 From: "Petar G. Georgiev" <petarg@codeaurora.org>
 Date: Fri, 29 Nov 2019 14:56:55 +0200
 Subject: [PATCH] waylandsink: release pending buffers in composer
@@ -13,13 +13,13 @@ Subject: [PATCH] waylandsink: release pending buffers in composer
 
 Signed-off-by: Petar G. Georgiev <quic_petarg@quicinc.com>
 ---
- ext/wayland/gstwaylandsink.c   | 38 +++++++++++++++++++
+ ext/wayland/gstwaylandsink.c   | 42 +++++++++++++++++++
  ext/wayland/wldisplay.c        | 14 +++++++
  ext/wayland/wldisplay.h        |  2 +
- 3 files changed, 54 insertions(+)
+ 3 files changed, 58 insertions(+)
 
 diff --git a/ext/wayland/gstwaylandsink.c b/ext/wayland/gstwaylandsink.c
-index 09839a9289..4019686357 100644
+index 5c28325668..75752cc8bf 100644
 --- a/ext/wayland/gstwaylandsink.c
 +++ b/ext/wayland/gstwaylandsink.c
 @@ -105,6 +105,8 @@ static GstCaps *gst_wayland_sink_get_caps (GstBaseSink * bsink,
@@ -49,7 +49,7 @@ index 09839a9289..4019686357 100644
        break;
      case GST_STATE_CHANGE_READY_TO_NULL:
        g_mutex_lock (&sink->display_lock);
-@@ -769,6 +775,38 @@ gst_wayland_sink_propose_allocation (GstBaseSink * bsink, GstQuery * query)
+@@ -769,6 +775,42 @@ gst_wayland_sink_propose_allocation (GstBaseSink * bsink, GstQuery * query)
    return TRUE;
  }
  
@@ -63,8 +63,10 @@ index 09839a9289..4019686357 100644
 +  ret = GST_BASE_SINK_CLASS (parent_class)->query (bsink, query);
 +
 +  /* Force release any buffers in the wayland composer. */
-+  if (GST_QUERY_TYPE (query) == GST_QUERY_DRAIN)
++  if (GST_QUERY_TYPE (query) == GST_QUERY_DRAIN) {
++    gst_buffer_replace (&sink->last_buffer, NULL);
 +    gst_wl_display_force_release_buffers (sink->display);
++  }
 +
 +  return ret;
 +}
@@ -78,8 +80,10 @@ index 09839a9289..4019686357 100644
 +  ret = GST_BASE_SINK_CLASS (parent_class)->event (bsink, gst_event_ref (event));
 +
 +  /* Force release any buffers in the wayland composer. */
-+  if (GST_EVENT_TYPE (event) == GST_EVENT_FLUSH_START)
++  if (GST_EVENT_TYPE (event) == GST_EVENT_FLUSH_START) {
++    gst_buffer_replace (&sink->last_buffer, NULL);
 +    gst_wl_display_force_release_buffers (sink->display);
++  }
 +
 +  gst_event_unref (event);
 +  return ret;
@@ -89,7 +93,7 @@ index 09839a9289..4019686357 100644
  frame_redraw_callback (void *data, struct wl_callback *callback, uint32_t time)
  {
 diff --git a/ext/wayland/wldisplay.c b/ext/wayland/wldisplay.c
-index a12656148b..2e11c326c5 100644
+index a12656148b..587f3b26ed 100644
 --- a/ext/wayland/wldisplay.c
 +++ b/ext/wayland/wldisplay.c
 @@ -490,3 +490,17 @@ gst_wl_display_unregister_buffer (GstWlDisplay * self, gpointer gstmem)
