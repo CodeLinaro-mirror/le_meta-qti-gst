@@ -1,20 +1,22 @@
 inherit cmake
 
-SUMMARY = "QTI open-source GStreamer Plug-in for batching buffers from multiple streams into single output buffer"
+SUMMARY = "QTI open-source GStreamer Plug-in for CVP image pyramid"
+HOMEPAGE = "https://git.codelinaro.org"
 SECTION = "multimedia"
 
-LICENSE = "BSD-3-Clause"
-LIC_FILES_CHKSUM = "file://${COMMON_LICENSE_DIR}/${LICENSE};md5=550794465ba0ec5312d6919e203a55f9"
+LICENSE = "BSD-3-Clause-Clear"
+LIC_FILES_CHKSUM = "file://${COREBASE}/meta-qti-bsp/files/common-licenses/${LICENSE};md5=3771d4920bd6cdb8cbdf1e8344489ee0"
 
 # Dependencies.
 DEPENDS := "gstreamer1.0"
 DEPENDS += "gstreamer1.0-plugins-base"
 DEPENDS += "gstreamer1.0-plugins-qti-oss-base"
+DEPENDS += "cvp-noship"
 
 FILESPATH =+ "${WORKSPACE}/vendor/qcom/opensource/gst-plugins-qti-oss/:"
 
-SRC_URI = "file://gst-plugin-batch/"
-S = "${WORKDIR}/gst-plugin-batch"
+SRC_URI = "file://gst-plugin-cvp-imgpyramid/"
+S = "${WORKDIR}/gst-plugin-cvp-imgpyramid"
 
 # Install directries.
 INSTALL_BINDIR := "${bindir}"
@@ -25,15 +27,18 @@ EXTRA_OECMAKE += "-DSYSROOT_INCDIR=${STAGING_INCDIR}"
 EXTRA_OECMAKE += "-DSYSROOT_LIBDIR=${STAGING_LIBDIR}"
 EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_INSTALL_BINDIR=${INSTALL_BINDIR}"
 EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_INSTALL_LIBDIR=${INSTALL_LIBDIR}"
-
-EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_LICENSE=BSD"
+EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_INSTALL_ENGINEDIR=${INSTALL_LIBDIR}"
 EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_VERSION=${PV}"
 EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_PACKAGE=${PN}"
 EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_SUMMARY="${SUMMARY}""
-EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_ORIGIN="Unknown package origin""
+EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_ORIGIN=${HOMEPAGE}"
+# Specifying license unknown as BSD-3-Clause-Clear is not in list of known licenses of Gstreamer
+EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_LICENSE="unknown""
 
 FILES_${PN} += "${INSTALL_BINDIR}"
 FILES_${PN} += "${INSTALL_LIBDIR}"
+
+FILES_${PN}-dbg += "${INSTALL_LIBDIR}/gstreamer-1.0/.debug"
 
 SOLIBS = ".so*"
 FILES_SOLIBSDEV = ""

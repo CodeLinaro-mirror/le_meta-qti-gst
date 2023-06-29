@@ -1,7 +1,7 @@
-From 92f43c77d893dd6cdb9621183b2bbdda646f060b Mon Sep 17 00:00:00 2001
+From bac2f9f179feb219c1ce66ca4234c12601a9d663 Mon Sep 17 00:00:00 2001
 From: Kai Xing <kxing@codeaurora.org>
 Date: Thu, 24 Dec 2020 12:27:02 +0530
-Subject: [PATCH 2/2] waylandsink: support gbm buffer backend protocol
+Subject: [PATCH] waylandsink: support gbm buffer backend protocol
 
 Support the wayland gbm_buffer_backend protocol.
 SHM formats, DMABuf formats and GBM formats are exposed differently
@@ -12,21 +12,21 @@ element responsibility to provide with such buffers
 Signed-off-by: Kai Xing <kxing@codeaurora.org>
 ---
  ext/wayland/Makefile.am      |   5 ++
- ext/wayland/gstwaylandsink.c |  43 ++++++++++-
+ ext/wayland/gstwaylandsink.c |  43 ++++++++-
  ext/wayland/gstwaylandsink.h |   3 +
  ext/wayland/meson.build      |   5 +-
- ext/wayland/wldisplay.c      |  55 ++++++++++++++
+ ext/wayland/wldisplay.c      |  55 ++++++++++++
  ext/wayland/wldisplay.h      |  10 +++
- ext/wayland/wlgbmallocator.c | 167 +++++++++++++++++++++++++++++++++++++++++++
- ext/wayland/wlgbmallocator.h |  38 ++++++++++
- ext/wayland/wlvideoformat.c  |  65 +++++++++++++++++
+ ext/wayland/wlgbmallocator.c | 167 +++++++++++++++++++++++++++++++++++
+ ext/wayland/wlgbmallocator.h |  38 ++++++++
+ ext/wayland/wlvideoformat.c  |  65 ++++++++++++++
  ext/wayland/wlvideoformat.h  |   3 +
  10 files changed, 390 insertions(+), 4 deletions(-)
  create mode 100644 ext/wayland/wlgbmallocator.c
  create mode 100644 ext/wayland/wlgbmallocator.h
 
 diff --git a/ext/wayland/Makefile.am b/ext/wayland/Makefile.am
-index 95bb97e..735cacd 100644
+index 95bb97e7f..735cacda0 100644
 --- a/ext/wayland/Makefile.am
 +++ b/ext/wayland/Makefile.am
 @@ -5,6 +5,8 @@ BUILT_SOURCES = \
@@ -63,7 +63,7 @@ index 95bb97e..735cacd 100644
  	wldisplay.h \
  	wlwindow.h \
 diff --git a/ext/wayland/gstwaylandsink.c b/ext/wayland/gstwaylandsink.c
-index 452e150..228ed58 100644
+index 452e150ae..228ed58c0 100644
 --- a/ext/wayland/gstwaylandsink.c
 +++ b/ext/wayland/gstwaylandsink.c
 @@ -46,6 +46,7 @@
@@ -186,7 +186,7 @@ index 452e150..228ed58 100644
  
    if (!wbuf && gst_wl_display_check_format_for_shm (sink->display, format)) {
 diff --git a/ext/wayland/gstwaylandsink.h b/ext/wayland/gstwaylandsink.h
-index 4d1eaf8..96aafe2 100644
+index 4d1eaf89e..96aafe242 100644
 --- a/ext/wayland/gstwaylandsink.h
 +++ b/ext/wayland/gstwaylandsink.h
 @@ -57,6 +57,9 @@ struct _GstWaylandSink
@@ -200,7 +200,7 @@ index 4d1eaf8..96aafe2 100644
    gboolean video_info_changed;
    GstVideoInfo video_info;
 diff --git a/ext/wayland/meson.build b/ext/wayland/meson.build
-index 3c377ee..d33d177 100644
+index 3c377eefb..d33d17798 100644
 --- a/ext/wayland/meson.build
 +++ b/ext/wayland/meson.build
 @@ -1,6 +1,7 @@
@@ -237,7 +237,7 @@ index 3c377ee..d33d177 100644
          install_dir : plugins_install_dir,
      )
 diff --git a/ext/wayland/wldisplay.c b/ext/wayland/wldisplay.c
-index 9400095..2464e77 100644
+index 940009556..2464e777e 100644
 --- a/ext/wayland/wldisplay.c
 +++ b/ext/wayland/wldisplay.c
 @@ -27,6 +27,8 @@
@@ -352,7 +352,7 @@ index 9400095..2464e77 100644
      /* If wl_surface and wl_display are passed via GstContext
       * wl_shell, xdg_shell and zwp_fullscreen_shell are not used.
 diff --git a/ext/wayland/wldisplay.h b/ext/wayland/wldisplay.h
-index 4ecc0d6..b8f1baf 100644
+index 4ecc0d659..b8f1baf95 100644
 --- a/ext/wayland/wldisplay.h
 +++ b/ext/wayland/wldisplay.h
 @@ -23,10 +23,12 @@
@@ -400,7 +400,7 @@ index 4ecc0d6..b8f1baf 100644
  
 diff --git a/ext/wayland/wlgbmallocator.c b/ext/wayland/wlgbmallocator.c
 new file mode 100644
-index 0000000..1b13bfc
+index 000000000..1b13bfc9b
 --- /dev/null
 +++ b/ext/wayland/wlgbmallocator.c
 @@ -0,0 +1,167 @@
@@ -573,7 +573,7 @@ index 0000000..1b13bfc
 +}
 diff --git a/ext/wayland/wlgbmallocator.h b/ext/wayland/wlgbmallocator.h
 new file mode 100644
-index 0000000..b512c5a
+index 000000000..b512c5aff
 --- /dev/null
 +++ b/ext/wayland/wlgbmallocator.h
 @@ -0,0 +1,38 @@
@@ -616,7 +616,7 @@ index 0000000..b512c5a
 +
 +#endif /* __GST_WL_GBM_ALLOCATOR_H__ */
 diff --git a/ext/wayland/wlvideoformat.c b/ext/wayland/wlvideoformat.c
-index 77cfac8..ae26c67 100644
+index 77cfac8a0..ae26c6743 100644
 --- a/ext/wayland/wlvideoformat.c
 +++ b/ext/wayland/wlvideoformat.c
 @@ -25,6 +25,8 @@
@@ -724,7 +724,7 @@ index 77cfac8..ae26c67 100644
 +      (gst_wl_gbm_format_to_video_format (wl_format));
 +}
 diff --git a/ext/wayland/wlvideoformat.h b/ext/wayland/wlvideoformat.h
-index 331f582..2c91cb6 100644
+index 331f582b1..2c91cb63a 100644
 --- a/ext/wayland/wlvideoformat.h
 +++ b/ext/wayland/wlvideoformat.h
 @@ -32,10 +32,13 @@ G_BEGIN_DECLS
@@ -742,5 +742,5 @@ index 331f582..2c91cb6 100644
  G_END_DECLS
  
 -- 
-2.7.4
+2.17.1
 
