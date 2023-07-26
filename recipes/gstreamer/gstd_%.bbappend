@@ -7,6 +7,7 @@ SRC_URI += "\
            file://0001-Unblock-GSTD-pipeline-if-a-plugin-refuses-to-change-.patch \
            "
 SRC_URI:append:kalama += "file://gstd-env_kalama"
+SRC_URI:append:qcs6490 += "file://gstd-env_qcs6490"
 
 SRC_URI:remove = "\
            file://0001-gstd-yocto-compatibility.patch \
@@ -34,11 +35,16 @@ do_install:prepend:kalama() {
         install -d ${D}${localstatedir}/log/gstd
 }
 
+do_install:prepend:qcs6490() {
+        install -d ${D}${localstatedir}/run/gstd
+        install -d ${D}${localstatedir}/log/gstd
+}
+
 do_install:append() {
         install -d ${D}${sysconfdir}/default
 
-        if [ ${BASEMACHINE} == "kalama" ]; then
-          install -m 666 ${WORKDIR}/gstd-env_kalama ${D}${sysconfdir}/default/gstd
+        if [ ${BASEMACHINE} == "kalama" ] || [ ${BASEMACHINE} == "qcs6490" ]; then
+          install -m 666 ${WORKDIR}/gstd-env_${BASEMACHINE} ${D}${sysconfdir}/default/gstd
         else
           echo "OPTARGS=\"-a 0.0.0.0\"" >> ${D}${sysconfdir}/default/gstd
           echo "XDG_RUNTIME_DIR=/dev/socket/weston" >> ${D}${sysconfdir}/default/gstd
