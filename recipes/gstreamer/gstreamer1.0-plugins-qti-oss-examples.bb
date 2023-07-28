@@ -14,6 +14,10 @@ DEPENDS += "gstreamer1.0-plugins-qti-oss-base"
 DEPENDS += "securemsm"
 DEPENDS += "media-headers"
 
+# As cecdm isn't shipped in HY_11 build, commenting the dependency out
+# temporarily. Later, will add a check based on DISTRO_FEATURES to enable.
+# DEPENDS += "cecdm"
+
 DEPENDS:append:sdmsteppe += "${@bb.utils.contains('DISTRO_FEATURES', 'qti-camera', bb.utils.contains('DISTRO_FEATURES', 'qti-camera-metadata', 'camera-metadata', 'libcamera-client', d), '', d)}"
 DEPENDS:append:qrb5165 += "${@bb.utils.contains('DISTRO_FEATURES', 'qti-camera', 'libhardware', '', d)}"
 DEPENDS:append:qrb5165 += "${@bb.utils.contains('DISTRO_FEATURES', 'qti-camera', 'camera-metadata', '', d)}"
