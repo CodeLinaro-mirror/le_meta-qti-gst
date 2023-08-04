@@ -10,6 +10,7 @@ SRC_URI_append = " \
        file://0001-waylandsink-support-fullscreen-for-waylandsink-for-g.patch \
        file://0002-waylandsink-support-gbm-buffer-backend-protocol.patch \
        file://0003-waylandsink-release-pending-buffers-in-composer.patch \
+       file://0004-waylandsink-support-gap-buffers.patch \
        file://0004-waylandsink-fix-for-video-playback-crash-after-HPD-o.patch \
 "
 
