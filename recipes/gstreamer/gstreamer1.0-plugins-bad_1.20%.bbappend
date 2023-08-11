@@ -8,6 +8,7 @@ SRC_URI:append = "\
   file://0005-waylandsink-support-gap-buffers.patch \
   file://0005-videoparser-support-protected-content-caps.patch \
   file://0006-videoparser-update-width-and-height-on-resolution-ch.patch \
+  file://0007-waylandsink-read-width-and-height-from-video-meta.patch \
 "
 
 do_configure:prepend() {
