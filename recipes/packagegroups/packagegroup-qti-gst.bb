@@ -46,6 +46,8 @@ RDEPENDS:packagegroup-qti-gst = " \
       ${@bb.utils.contains("MACHINE_FEATURES", "qti-cvp", "gstreamer1.0-plugins-qti-oss-cvp-optclflow", "", d)} \
       ${@bb.utils.contains("BASEMACHINE", "kalama", "gstreamer1.0-plugins-qti-oss-jpegenc", "", d)} \
       ${@bb.utils.contains("BASEMACHINE", "qrb5165", "gstreamer1.0-plugins-qti-oss-drmdecryptor", "", d)} \
+      ${@bb.utils.contains("BASEMACHINE", "qcs6490", "gstreamer1.0-plugins-qti-oss-jpegenc", "", d)} \
+      ${@bb.utils.contains("BASEMACHINE", "qcs6490", bb.utils.contains_any("COMBINED_FEATURES", "qti-video qti-audio", "gstreamer1.0-omx", "", d), "", d)} \
     "
 
 RDEPENDS:packagegroup-qti-gst:remove:qrb5165 = " \

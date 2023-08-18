@@ -23,6 +23,7 @@ S = "${WORKDIR}/gst-plugin-base"
 
 # Default platform definitions.
 C2D_CONVERTER := "FALSE"
+C2D_CONVERTER:qcs6490 := "TRUE"
 GLES_CONVERTER := "${@bb.utils.contains('DISTRO_FEATURES', 'qti-ib2c', 'TRUE', 'FALSE', d)}"
 
 # Install directries.
