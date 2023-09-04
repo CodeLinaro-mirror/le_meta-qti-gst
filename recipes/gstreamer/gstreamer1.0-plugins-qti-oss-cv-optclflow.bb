@@ -1,6 +1,6 @@
-inherit cmake
+inherit cmake pkgconfig
 
-SUMMARY = "QTI open-source GStreamer Plug-in for CVP"
+SUMMARY = "QTI open-source GStreamer Plug-in for CVP and EVA"
 HOMEPAGE = "https://git.codelinaro.org"
 SECTION = "multimedia"
 
@@ -11,12 +11,13 @@ LIC_FILES_CHKSUM = "file://${COREBASE}/meta-qti-bsp/files/common-licenses/${LICE
 DEPENDS := "gstreamer1.0"
 DEPENDS += "gstreamer1.0-plugins-base"
 DEPENDS += "gstreamer1.0-plugins-qti-oss-base"
-DEPENDS += "cvp-noship"
+DEPENDS:append:qrb5165 += "cvp-noship"
+DEPENDS:append:kalama += "eva-noship"
 
 FILESPATH =+ "${WORKSPACE}/vendor/qcom/opensource/gst-plugins-qti-oss/:"
 
-SRC_URI = "file://gst-plugin-cvp-optclflow/"
-S = "${WORKDIR}/gst-plugin-cvp-optclflow"
+SRC_URI = "file://gst-plugin-cv-optclflow/"
+S = "${WORKDIR}/gst-plugin-cv-optclflow"
 
 # Install directries.
 INSTALL_BINDIR := "${bindir}"
