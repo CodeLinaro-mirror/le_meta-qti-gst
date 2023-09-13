@@ -4,5 +4,6 @@ FILESEXTRAPATHS:prepend := "${THISDIR}/gstreamer1.0-plugins-good/1.20.4:"
 SRC_URI += "\
      ${@bb.utils.contains("DISTRO_FEATURES", "pulseaudio", "file://0001-Add-pulsedirectsink-plugin.patch", "", d)} \
      file://0002-v4l2-Add-support-for-fd-memory-import.patch \
+     file://0003-gstreamer1.0-plugins-good-modify-caps.patch \
     "
 
