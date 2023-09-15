@@ -11,6 +11,7 @@ DEPENDS := "gstreamer1.0"
 DEPENDS += "gstreamer1.0-plugins-base"
 DEPENDS += "gbm"
 DEPENDS += "adreno"
+DEPENDS += "fastcv-noship"
 
 # Conditional dependency in IB2C library used in GLES Video Converter.
 DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'qti-ib2c', 'qti-ib2c', '', d)}"
