@@ -1,4 +1,4 @@
-inherit cmake
+inherit cmake pkgconfig
 
 SUMMARY = "GStreamer based daemon utilizing QTI UMD gadget library"
 SECTION = "multimedia"
@@ -10,8 +10,10 @@ LIC_FILES_CHKSUM = "file://${COREBASE}/meta-qti-bsp/files/common-licenses/${LICE
 DEPENDS := "gstreamer1.0"
 DEPENDS += "gstreamer1.0-plugins-qti-oss-mlmeta"
 DEPENDS += "qti-umd-gadget"
+DEPENDS += "qti-auto-framing-stabilization"
 
 RDEPENDS:${PN} := "qti-umd-gadget"
+RDEPENDS:${PN} += "qti-auto-framing-stabilization"
 
 FILESPATH =+ "${WORKSPACE}/vendor/qcom/opensource/gst-plugins-qti-oss/:"
 SRC_URI = "file://gst-umd-daemon/"
@@ -29,6 +31,7 @@ EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_INSTALL_LIBDIR=${INSTALL_LIBDIR}"
 
 FILES:${PN} += "${INSTALL_BINDIR}"
 FILES:${PN} += "${INSTALL_LIBDIR}"
+FILES:${PN} += "/data/"
 
 SOLIBS = ".so*"
 FILES_SOLIBSDEV = ""
