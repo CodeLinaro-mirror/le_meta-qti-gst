@@ -16,9 +16,6 @@ FILESPATH =+ "${WORKSPACE}/vendor/qcom/opensource/gst-plugins-qti-oss/:"
 SRC_URI = "file://gst-plugin-mlvconverter/"
 S = "${WORKDIR}/gst-plugin-mlvconverter"
 
-# Default platform definitions.
-VIDEO_CONVERTER_ENGINE := "${@bb.utils.contains('DISTRO_FEATURES', 'qti-ib2c', 'GLES', 'C2D', d)}"
-
 # Install directories.
 INSTALL_BINDIR := "${bindir}"
 INSTALL_LIBDIR := "${libdir}"
@@ -35,8 +32,6 @@ EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_VERSION=${PV}"
 EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_PACKAGE=${PN}"
 EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_SUMMARY="${SUMMARY}""
 EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_ORIGIN="Unknown package origin""
-
-EXTRA_OECMAKE += "-DGST_VIDEO_CONVERTER_ENGINE=${VIDEO_CONVERTER_ENGINE}"
 
 FILES:${PN} += "${INSTALL_BINDIR}"
 FILES:${PN} += "${INSTALL_LIBDIR}"
