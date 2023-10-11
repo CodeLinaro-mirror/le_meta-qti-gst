@@ -37,20 +37,20 @@ index 78dd294..452e150 100644
 +
 +  g_object_class_install_property (gobject_class, PROP_X,
 +      g_param_spec_uint ("x", "X Position", "X postion for the content",
-+           0, 1920, 0, G_PARAM_READWRITE | G_PARAM_CONSTRUCT));
++           0, 5760, 0, G_PARAM_READWRITE | G_PARAM_CONSTRUCT));
 +
 +  g_object_class_install_property (gobject_class, PROP_Y,
 +      g_param_spec_uint ("y", "Y Position", "Y postion for the content",
-+           0, 1080, 0, G_PARAM_READWRITE | G_PARAM_CONSTRUCT));
++           0, 2160, 0, G_PARAM_READWRITE | G_PARAM_CONSTRUCT));
 +
 +  g_object_class_install_property (gobject_class, PROP_DST_WIDTH,
 +      g_param_spec_uint ("width", "Destination Width", "Destination Width "
-+          "for the content", 0, 1920, 640,
++          "for the content", 0, 5760, 640,
 +          G_PARAM_READWRITE | G_PARAM_CONSTRUCT));
 +
 +  g_object_class_install_property (gobject_class, PROP_DST_HEIGHT,
 +      g_param_spec_uint ("height", "Destination Height", "Destination Height "
-+          "for the content", 0, 1080, 480,
++          "for the content", 0, 2160, 480,
 +          G_PARAM_READWRITE | G_PARAM_CONSTRUCT));
 +
  }
