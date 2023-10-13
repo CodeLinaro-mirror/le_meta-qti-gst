@@ -12,8 +12,6 @@ DEPENDS += "gstreamer1.0-plugins-base"
 DEPENDS += "gstreamer1.0-plugins-qti-oss-base"
 DEPENDS += "snpe"
 
-do_configure[depends] += "snpe:do_package_write_ipk"
-
 FILESPATH =+ "${WORKSPACE}/vendor/qcom/opensource/gst-plugins-qti-oss/:"
 
 SRC_URI = "file://gst-plugin-mlsnpe/"
