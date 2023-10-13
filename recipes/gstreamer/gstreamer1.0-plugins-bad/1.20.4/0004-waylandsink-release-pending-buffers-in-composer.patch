@@ -1,4 +1,4 @@
-From 0ca8a8fbcf1806a03d4f417f5e8f937899680bba Mon Sep 17 00:00:00 2001
+From 850241141d677be6b608e3dac595908d6f65c0d8 Mon Sep 17 00:00:00 2001
 From: "Petar G. Georgiev" <petarg@codeaurora.org>
 Date: Fri, 29 Nov 2019 14:56:55 +0200
 Subject: [PATCH] waylandsink: release pending buffers in composer
@@ -13,13 +13,14 @@ Subject: [PATCH] waylandsink: release pending buffers in composer
 
 Signed-off-by: Petar G. Georgiev <quic_petarg@quicinc.com>
 ---
- ext/wayland/gstwaylandsink.c   | 42 +++++++++++++++++++
- ext/wayland/wldisplay.c        | 14 +++++++
- ext/wayland/wldisplay.h        |  2 +
- 3 files changed, 58 insertions(+)
+ ext/wayland/gstwaylandsink.c | 42 ++++++++++++++++++++++++++++++++++++
+ ext/wayland/wlbuffer.c       | 24 ++++++++++-----------
+ ext/wayland/wldisplay.c      | 14 ++++++++++++
+ ext/wayland/wldisplay.h      |  2 ++
+ 4 files changed, 70 insertions(+), 12 deletions(-)
 
 diff --git a/ext/wayland/gstwaylandsink.c b/ext/wayland/gstwaylandsink.c
-index 5c28325668..75752cc8bf 100644
+index 7674397..0de9821 100644
 --- a/ext/wayland/gstwaylandsink.c
 +++ b/ext/wayland/gstwaylandsink.c
 @@ -105,6 +105,8 @@ static GstCaps *gst_wayland_sink_get_caps (GstBaseSink * bsink,
@@ -92,11 +93,54 @@ index 5c28325668..75752cc8bf 100644
  static void
  frame_redraw_callback (void *data, struct wl_callback *callback, uint32_t time)
  {
+diff --git a/ext/wayland/wlbuffer.c b/ext/wayland/wlbuffer.c
+index caab58d..1e11c5a 100644
+--- a/ext/wayland/wlbuffer.c
++++ b/ext/wayland/wlbuffer.c
+@@ -203,8 +203,19 @@ gst_buffer_get_wl_buffer (GstWlDisplay * display, GstBuffer * gstbuffer)
+ void
+ gst_wl_buffer_force_release_and_unref (GstBuffer * buf, GstWlBuffer * self)
+ {
++  /* Finalize this GstWlBuffer early.
++   * We need to stop using any wayland resources and disconnect from
++   * the display. The GstWlBuffer stays alive, though, to avoid race
++   * conditions with the GstBuffer being destroyed from another thread.
++   * The last reference is either owned by the GstBuffer or by us and
++   * it will be released at the end of this function. */
++  GST_TRACE_OBJECT (self, "finalizing early");
++  wl_buffer_destroy (self->wlbuffer);
++  self->wlbuffer = NULL;
++  self->display = NULL;
++
+   /* Force a buffer release.
+-   * At this point, the GstWlDisplay has killed its event loop,
++   * At this point, wl_buffer has been disconnected from display,
+    * so we don't need to worry about buffer_release() being called
+    * at the same time from the event loop thread */
+   if (self->used_by_compositor) {
+@@ -214,17 +225,6 @@ gst_wl_buffer_force_release_and_unref (GstBuffer * buf, GstWlBuffer * self)
+     gst_buffer_unref (self->current_gstbuffer);
+   }
+ 
+-  /* Finalize this GstWlBuffer early.
+-   * This method has been called as a result of the display shutting down,
+-   * so we need to stop using any wayland resources and disconnect from
+-   * the display. The GstWlBuffer stays alive, though, to avoid race
+-   * conditions with the GstBuffer being destroyed from another thread.
+-   * The last reference is either owned by the GstBuffer or by us and
+-   * it will be released at the end of this function. */
+-  GST_TRACE_OBJECT (self, "finalizing early");
+-  wl_buffer_destroy (self->wlbuffer);
+-  self->wlbuffer = NULL;
+-  self->display = NULL;
+   self->current_gstbuffer = NULL;
+ 
+   /* remove the reference that the caller (GstWlDisplay) owns */
 diff --git a/ext/wayland/wldisplay.c b/ext/wayland/wldisplay.c
-index a12656148b..587f3b26ed 100644
+index 27e071a..3e3d816 100644
 --- a/ext/wayland/wldisplay.c
 +++ b/ext/wayland/wldisplay.c
-@@ -490,3 +490,17 @@ gst_wl_display_unregister_buffer (GstWlDisplay * self, gpointer gstmem)
+@@ -492,3 +492,17 @@ gst_wl_display_unregister_buffer (GstWlDisplay * self, gpointer gstmem)
      g_hash_table_remove (self->buffers, gstmem);
    g_mutex_unlock (&self->buffers_mutex);
  }
@@ -115,7 +159,7 @@ index a12656148b..587f3b26ed 100644
 +  g_hash_table_remove_all (self->buffers);
 +}
 diff --git a/ext/wayland/wldisplay.h b/ext/wayland/wldisplay.h
-index bdd00ba249..f988ebbac5 100644
+index bdd00ba..f988ebb 100644
 --- a/ext/wayland/wldisplay.h
 +++ b/ext/wayland/wldisplay.h
 @@ -104,6 +104,8 @@ void gst_wl_display_register_buffer (GstWlDisplay * self, gpointer gstmem,
@@ -128,5 +172,5 @@ index bdd00ba249..f988ebbac5 100644
      GstVideoFormat format);
  gboolean gst_wl_display_check_format_for_dmabuf (GstWlDisplay * display,
 -- 
-2.17.1
+2.25.1
 

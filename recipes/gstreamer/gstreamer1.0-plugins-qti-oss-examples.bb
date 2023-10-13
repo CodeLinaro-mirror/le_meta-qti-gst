@@ -21,6 +21,8 @@ DEPENDS:append:kalama  += "${@bb.utils.contains('DISTRO_FEATURES', 'qti-camera',
 DEPENDS:append:kalama  += "${@bb.utils.contains('DISTRO_FEATURES', 'qti-camera', 'camera-metadata', '', d)}"
 DEPENDS:append:qrbx210 += "${@bb.utils.contains('DISTRO_FEATURES', 'qti-camera', 'libhardware', '', d)}"
 DEPENDS:append:qrbx210 += "${@bb.utils.contains('DISTRO_FEATURES', 'qti-camera', 'camera-metadata', '', d)}"
+DEPENDS:append:qcs6490 += "${@bb.utils.contains('DISTRO_FEATURES', 'qti-camera', 'libhardware', '', d)}"
+DEPENDS:append:qcs6490 += "${@bb.utils.contains('DISTRO_FEATURES', 'qti-camera', 'camera-metadata', '', d)}"
 
 FILESPATH =+ "${WORKSPACE}/vendor/qcom/opensource/gst-plugins-qti-oss/:"
 SRC_URI = "file://gst-plugin-examples/"
@@ -42,6 +44,7 @@ CAMERA_CLIENT_DISABLED_sdmsteppe := "${@bb.utils.contains('DISTRO_FEATURES', 'qt
 CODEC2_ENCODE := "FALSE"
 CODEC2_ENCODE_qrbx210 := "TRUE"
 CODEC2_ENCODE:kalama := "TRUE"
+CODEC2_ENCODE:qcs6490 := "TRUE"
 CAMERA_METADATA_VERSION:kalama := "1.0ns"
 
 EXTRA_OECMAKE += "-DGST_VERSION_REQUIRED=1.14.4"
