@@ -12,7 +12,7 @@ DEPENDS += "gstreamer1.0-plugins-base"
 DEPENDS += "gstreamer1.0-plugins-qti-oss-base"
 DEPENDS += "snpe"
 
-do_configure[depends] += "snpe:do_package_write_ipk"
+do_configure[depends] += "${@bb.utils.contains('PACKAGE_CLASSES', 'package_ipk', 'snpe:do_package_write_ipk', 'snpe:do_package_write_deb', d)}"
 
 FILESPATH =+ "${WORKSPACE}/vendor/qcom/opensource/gst-plugins-qti-oss/:"
 
