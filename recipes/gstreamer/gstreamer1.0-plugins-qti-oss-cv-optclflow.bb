@@ -15,8 +15,8 @@ DEPENDS += "cvp-noship"
 
 FILESPATH =+ "${WORKSPACE}/vendor/qcom/opensource/gst-plugins-qti-oss/:"
 
-SRC_URI = "file://gst-plugin-cvp-optclflow/"
-S = "${WORKDIR}/gst-plugin-cvp-optclflow"
+SRC_URI = "file://gst-plugin-cv-optclflow/"
+S = "${WORKDIR}/gst-plugin-cv-optclflow"
 
 # Install directries.
 INSTALL_BINDIR := "${bindir}"
