@@ -24,6 +24,12 @@ DEPENDS:append:qrbx210 += "${@bb.utils.contains('DISTRO_FEATURES', 'qti-camera',
 DEPENDS:append:qcs6490 += "${@bb.utils.contains('DISTRO_FEATURES', 'qti-camera', 'libhardware', '', d)}"
 DEPENDS:append:qcs6490 += "${@bb.utils.contains('DISTRO_FEATURES', 'qti-camera', 'camera-metadata', '', d)}"
 
+DEPENDS:remove:qcm6490 = "${@bb.utils.contains('PRODUCT', 'ubuntu', '', 'gstreamer1.0-plugins-qti-oss-mlmeta', d)}"
+DEPENDS:remove:qcm6490 = "${@bb.utils.contains('PRODUCT', 'ubuntu', '', 'binder', d)}"
+DEPENDS:remove:qcm6490 = "${@bb.utils.contains('PRODUCT', 'ubuntu', '', 'gstreamer1.0-plugins-qti-oss-base', d)}"
+DEPENDS:remove:qcm6490 = "${@bb.utils.contains('PRODUCT', 'ubuntu', '', 'securemsm', d)}"
+DEPENDS:remove:qcm6490 = "${@bb.utils.contains('PRODUCT', 'ubuntu', '', 'media-headers', d)}"
+
 FILESPATH =+ "${WORKSPACE}/vendor/qcom/opensource/gst-plugins-qti-oss/:"
 SRC_URI = "file://gst-plugin-examples/"
 S = "${WORKDIR}/gst-plugin-examples/"
@@ -47,6 +53,9 @@ CODEC2_ENCODE:kalama := "TRUE"
 CODEC2_ENCODE:qcs6490 := "TRUE"
 CAMERA_METADATA_VERSION:kalama := "1.0ns"
 
+ENABLE_ALL_APPS := "TRUE"
+ENABLE_ALL_APPS:qcm6490 := "${@bb.utils.contains('PRODUCT', 'ubuntu', 'TRUE', 'FALSE', d)}"
+
 EXTRA_OECMAKE += "-DGST_VERSION_REQUIRED=1.14.4"
 EXTRA_OECMAKE += "-DSYSROOT_INCDIR=${STAGING_INCDIR}"
 EXTRA_OECMAKE += "-DSYSROOT_LIBDIR=${STAGING_LIBDIR}"
@@ -55,6 +64,7 @@ EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_INSTALL_LIBDIR=${INSTALL_LIBDIR}"
 EXTRA_OECMAKE += "-DCAMERA_CLIENT_DISABLED=${CAMERA_CLIENT_DISABLED}"
 EXTRA_OECMAKE += "-DCODEC2_ENCODE=${CODEC2_ENCODE}"
 EXTRA_OECMAKE += "-DCAMERA_METADATA_VERSION=${CAMERA_METADATA_VERSION}"
+EXTRA_OECMAKE += "-DENABLE_ALL_APPS=${ENABLE_ALL_APPS}"
 
 FILES:${PN} += "${INSTALL_BINDIR}"
 FILES:${PN} += "${INSTALL_LIBDIR}"
