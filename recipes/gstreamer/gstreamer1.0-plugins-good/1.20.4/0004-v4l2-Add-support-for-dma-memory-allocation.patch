@@ -1,4 +1,4 @@
-From 4c124ef18edb6fef4794bf23b41a3eb42c58c68d Mon Sep 17 00:00:00 2001
+From 02ccacfc4e71d3a764ad22ba91e359e8bf468037 Mon Sep 17 00:00:00 2001
 From: ppachang <quic_ppachang@quicinc.com>
 Date: Sat, 28 Oct 2023 16:42:14 +0530
 Subject: [PATCH] v4l2 : Add support for dma memory allocation
@@ -33,7 +33,7 @@ index 24832ee..93a138a 100644
  /* two non contiguous planes - one Y, one Cr + Cb interleaved  */
  #define V4L2_PIX_FMT_NV12M   v4l2_fourcc('N', 'M', '1', '2') /* 12  Y/CbCr 4:2:0  */
 diff --git a/sys/v4l2/gstv4l2allocator.c b/sys/v4l2/gstv4l2allocator.c
-index ed4c2ed..67f48c3 100644
+index ed4c2ed..2d1bad4 100644
 --- a/sys/v4l2/gstv4l2allocator.c
 +++ b/sys/v4l2/gstv4l2allocator.c
 @@ -39,6 +39,8 @@
@@ -144,7 +144,7 @@ index ed4c2ed..67f48c3 100644
 +
 +      gst_memory_map (dma_mem[i], &info, GST_MAP_READ);
 +
-+      memcpy (data, info.data + dma_mem[i]->offset, dma_mem[i]->size);
++      memcpy (data, info.data, dma_mem[i]->size);
 +
 +      gst_memory_unmap (dma_mem[i], &info);
 +      if (munmap (data, maxsize))
