@@ -1,4 +1,4 @@
-From 622831f7ee26079df91c041ac25da027331b4d48 Mon Sep 17 00:00:00 2001
+From 4c124ef18edb6fef4794bf23b41a3eb42c58c68d Mon Sep 17 00:00:00 2001
 From: ppachang <quic_ppachang@quicinc.com>
 Date: Sat, 28 Oct 2023 16:42:14 +0530
 Subject: [PATCH] v4l2 : Add support for dma memory allocation
@@ -7,18 +7,18 @@ Signed-off-by: ppachang <quic_ppachang@quicinc.com>
 
 ---
  sys/v4l2/ext/videodev2.h     |   1 +
- sys/v4l2/gstimagepool.c      | 667 +++++++++++++++++++++++++++++++++++
- sys/v4l2/gstimagepool.h      | 134 +++++++
  sys/v4l2/gstv4l2allocator.c  |  78 +++-
  sys/v4l2/gstv4l2allocator.h  |   9 +
  sys/v4l2/gstv4l2bufferpool.c |  50 ++-
  sys/v4l2/gstv4l2bufferpool.h |   2 +
+ sys/v4l2/gstv4l2imagepool.c  | 667 +++++++++++++++++++++++++++++++++++
+ sys/v4l2/gstv4l2imagepool.h  | 134 +++++++
  sys/v4l2/gstv4l2object.c     |  56 ++-
  sys/v4l2/gstv4l2videodec.c   |   2 +-
  sys/v4l2/meson.build         |   3 +-
  10 files changed, 986 insertions(+), 16 deletions(-)
- create mode 100644 sys/v4l2/gstimagepool.c
- create mode 100644 sys/v4l2/gstimagepool.h
+ create mode 100644 sys/v4l2/gstv4l2imagepool.c
+ create mode 100644 sys/v4l2/gstv4l2imagepool.h
 
 diff --git a/sys/v4l2/ext/videodev2.h b/sys/v4l2/ext/videodev2.h
 index 24832ee..93a138a 100644
@@ -32,819 +32,6 @@ index 24832ee..93a138a 100644
  
  /* two non contiguous planes - one Y, one Cr + Cb interleaved  */
  #define V4L2_PIX_FMT_NV12M   v4l2_fourcc('N', 'M', '1', '2') /* 12  Y/CbCr 4:2:0  */
-diff --git a/sys/v4l2/gstimagepool.c b/sys/v4l2/gstimagepool.c
-new file mode 100644
-index 0000000..7986466
---- /dev/null
-+++ b/sys/v4l2/gstimagepool.c
-@@ -0,0 +1,667 @@
-+/*
-+ * Copyright (c) 2019-2021, The Linux Foundation. All rights reserved.
-+ *
-+ * Redistribution and use in source and binary forms, with or without
-+ * modification, are permitted provided that the following conditions are
-+ * met:
-+ *     * Redistributions of source code must retain the above copyright
-+ *       notice, this list of conditions and the following disclaimer.
-+ *     * Redistributions in binary form must reproduce the above
-+ *       copyright notice, this list of conditions and the following
-+ *       disclaimer in the documentation and/or other materials provided
-+ *       with the distribution.
-+ *     * Neither the name of The Linux Foundation nor the names of its
-+ *       contributors may be used to endorse or promote products derived
-+ *       from this software without specific prior written permission.
-+ *
-+ * THIS SOFTWARE IS PROVIDED "AS IS" AND ANY EXPRESS OR IMPLIED
-+ * WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
-+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT
-+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS
-+ * BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
-+ * BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
-+ * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
-+ * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
-+ * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-+ *
-+ * Changes from Qualcomm Innovation Center are provided under the following license:
-+ *
-+ * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
-+ *
-+ * Redistribution and use in source and binary forms, with or without
-+ * modification, are permitted (subject to the limitations in the
-+ * disclaimer below) provided that the following conditions are met:
-+ *
-+ *     * Redistributions of source code must retain the above copyright
-+ *       notice, this list of conditions and the following disclaimer.
-+ *
-+ *     * Redistributions in binary form must reproduce the above
-+ *       copyright notice, this list of conditions and the following
-+ *       disclaimer in the documentation and/or other materials provided
-+ *       with the distribution.
-+ *
-+ *     * Neither the name of Qualcomm Innovation Center, Inc. nor the names of its
-+ *       contributors may be used to endorse or promote products derived
-+ *       from this software without specific prior written permission.
-+ *
-+ * NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE
-+ * GRANTED BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT
-+ * HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED
-+ * WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
-+ * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
-+ * IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
-+ * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE
-+ * GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER
-+ * IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
-+ * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
-+ * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-+ */
-+
-+#include "gstimagepool.h"
-+
-+#include <dlfcn.h>
-+#include <fcntl.h>
-+#include <unistd.h>
-+#include <sys/stat.h>
-+#include <sys/ioctl.h>
-+
-+#include <gbm.h>
-+#include <gbm_priv.h>
-+
-+#include <display/media/mmm_color_fmt.h>
-+#include <linux/dma-heap.h>
-+
-+GST_DEBUG_CATEGORY_STATIC (gst_image_pool_debug);
-+#define GST_CAT_DEFAULT gst_image_pool_debug
-+
-+#define GST_IS_GBM_MEMORY_TYPE(type) \
-+    (type == g_quark_from_static_string (GST_IMAGE_BUFFER_POOL_TYPE_GBM))
-+#define GST_IS_DMA_MEMORY_TYPE(type) \
-+    (type == g_quark_from_static_string (GST_IMAGE_BUFFER_POOL_TYPE_DMA))
-+
-+#define DEFAULT_PAGE_ALIGNMENT 4096
-+
-+struct _GstImageBufferPoolPrivate
-+{
-+  GstVideoInfo        info;
-+  gboolean            addmeta;
-+  gboolean            keepmapped;
-+
-+  GstAllocator        *allocator;
-+  GstAllocationParams params;
-+  GQuark              memtype;
-+
-+  // Either DMA or GBM device FD.
-+  gint                devfd;
-+
-+  // GBM library handle;
-+  gpointer            gbmhandle;
-+  // GBM device handle;
-+  struct gbm_device   *gbmdevice;
-+
-+  // Map of data FDs and DMA handles on case DMA memory is used OR
-+  // map of data FDs and GBM buffer objects if GBM memory is used.
-+  GHashTable          *datamap;
-+  // Mutex for protecting insert/remove from the data map.
-+  GMutex              lock;
-+
-+  // GBM library APIs
-+  struct gbm_device * (*gbm_create_device) (gint fd);
-+  void (*gbm_device_destroy)(struct gbm_device * gbm);
-+  struct gbm_bo * (*gbm_bo_create) (struct gbm_device * gbm, guint width,
-+                                    guint height, guint format, guint flags);
-+  void (*gbm_bo_destroy) (struct gbm_bo * bo);
-+  gint (*gbm_bo_get_fd) (struct gbm_bo *bo);
-+  gint (*gbm_perform) (int operation,...);
-+};
-+
-+#define gst_image_buffer_pool_parent_class parent_class
-+G_DEFINE_TYPE_WITH_PRIVATE (GstImageBufferPool, gst_image_buffer_pool,
-+    GST_TYPE_BUFFER_POOL);
-+
-+static gint
-+gst_video_format_to_gbm_format (GstVideoFormat format)
-+{
-+  switch (format) {
-+    case GST_VIDEO_FORMAT_NV12:
-+      return GBM_FORMAT_NV12;
-+    case GST_VIDEO_FORMAT_NV21:
-+      return GBM_FORMAT_NV21_ZSL;
-+    case GST_VIDEO_FORMAT_YUY2:
-+      return GBM_FORMAT_YCrCb_422_I;
-+    case GST_VIDEO_FORMAT_UYVY:
-+      return GBM_FORMAT_UYVY;
-+    case GST_VIDEO_FORMAT_P010_10LE:
-+      return GBM_FORMAT_YCbCr_420_P010_VENUS;
-+    case GST_VIDEO_FORMAT_NV12_10LE32:
-+      // TODO: Hack due to missing TP10 format
-+      return GBM_FORMAT_YCbCr_420_TP10_UBWC;
-+    case GST_VIDEO_FORMAT_BGRx:
-+      return GBM_FORMAT_BGRX8888;
-+    case GST_VIDEO_FORMAT_BGRA:
-+      return GBM_FORMAT_BGRA8888;
-+    case GST_VIDEO_FORMAT_RGBx:
-+      return GBM_FORMAT_RGBX8888;
-+    case GST_VIDEO_FORMAT_xBGR:
-+      return GBM_FORMAT_XBGR8888;
-+    case GST_VIDEO_FORMAT_RGBA:
-+      return GBM_FORMAT_RGBA8888;
-+    case GST_VIDEO_FORMAT_ABGR:
-+      return GBM_FORMAT_ABGR8888;
-+    case GST_VIDEO_FORMAT_RGB:
-+      return GBM_FORMAT_RGB888;
-+    case GST_VIDEO_FORMAT_BGR:
-+      return GBM_FORMAT_BGR888;
-+    case GST_VIDEO_FORMAT_BGR16:
-+      return GBM_FORMAT_BGR565;
-+    case GST_VIDEO_FORMAT_RGB16:
-+      return GBM_FORMAT_RGB565;
-+    default:
-+      GST_ERROR ("Unsupported format %s!", gst_video_format_to_string (format));
-+  }
-+  return -1;
-+}
-+
-+static gboolean
-+load_symbol (gpointer* method, gpointer handle, const gchar* name)
-+{
-+  *(method) = dlsym (handle, name);
-+  if (NULL == *(method)) {
-+    GST_ERROR("Failed to link library method %s, error: %s!", name, dlerror());
-+    return FALSE;
-+  }
-+  return TRUE;
-+}
-+
-+static void
-+close_gbm_device (GstImageBufferPool * vpool)
-+{
-+  GstImageBufferPoolPrivate *priv = vpool->priv;
-+
-+  if (priv->gbmdevice != NULL) {
-+    GST_INFO_OBJECT (vpool, "Closing GBM device %p", priv->gbmdevice);
-+    priv->gbm_device_destroy (priv->gbmdevice);
-+  }
-+
-+  if (priv->devfd >= 0) {
-+    GST_INFO_OBJECT (vpool, "Closing GBM device FD %d", priv->devfd);
-+    close (priv->devfd);
-+  }
-+
-+  if (priv->gbmhandle != NULL) {
-+    GST_INFO_OBJECT (vpool, "Closing GBM handle %p", priv->gbmhandle);
-+    dlclose (priv->gbmhandle);
-+  }
-+
-+  g_hash_table_destroy (priv->datamap);
-+}
-+
-+static gboolean
-+open_gbm_device (GstImageBufferPool * vpool)
-+{
-+  GstImageBufferPoolPrivate *priv = vpool->priv;
-+  gboolean success = TRUE;
-+
-+  // Load GBM library.
-+  priv->gbmhandle = dlopen("libgbm.so", RTLD_NOW);
-+  if (NULL == priv->gbmhandle) {
-+    GST_ERROR ("Failed to open GBM library, error: %s!", dlerror());
-+    return FALSE;
-+  }
-+
-+  // Load GBM library symbols.
-+  success &= load_symbol ((gpointer*)&priv->gbm_create_device, priv->gbmhandle,
-+      "gbm_create_device");
-+  success &= load_symbol ((gpointer*)&priv->gbm_device_destroy, priv->gbmhandle,
-+      "gbm_device_destroy");
-+  success &= load_symbol ((gpointer*)&priv->gbm_bo_create, priv->gbmhandle,
-+      "gbm_bo_create");
-+  success &= load_symbol ((gpointer*)&priv->gbm_bo_destroy, priv->gbmhandle,
-+      "gbm_bo_destroy");
-+  success &= load_symbol ((gpointer*)&priv->gbm_bo_get_fd, priv->gbmhandle,
-+      "gbm_bo_get_fd");
-+  success &= load_symbol ((gpointer*)&priv->gbm_perform, priv->gbmhandle,
-+      "gbm_perform");
-+
-+  if (!success) {
-+    close_gbm_device (vpool);
-+    return FALSE;
-+  }
-+
-+  GST_INFO_OBJECT (vpool, "Open /dev/dma_heap/system");
-+  priv->devfd = open ("/dev/dma_heap/system", O_RDONLY | O_CLOEXEC);
-+
-+  if (priv->devfd < 0) {
-+    GST_ERROR_OBJECT (vpool, "Failed to open GBM device FD!");
-+    close_gbm_device (vpool);
-+    return FALSE;
-+  }
-+
-+  GST_INFO_OBJECT (vpool, "Opened GBM device FD %d", priv->devfd);
-+
-+  priv->gbmdevice = priv->gbm_create_device (priv->devfd);
-+  if (NULL == priv->gbmdevice) {
-+    GST_ERROR_OBJECT (vpool, "Failed to create GBM device!");
-+    close_gbm_device (vpool);
-+    return FALSE;
-+  }
-+
-+  priv->datamap = g_hash_table_new (NULL, NULL);
-+
-+  GST_INFO_OBJECT (vpool, "Created GBM handle %p", priv->gbmdevice);
-+  return TRUE;
-+}
-+
-+static GstMemory *
-+gbm_device_alloc (GstImageBufferPool * vpool)
-+{
-+  GstImageBufferPoolPrivate *priv = vpool->priv;
-+  struct gbm_bo *bo = NULL;
-+  gint fd, format, usage = 0;
-+
-+#ifdef GBM_FREE_FD
-+  GstFdMemoryFlags flags = 0;
-+#else
-+  GstFdMemoryFlags flags = GST_FD_MEMORY_FLAG_DONT_CLOSE;
-+#endif
-+
-+  format = gst_video_format_to_gbm_format (GST_VIDEO_INFO_FORMAT (&priv->info));
-+  g_return_val_if_fail (format >= 0, NULL);
-+
-+  if (GST_VIDEO_INFO_FORMAT (&priv->info) == GST_VIDEO_FORMAT_P010_10LE)
-+    usage |= GBM_BO_USAGE_10BIT_QTI;
-+  else if (GST_VIDEO_INFO_FORMAT (&priv->info) == GST_VIDEO_FORMAT_NV12_10LE32)
-+    usage |= GBM_BO_USAGE_10BIT_TP_QTI;
-+
-+  bo = priv->gbm_bo_create (priv->gbmdevice, GST_VIDEO_INFO_WIDTH (&priv->info),
-+       GST_VIDEO_INFO_HEIGHT (&priv->info), format, usage);
-+  if (NULL == bo) {
-+    GST_ERROR_OBJECT (vpool, "Failed to allocate GBM memory!");
-+    return NULL;
-+  }
-+
-+  fd = priv->gbm_bo_get_fd (bo);
-+
-+  g_mutex_lock (&priv->lock);
-+  g_hash_table_insert (priv->datamap, GINT_TO_POINTER (fd), bo);
-+  g_mutex_unlock (&priv->lock);
-+
-+  GST_DEBUG_OBJECT (vpool, "Allocated GBM memory FD %d", fd);
-+
-+  if (priv->keepmapped)
-+    flags |= GST_FD_MEMORY_FLAG_KEEP_MAPPED;
-+
-+  return gst_fd_allocator_alloc (priv->allocator, fd, priv->info.size, flags);
-+}
-+
-+static void
-+gbm_device_free (GstImageBufferPool * vpool, gint fd)
-+{
-+  GstImageBufferPoolPrivate *priv = vpool->priv;
-+
-+  GST_DEBUG_OBJECT (vpool, "Closing GBM memory FD %d", fd);
-+
-+  g_mutex_lock (&priv->lock);
-+
-+  struct gbm_bo *bo = g_hash_table_lookup (priv->datamap, GINT_TO_POINTER (fd));
-+  g_hash_table_remove (priv->datamap, GINT_TO_POINTER (fd));
-+
-+  g_mutex_unlock (&priv->lock);
-+
-+  priv->gbm_bo_destroy (bo);
-+}
-+
-+static gboolean
-+open_dma_device (GstImageBufferPool * vpool)
-+{
-+  GstImageBufferPoolPrivate *priv = vpool->priv;
-+
-+  GST_INFO_OBJECT (vpool, "Open /dev/dma_heap/system");
-+  priv->devfd = open ("/dev/dma_heap/system", O_RDONLY | O_CLOEXEC);
-+
-+  if (priv->devfd < 0) {
-+    GST_ERROR_OBJECT (vpool, "Failed to open DMA device FD!");
-+    return FALSE;
-+  }
-+
-+  GST_INFO_OBJECT (vpool, "Opened DMA device FD %d", priv->devfd);
-+  return TRUE;
-+}
-+
-+static void
-+close_dma_device (GstImageBufferPool * vpool)
-+{
-+  GstImageBufferPoolPrivate *priv = vpool->priv;
-+
-+  if (priv->devfd >= 0) {
-+    GST_INFO_OBJECT (vpool, "Closing DMA device FD %d", priv->devfd);
-+    close (priv->devfd);
-+  }
-+}
-+
-+static GstMemory *
-+dma_device_alloc (GstImageBufferPool * vpool)
-+{
-+  GstImageBufferPoolPrivate *priv = vpool->priv;
-+  GstFdMemoryFlags flags = GST_FD_MEMORY_FLAG_DONT_CLOSE;
-+  struct dma_heap_allocation_data alloc_data;
-+  gint result = 0, fd = -1;
-+
-+  alloc_data.fd = 0;
-+  alloc_data.len = GST_VIDEO_INFO_SIZE (&priv->info);
-+
-+  // Permissions for the memory to be allocated.
-+  alloc_data.fd_flags = O_RDWR | O_CLOEXEC;
-+  alloc_data.heap_flags = 0;
-+
-+  result = ioctl (priv->devfd, DMA_HEAP_IOCTL_ALLOC, &alloc_data);
-+
-+  if (result != 0) {
-+    GST_ERROR_OBJECT (vpool, "Failed to allocate DMA memory!");
-+    return NULL;
-+  }
-+
-+  fd = alloc_data.fd;
-+
-+  GST_DEBUG_OBJECT (vpool, "Allocated DMA memory FD %d and size %llu", fd,
-+      alloc_data.len);
-+
-+  if (priv->keepmapped)
-+    flags |= GST_FD_MEMORY_FLAG_KEEP_MAPPED;
-+
-+  // Wrap the allocated FD in FD backed allocator.
-+  return gst_dmabuf_allocator_alloc_with_flags (priv->allocator, fd,
-+      priv->info.size, flags);
-+}
-+
-+static void
-+dma_device_free (GstImageBufferPool * vpool, gint fd)
-+{
-+  GST_DEBUG_OBJECT (vpool, "Closing DMA memory FD %d", fd);
-+  close (fd);
-+}
-+
-+static const gchar **
-+gst_image_buffer_pool_get_options (GstBufferPool * pool)
-+{
-+  static const gchar *options[] = {
-+    GST_BUFFER_POOL_OPTION_VIDEO_META,
-+    GST_IMAGE_BUFFER_POOL_OPTION_KEEP_MAPPED,
-+    NULL
-+  };
-+  return options;
-+}
-+
-+static gboolean
-+gst_image_buffer_pool_set_config (GstBufferPool * pool, GstStructure * config)
-+{
-+  GstImageBufferPool *vpool = GST_IMAGE_BUFFER_POOL (pool);
-+  GstImageBufferPoolPrivate *priv = vpool->priv;
-+
-+  gboolean success;
-+  GstVideoInfo info;
-+  GstCaps *caps;
-+  guint size, minbuffers, maxbuffers;
-+  GstAllocator *allocator;
-+  GstAllocationParams params;
-+
-+  success = gst_buffer_pool_config_get_params (config, &caps, &size,
-+      &minbuffers, &maxbuffers);
-+
-+  if (!success) {
-+    GST_ERROR_OBJECT (vpool, "Invalid configuration!");
-+    return FALSE;
-+  } else if (caps == NULL) {
-+    GST_ERROR_OBJECT (vpool, "Caps missing from configuration");
-+    return FALSE;
-+  }
-+
-+  // Now parse the caps from the configuration.
-+  if (!gst_video_info_from_caps (&info, caps)) {
-+    GST_ERROR_OBJECT (vpool, "Failed getting geometry from caps %"
-+        GST_PTR_FORMAT, caps);
-+    return FALSE;
-+  } else if (size < info.size) {
-+    GST_ERROR_OBJECT (pool, "Provided size is to small for the caps: %u < %"
-+        G_GSIZE_FORMAT, size, info.size);
-+    return FALSE;
-+  }
-+
-+  if (!gst_buffer_pool_config_get_allocator (config, &allocator, &params)) {
-+    GST_ERROR_OBJECT (vpool, "Allocator missing from configuration!");
-+    return FALSE;
-+  } else if (NULL == allocator) {
-+    // No allocator set in configuration, create default FD allocator.
-+    if (NULL == (allocator = gst_dmabuf_allocator_new ())) {
-+      GST_ERROR_OBJECT (vpool, "Failed to create FD allocator!");
-+      return FALSE;
-+    }
-+  }
-+
-+  if (!GST_IS_FD_ALLOCATOR (allocator)) {
-+     GST_ERROR_OBJECT (vpool, "Allocator %p is not FD backed!", allocator);
-+     return FALSE;
-+  }
-+
-+  GST_DEBUG_OBJECT (pool, "Video dimensions %dx%d, caps %" GST_PTR_FORMAT,
-+      info.width, info.height, caps);
-+
-+  priv->params = params;
-+  info.size = MAX (size, info.size);
-+  priv->info = info;
-+
-+  // Check whether we should keep buffer memory mapped.
-+  priv->keepmapped = gst_buffer_pool_config_has_option (config,
-+      GST_IMAGE_BUFFER_POOL_OPTION_KEEP_MAPPED);
-+
-+  // GBM library has its own alignment for the allocated buffers so update
-+  // the size, stride and offset for the buffer planes in the video info.
-+  if (GST_IS_GBM_MEMORY_TYPE (vpool->priv->memtype)) {
-+    struct gbm_buf_info bufinfo = { 0, };
-+    guint stride, scanline, usage = 0;
-+
-+    bufinfo.width = GST_VIDEO_INFO_WIDTH (&priv->info);
-+    bufinfo.height = GST_VIDEO_INFO_HEIGHT (&priv->info);
-+    bufinfo.format = gst_video_format_to_gbm_format (
-+        GST_VIDEO_INFO_FORMAT (&priv->info));
-+
-+    if (GST_VIDEO_INFO_FORMAT (&priv->info) == GST_VIDEO_FORMAT_P010_10LE)
-+      usage |= GBM_BO_USAGE_10BIT_QTI;
-+    else if (GST_VIDEO_INFO_FORMAT (&priv->info) == GST_VIDEO_FORMAT_NV12_10LE32)
-+      usage |= GBM_BO_USAGE_10BIT_TP_QTI;
-+
-+    priv->gbm_perform (GBM_PERFORM_GET_BUFFER_STRIDE_SCANLINE_SIZE, &bufinfo,
-+        usage, &stride, &scanline, &size);
-+
-+    GST_VIDEO_INFO_PLANE_STRIDE (&priv->info, 0) = stride;
-+    GST_VIDEO_INFO_PLANE_OFFSET (&priv->info, 0) = 0;
-+
-+    // Check for a second plane and fill its stride and offset.
-+    if (GST_VIDEO_INFO_N_PLANES (&priv->info) >= 2) {
-+      GST_VIDEO_INFO_PLANE_STRIDE (&priv->info, 1) = stride;
-+      GST_VIDEO_INFO_PLANE_OFFSET (&priv->info, 1) = stride * scanline;
-+    }
-+
-+    priv->info.size = MAX (size, priv->info.size);
-+  }
-+
-+  // Remove cached allocator.
-+  if (priv->allocator)
-+    gst_object_unref (priv->allocator);
-+
-+  priv->allocator = allocator;
-+  gst_object_ref (priv->allocator);
-+
-+  // Enable metadata based on configuration of the pool.
-+  priv->addmeta = gst_buffer_pool_config_has_option (config,
-+      GST_BUFFER_POOL_OPTION_VIDEO_META);
-+
-+  gst_buffer_pool_config_set_params (config, caps, priv->info.size, minbuffers,
-+      maxbuffers);
-+
-+  return GST_BUFFER_POOL_CLASS (parent_class)->set_config (pool, config);
-+}
-+
-+static GstFlowReturn
-+gst_image_buffer_pool_alloc (GstBufferPool * pool, GstBuffer ** buffer,
-+    GstBufferPoolAcquireParams * params)
-+{
-+  GstImageBufferPool *vpool = GST_IMAGE_BUFFER_POOL (pool);
-+  GstImageBufferPoolPrivate *priv = vpool->priv;
-+  GstVideoInfo *info = &priv->info;
-+  GstMemory *memory = NULL;
-+  GstBuffer *newbuffer = NULL;
-+
-+  if (GST_IS_GBM_MEMORY_TYPE (priv->memtype)) {
-+    memory = gbm_device_alloc (vpool);
-+  } else if (GST_IS_DMA_MEMORY_TYPE (priv->memtype)) {
-+    memory = dma_device_alloc (vpool);
-+  }
-+
-+  if (NULL == memory) {
-+    GST_WARNING_OBJECT (pool, "Failed to allocate memory!");
-+    return GST_FLOW_ERROR;
-+  }
-+
-+  // Create a GstBuffer.
-+  newbuffer = gst_buffer_new ();
-+
-+  // Append the FD backed memory to the newly created GstBuffer.
-+  gst_buffer_append_memory(newbuffer, memory);
-+
-+  if (priv->addmeta) {
-+    GST_DEBUG_OBJECT (vpool, "Adding GstVideoMeta");
-+    gst_buffer_add_video_meta_full (
-+        newbuffer, GST_VIDEO_FRAME_FLAG_NONE,
-+        GST_VIDEO_INFO_FORMAT (info), GST_VIDEO_INFO_WIDTH (info),
-+        GST_VIDEO_INFO_HEIGHT (info), GST_VIDEO_INFO_N_PLANES (info),
-+        info->offset, info->stride
-+    );
-+  }
-+
-+  *buffer = newbuffer;
-+  return GST_FLOW_OK;
-+}
-+
-+static void
-+gst_image_buffer_pool_free (GstBufferPool * pool, GstBuffer * buffer)
-+{
-+  GstImageBufferPool *vpool = GST_IMAGE_BUFFER_POOL (pool);
-+  gint fd = gst_dmabuf_memory_get_fd (gst_buffer_peek_memory (buffer, 0));
-+
-+  if (GST_IS_GBM_MEMORY_TYPE (vpool->priv->memtype)) {
-+    gbm_device_free (vpool, fd);
-+  } else if (GST_IS_DMA_MEMORY_TYPE (vpool->priv->memtype)) {
-+    dma_device_free (vpool, fd);
-+  }
-+  gst_buffer_unref (buffer);
-+}
-+
-+static void
-+gst_image_buffer_pool_reset (GstBufferPool * pool, GstBuffer * buffer)
-+{
-+  GstImageBufferPoolPrivate *priv = GST_IMAGE_BUFFER_POOL (pool)->priv;
-+
-+  // Resize the buffer to the original size otherwise it will be discarded
-+  // due to the mismatch during the default implementation of release_buffer.
-+  gst_buffer_resize (buffer, 0, priv->info.size);
-+
-+  GST_BUFFER_POOL_CLASS (parent_class)->reset_buffer (pool, buffer);
-+}
-+
-+static void
-+gst_image_buffer_pool_finalize (GObject * object)
-+{
-+  GstImageBufferPool *vpool = GST_IMAGE_BUFFER_POOL (object);
-+  GstImageBufferPoolPrivate *priv = vpool->priv;
-+
-+  GST_INFO_OBJECT (vpool, "Finalize video buffer pool %p", vpool);
-+
-+  if (priv->allocator) {
-+    GST_INFO_OBJECT (vpool, "Free buffer pool allocator %p", priv->allocator);
-+    gst_object_unref (priv->allocator);
-+  }
-+
-+  if (GST_IS_GBM_MEMORY_TYPE (priv->memtype)) {
-+    close_gbm_device (vpool);
-+  } else if (GST_IS_DMA_MEMORY_TYPE (priv->memtype)) {
-+    close_dma_device (vpool);
-+  }
-+
-+  g_mutex_clear (&priv->lock);
-+
-+  G_OBJECT_CLASS (parent_class)->finalize (object);
-+}
-+
-+static void
-+gst_image_buffer_pool_class_init (GstImageBufferPoolClass * klass)
-+{
-+  GObjectClass *object = G_OBJECT_CLASS (klass);
-+  GstBufferPoolClass *pool = GST_BUFFER_POOL_CLASS (klass);
-+
-+  object->finalize = gst_image_buffer_pool_finalize;
-+
-+  pool->get_options = gst_image_buffer_pool_get_options;
-+  pool->set_config = gst_image_buffer_pool_set_config;
-+  pool->alloc_buffer = gst_image_buffer_pool_alloc;
-+  pool->free_buffer = gst_image_buffer_pool_free;
-+  pool->reset_buffer = gst_image_buffer_pool_reset;
-+
-+  GST_DEBUG_CATEGORY_INIT (gst_image_pool_debug, "image-pool", 0,
-+      "image-pool object");
-+}
-+
-+static void
-+gst_image_buffer_pool_init (GstImageBufferPool * vpool)
-+{
-+  vpool->priv = gst_image_buffer_pool_get_instance_private (vpool);
-+  vpool->priv->devfd = -1;
-+
-+  g_mutex_init (&vpool->priv->lock);
-+}
-+
-+
-+GstBufferPool *
-+gst_image_buffer_pool_new (const gchar * type)
-+{
-+  GstImageBufferPool *vpool;
-+  gboolean success = FALSE;
-+
-+  vpool = g_object_new (GST_TYPE_IMAGE_BUFFER_POOL, NULL);
-+
-+  vpool->priv->memtype = g_quark_from_string (type);
-+
-+  if (GST_IS_GBM_MEMORY_TYPE (vpool->priv->memtype)) {
-+    GST_INFO_OBJECT (vpool, "Using GBM memory");
-+    success = open_gbm_device (vpool);
-+  } else if (GST_IS_DMA_MEMORY_TYPE (vpool->priv->memtype)) {
-+    GST_INFO_OBJECT (vpool, "Using DMA memory");
-+    success = open_dma_device (vpool);
-+  } else {
-+    GST_ERROR_OBJECT (vpool, "Invalid memory type %s!",
-+        g_quark_to_string (vpool->priv->memtype));
-+    success = FALSE;
-+  }
-+
-+  if (!success) {
-+    gst_object_unref (vpool);
-+    return NULL;
-+  }
-+
-+  GST_INFO_OBJECT (vpool, "New video buffer pool %p", vpool);
-+  return GST_BUFFER_POOL_CAST (vpool);
-+}
-+
-+const GstVideoInfo *
-+gst_image_buffer_pool_get_info (GstBufferPool * pool)
-+{
-+  GstImageBufferPool *vpool = GST_IMAGE_BUFFER_POOL (pool);
-+
-+  g_return_val_if_fail (vpool != NULL, NULL);
-+
-+  return &vpool->priv->info;
-+}
-diff --git a/sys/v4l2/gstimagepool.h b/sys/v4l2/gstimagepool.h
-new file mode 100644
-index 0000000..d3ef6ee
---- /dev/null
-+++ b/sys/v4l2/gstimagepool.h
-@@ -0,0 +1,134 @@
-+/*
-+ * Copyright (c) 2019-2020, The Linux Foundation. All rights reserved.
-+ *
-+ * Redistribution and use in source and binary forms, with or without
-+ * modification, are permitted provided that the following conditions are
-+ * met:
-+ *     * Redistributions of source code must retain the above copyright
-+ *       notice, this list of conditions and the following disclaimer.
-+ *     * Redistributions in binary form must reproduce the above
-+ *       copyright notice, this list of conditions and the following
-+ *       disclaimer in the documentation and/or other materials provided
-+ *       with the distribution.
-+ *     * Neither the name of The Linux Foundation nor the names of its
-+ *       contributors may be used to endorse or promote products derived
-+ *       from this software without specific prior written permission.
-+ *
-+ * THIS SOFTWARE IS PROVIDED "AS IS" AND ANY EXPRESS OR IMPLIED
-+ * WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
-+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT
-+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS
-+ * BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
-+ * BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
-+ * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
-+ * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
-+ * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-+ *
-+ * Changes from Qualcomm Innovation Center are provided under the following license:
-+ *
-+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
-+ *
-+ * Redistribution and use in source and binary forms, with or without
-+ * modification, are permitted (subject to the limitations in the
-+ * disclaimer below) provided that the following conditions are met:
-+ *
-+ *     * Redistributions of source code must retain the above copyright
-+ *       notice, this list of conditions and the following disclaimer.
-+ *
-+ *     * Redistributions in binary form must reproduce the above
-+ *       copyright notice, this list of conditions and the following
-+ *       disclaimer in the documentation and/or other materials provided
-+ *       with the distribution.
-+ *
-+ *     * Neither the name of Qualcomm Innovation Center, Inc. nor the names of its
-+ *       contributors may be used to endorse or promote products derived
-+ *       from this software without specific prior written permission.
-+ *
-+ * NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE
-+ * GRANTED BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT
-+ * HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED
-+ * WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
-+ * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
-+ * IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
-+ * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE
-+ * GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER
-+ * IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
-+ * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
-+ * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-+ */
-+
-+#ifndef __GST_IMAGE_POOL_H__
-+#define __GST_IMAGE_POOL_H__
-+
-+#include <gst/video/video.h>
-+#include <gst/allocators/allocators.h>
-+
-+G_BEGIN_DECLS
-+
-+#define GST_TYPE_IMAGE_BUFFER_POOL \
-+  (gst_image_buffer_pool_get_type ())
-+#define GST_IMAGE_BUFFER_POOL(obj) \
-+  (G_TYPE_CHECK_INSTANCE_CAST ((obj), GST_TYPE_IMAGE_BUFFER_POOL, \
-+      GstImageBufferPool))
-+#define GST_IMAGE_BUFFER_POOL_CLASS(klass) \
-+  (G_TYPE_CHECK_CLASS_CAST ((klass), GST_TYPE_IMAGE_BUFFER_POOL, \
-+      GstImageBufferPoolClass))
-+#define GST_IS_IMAGE_BUFFER_POOL(obj) \
-+  (G_TYPE_CHECK_INSTANCE_TYPE ((obj), GST_TYPE_IMAGE_BUFFER_POOL))
-+#define GST_IS_IMAGE_BUFFER_POOL_CLASS(klass) \
-+  (G_TYPE_CHECK_CLASS_TYPE ((klass), GST_TYPE_IMAGE_BUFFER_POOL))
-+#define GST_IMAGE_BUFFER_POOL_CAST(obj) ((GstImageBufferPool*)(obj))
-+
-+/**
-+ * GST_IMAGE_BUFFER_POOL_OPTION_KEEP_MAPPED:
-+ *
-+ * An option indicating that once the buffer memory is mapped it will be
-+ * kept mapped until the memory is destroyed.
-+ */
-+#define GST_IMAGE_BUFFER_POOL_OPTION_KEEP_MAPPED "GstBufferPoolOptionKeepMapped"
-+
-+/**
-+ * GST_IMAGE_BUFFER_POOL_TYPE_DMA:
-+ *
-+ * Type of memory that the pool will use for allocating buffers.
-+ */
-+#define GST_IMAGE_BUFFER_POOL_TYPE_DMA "GstBufferPoolTypeDmaMemory"
-+
-+/**
-+ * GST_IMAGE_BUFFER_POOL_TYPE_GBM:
-+ *
-+ * Type of memory that the pool will use for allocating buffers.
-+ */
-+#define GST_IMAGE_BUFFER_POOL_TYPE_GBM "GstBufferPoolTypeGbmMemory"
-+
-+typedef struct _GstImageBufferPool GstImageBufferPool;
-+typedef struct _GstImageBufferPoolClass GstImageBufferPoolClass;
-+typedef struct _GstImageBufferPoolPrivate GstImageBufferPoolPrivate;
-+
-+struct _GstImageBufferPool
-+{
-+  GstBufferPool parent;
-+
-+  GstImageBufferPoolPrivate *priv;
-+};
-+
-+struct _GstImageBufferPoolClass
-+{
-+  GstBufferPoolClass parent;
-+};
-+
-+GType gst_image_buffer_pool_get_type (void);
-+
-+/// Creates a buffer pool for managing video frames.
-+GstBufferPool * gst_image_buffer_pool_new (const gchar * type);
-+
-+/// Retrieve current set video configuration.
-+const GstVideoInfo * gst_image_buffer_pool_get_info (GstBufferPool * pool);
-+
-+G_END_DECLS
-+
-+#endif /* __GST_IMAGE_POOL_H__ */
 diff --git a/sys/v4l2/gstv4l2allocator.c b/sys/v4l2/gstv4l2allocator.c
 index ed4c2ed..67f48c3 100644
 --- a/sys/v4l2/gstv4l2allocator.c
@@ -1019,14 +206,14 @@ index eb51524..2166b6b 100644
  
  #endif /* __GST_V4L2_ALLOCATOR_H__ */
 diff --git a/sys/v4l2/gstv4l2bufferpool.c b/sys/v4l2/gstv4l2bufferpool.c
-index 4de1da4..36fd7d7 100644
+index 4de1da4..8ce8e94 100644
 --- a/sys/v4l2/gstv4l2bufferpool.c
 +++ b/sys/v4l2/gstv4l2bufferpool.c
 @@ -46,12 +46,16 @@
  #include "gst/gst-i18n-plugin.h"
  #include <gst/glib-compat-private.h>
  
-+#include "gstimagepool.h"
++#include "gstv4l2imagepool.h"
 +
  GST_DEBUG_CATEGORY_STATIC (v4l2bufferpool_debug);
  GST_DEBUG_CATEGORY_STATIC (CAT_PERFORMANCE);
@@ -1062,7 +249,7 @@ index 4de1da4..36fd7d7 100644
 +  GstBufferPool *pool = NULL;
 +  GstAllocator *allocator = NULL;
 +
-+  if ((pool = gst_image_buffer_pool_new (GST_IMAGE_BUFFER_POOL_TYPE_GBM))
++  if ((pool = gst_v4l2_image_buffer_pool_new (GST_V4L2_IMAGE_BUFFER_POOL_TYPE_GBM))
 +      == NULL) {
 +    GST_ERROR_OBJECT (obj->dbg_obj, "Failed to create buffer pool !");
 +    return NULL;
@@ -1126,6 +313,819 @@ index 60340c2..19c96c3 100644
  GstFlowReturn       gst_v4l2_buffer_pool_process (GstV4l2BufferPool * bpool, GstBuffer ** buf, guint32 * frame_number);
  
  void                gst_v4l2_buffer_pool_set_other_pool (GstV4l2BufferPool * pool,
+diff --git a/sys/v4l2/gstv4l2imagepool.c b/sys/v4l2/gstv4l2imagepool.c
+new file mode 100644
+index 0000000..02f58aa
+--- /dev/null
++++ b/sys/v4l2/gstv4l2imagepool.c
+@@ -0,0 +1,667 @@
++/*
++ * Copyright (c) 2019-2021, The Linux Foundation. All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions are
++ * met:
++ *     * Redistributions of source code must retain the above copyright
++ *       notice, this list of conditions and the following disclaimer.
++ *     * Redistributions in binary form must reproduce the above
++ *       copyright notice, this list of conditions and the following
++ *       disclaimer in the documentation and/or other materials provided
++ *       with the distribution.
++ *     * Neither the name of The Linux Foundation nor the names of its
++ *       contributors may be used to endorse or promote products derived
++ *       from this software without specific prior written permission.
++ *
++ * THIS SOFTWARE IS PROVIDED "AS IS" AND ANY EXPRESS OR IMPLIED
++ * WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
++ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT
++ * ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS
++ * BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
++ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
++ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
++ * BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
++ * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
++ * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
++ * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++ *
++ * Changes from Qualcomm Innovation Center are provided under the following license:
++ *
++ * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted (subject to the limitations in the
++ * disclaimer below) provided that the following conditions are met:
++ *
++ *     * Redistributions of source code must retain the above copyright
++ *       notice, this list of conditions and the following disclaimer.
++ *
++ *     * Redistributions in binary form must reproduce the above
++ *       copyright notice, this list of conditions and the following
++ *       disclaimer in the documentation and/or other materials provided
++ *       with the distribution.
++ *
++ *     * Neither the name of Qualcomm Innovation Center, Inc. nor the names of its
++ *       contributors may be used to endorse or promote products derived
++ *       from this software without specific prior written permission.
++ *
++ * NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE
++ * GRANTED BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT
++ * HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED
++ * WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
++ * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
++ * IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
++ * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
++ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE
++ * GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
++ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER
++ * IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
++ * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
++ * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++ */
++
++#include "gstv4l2imagepool.h"
++
++#include <dlfcn.h>
++#include <fcntl.h>
++#include <unistd.h>
++#include <sys/stat.h>
++#include <sys/ioctl.h>
++
++#include <gbm.h>
++#include <gbm_priv.h>
++
++#include <display/media/mmm_color_fmt.h>
++#include <linux/dma-heap.h>
++
++GST_DEBUG_CATEGORY_STATIC (gst_v4l2_image_pool_debug);
++#define GST_CAT_DEFAULT gst_v4l2_image_pool_debug
++
++#define GST_IS_GBM_MEMORY_TYPE(type) \
++    (type == g_quark_from_static_string (GST_V4L2_IMAGE_BUFFER_POOL_TYPE_GBM))
++#define GST_IS_DMA_MEMORY_TYPE(type) \
++    (type == g_quark_from_static_string (GST_V4L2_IMAGE_BUFFER_POOL_TYPE_DMA))
++
++#define DEFAULT_PAGE_ALIGNMENT 4096
++
++struct _GstV4l2ImageBufferPoolPrivate
++{
++  GstVideoInfo        info;
++  gboolean            addmeta;
++  gboolean            keepmapped;
++
++  GstAllocator        *allocator;
++  GstAllocationParams params;
++  GQuark              memtype;
++
++  // Either DMA or GBM device FD.
++  gint                devfd;
++
++  // GBM library handle;
++  gpointer            gbmhandle;
++  // GBM device handle;
++  struct gbm_device   *gbmdevice;
++
++  // Map of data FDs and DMA handles on case DMA memory is used OR
++  // map of data FDs and GBM buffer objects if GBM memory is used.
++  GHashTable          *datamap;
++  // Mutex for protecting insert/remove from the data map.
++  GMutex              lock;
++
++  // GBM library APIs
++  struct gbm_device * (*gbm_create_device) (gint fd);
++  void (*gbm_device_destroy)(struct gbm_device * gbm);
++  struct gbm_bo * (*gbm_bo_create) (struct gbm_device * gbm, guint width,
++                                    guint height, guint format, guint flags);
++  void (*gbm_bo_destroy) (struct gbm_bo * bo);
++  gint (*gbm_bo_get_fd) (struct gbm_bo *bo);
++  gint (*gbm_perform) (int operation,...);
++};
++
++#define gst_v4l2_image_buffer_pool_parent_class parent_class
++G_DEFINE_TYPE_WITH_PRIVATE (GstV4l2ImageBufferPool, gst_v4l2_image_buffer_pool,
++    GST_TYPE_BUFFER_POOL);
++
++static gint
++gst_video_format_to_gbm_format (GstVideoFormat format)
++{
++  switch (format) {
++    case GST_VIDEO_FORMAT_NV12:
++      return GBM_FORMAT_NV12;
++    case GST_VIDEO_FORMAT_NV21:
++      return GBM_FORMAT_NV21_ZSL;
++    case GST_VIDEO_FORMAT_YUY2:
++      return GBM_FORMAT_YCrCb_422_I;
++    case GST_VIDEO_FORMAT_UYVY:
++      return GBM_FORMAT_UYVY;
++    case GST_VIDEO_FORMAT_P010_10LE:
++      return GBM_FORMAT_YCbCr_420_P010_VENUS;
++    case GST_VIDEO_FORMAT_NV12_10LE32:
++      // TODO: Hack due to missing TP10 format
++      return GBM_FORMAT_YCbCr_420_TP10_UBWC;
++    case GST_VIDEO_FORMAT_BGRx:
++      return GBM_FORMAT_BGRX8888;
++    case GST_VIDEO_FORMAT_BGRA:
++      return GBM_FORMAT_BGRA8888;
++    case GST_VIDEO_FORMAT_RGBx:
++      return GBM_FORMAT_RGBX8888;
++    case GST_VIDEO_FORMAT_xBGR:
++      return GBM_FORMAT_XBGR8888;
++    case GST_VIDEO_FORMAT_RGBA:
++      return GBM_FORMAT_RGBA8888;
++    case GST_VIDEO_FORMAT_ABGR:
++      return GBM_FORMAT_ABGR8888;
++    case GST_VIDEO_FORMAT_RGB:
++      return GBM_FORMAT_RGB888;
++    case GST_VIDEO_FORMAT_BGR:
++      return GBM_FORMAT_BGR888;
++    case GST_VIDEO_FORMAT_BGR16:
++      return GBM_FORMAT_BGR565;
++    case GST_VIDEO_FORMAT_RGB16:
++      return GBM_FORMAT_RGB565;
++    default:
++      GST_ERROR ("Unsupported format %s!", gst_video_format_to_string (format));
++  }
++  return -1;
++}
++
++static gboolean
++load_symbol (gpointer* method, gpointer handle, const gchar* name)
++{
++  *(method) = dlsym (handle, name);
++  if (NULL == *(method)) {
++    GST_ERROR("Failed to link library method %s, error: %s!", name, dlerror());
++    return FALSE;
++  }
++  return TRUE;
++}
++
++static void
++close_gbm_device (GstV4l2ImageBufferPool * vpool)
++{
++  GstV4l2ImageBufferPoolPrivate *priv = vpool->priv;
++
++  if (priv->gbmdevice != NULL) {
++    GST_INFO_OBJECT (vpool, "Closing GBM device %p", priv->gbmdevice);
++    priv->gbm_device_destroy (priv->gbmdevice);
++  }
++
++  if (priv->devfd >= 0) {
++    GST_INFO_OBJECT (vpool, "Closing GBM device FD %d", priv->devfd);
++    close (priv->devfd);
++  }
++
++  if (priv->gbmhandle != NULL) {
++    GST_INFO_OBJECT (vpool, "Closing GBM handle %p", priv->gbmhandle);
++    dlclose (priv->gbmhandle);
++  }
++
++  g_hash_table_destroy (priv->datamap);
++}
++
++static gboolean
++open_gbm_device (GstV4l2ImageBufferPool * vpool)
++{
++  GstV4l2ImageBufferPoolPrivate *priv = vpool->priv;
++  gboolean success = TRUE;
++
++  // Load GBM library.
++  priv->gbmhandle = dlopen("libgbm.so", RTLD_NOW);
++  if (NULL == priv->gbmhandle) {
++    GST_ERROR ("Failed to open GBM library, error: %s!", dlerror());
++    return FALSE;
++  }
++
++  // Load GBM library symbols.
++  success &= load_symbol ((gpointer*)&priv->gbm_create_device, priv->gbmhandle,
++      "gbm_create_device");
++  success &= load_symbol ((gpointer*)&priv->gbm_device_destroy, priv->gbmhandle,
++      "gbm_device_destroy");
++  success &= load_symbol ((gpointer*)&priv->gbm_bo_create, priv->gbmhandle,
++      "gbm_bo_create");
++  success &= load_symbol ((gpointer*)&priv->gbm_bo_destroy, priv->gbmhandle,
++      "gbm_bo_destroy");
++  success &= load_symbol ((gpointer*)&priv->gbm_bo_get_fd, priv->gbmhandle,
++      "gbm_bo_get_fd");
++  success &= load_symbol ((gpointer*)&priv->gbm_perform, priv->gbmhandle,
++      "gbm_perform");
++
++  if (!success) {
++    close_gbm_device (vpool);
++    return FALSE;
++  }
++
++  GST_INFO_OBJECT (vpool, "Open /dev/dma_heap/system");
++  priv->devfd = open ("/dev/dma_heap/system", O_RDONLY | O_CLOEXEC);
++
++  if (priv->devfd < 0) {
++    GST_ERROR_OBJECT (vpool, "Failed to open GBM device FD!");
++    close_gbm_device (vpool);
++    return FALSE;
++  }
++
++  GST_INFO_OBJECT (vpool, "Opened GBM device FD %d", priv->devfd);
++
++  priv->gbmdevice = priv->gbm_create_device (priv->devfd);
++  if (NULL == priv->gbmdevice) {
++    GST_ERROR_OBJECT (vpool, "Failed to create GBM device!");
++    close_gbm_device (vpool);
++    return FALSE;
++  }
++
++  priv->datamap = g_hash_table_new (NULL, NULL);
++
++  GST_INFO_OBJECT (vpool, "Created GBM handle %p", priv->gbmdevice);
++  return TRUE;
++}
++
++static GstMemory *
++gbm_device_alloc (GstV4l2ImageBufferPool * vpool)
++{
++  GstV4l2ImageBufferPoolPrivate *priv = vpool->priv;
++  struct gbm_bo *bo = NULL;
++  gint fd, format, usage = 0;
++
++#ifdef GBM_FREE_FD
++  GstFdMemoryFlags flags = 0;
++#else
++  GstFdMemoryFlags flags = GST_FD_MEMORY_FLAG_DONT_CLOSE;
++#endif
++
++  format = gst_video_format_to_gbm_format (GST_VIDEO_INFO_FORMAT (&priv->info));
++  g_return_val_if_fail (format >= 0, NULL);
++
++  if (GST_VIDEO_INFO_FORMAT (&priv->info) == GST_VIDEO_FORMAT_P010_10LE)
++    usage |= GBM_BO_USAGE_10BIT_QTI;
++  else if (GST_VIDEO_INFO_FORMAT (&priv->info) == GST_VIDEO_FORMAT_NV12_10LE32)
++    usage |= GBM_BO_USAGE_10BIT_TP_QTI;
++
++  bo = priv->gbm_bo_create (priv->gbmdevice, GST_VIDEO_INFO_WIDTH (&priv->info),
++       GST_VIDEO_INFO_HEIGHT (&priv->info), format, usage);
++  if (NULL == bo) {
++    GST_ERROR_OBJECT (vpool, "Failed to allocate GBM memory!");
++    return NULL;
++  }
++
++  fd = priv->gbm_bo_get_fd (bo);
++
++  g_mutex_lock (&priv->lock);
++  g_hash_table_insert (priv->datamap, GINT_TO_POINTER (fd), bo);
++  g_mutex_unlock (&priv->lock);
++
++  GST_DEBUG_OBJECT (vpool, "Allocated GBM memory FD %d", fd);
++
++  if (priv->keepmapped)
++    flags |= GST_FD_MEMORY_FLAG_KEEP_MAPPED;
++
++  return gst_fd_allocator_alloc (priv->allocator, fd, priv->info.size, flags);
++}
++
++static void
++gbm_device_free (GstV4l2ImageBufferPool * vpool, gint fd)
++{
++  GstV4l2ImageBufferPoolPrivate *priv = vpool->priv;
++
++  GST_DEBUG_OBJECT (vpool, "Closing GBM memory FD %d", fd);
++
++  g_mutex_lock (&priv->lock);
++
++  struct gbm_bo *bo = g_hash_table_lookup (priv->datamap, GINT_TO_POINTER (fd));
++  g_hash_table_remove (priv->datamap, GINT_TO_POINTER (fd));
++
++  g_mutex_unlock (&priv->lock);
++
++  priv->gbm_bo_destroy (bo);
++}
++
++static gboolean
++open_dma_device (GstV4l2ImageBufferPool * vpool)
++{
++  GstV4l2ImageBufferPoolPrivate *priv = vpool->priv;
++
++  GST_INFO_OBJECT (vpool, "Open /dev/dma_heap/system");
++  priv->devfd = open ("/dev/dma_heap/system", O_RDONLY | O_CLOEXEC);
++
++  if (priv->devfd < 0) {
++    GST_ERROR_OBJECT (vpool, "Failed to open DMA device FD!");
++    return FALSE;
++  }
++
++  GST_INFO_OBJECT (vpool, "Opened DMA device FD %d", priv->devfd);
++  return TRUE;
++}
++
++static void
++close_dma_device (GstV4l2ImageBufferPool * vpool)
++{
++  GstV4l2ImageBufferPoolPrivate *priv = vpool->priv;
++
++  if (priv->devfd >= 0) {
++    GST_INFO_OBJECT (vpool, "Closing DMA device FD %d", priv->devfd);
++    close (priv->devfd);
++  }
++}
++
++static GstMemory *
++dma_device_alloc (GstV4l2ImageBufferPool * vpool)
++{
++  GstV4l2ImageBufferPoolPrivate *priv = vpool->priv;
++  GstFdMemoryFlags flags = GST_FD_MEMORY_FLAG_DONT_CLOSE;
++  struct dma_heap_allocation_data alloc_data;
++  gint result = 0, fd = -1;
++
++  alloc_data.fd = 0;
++  alloc_data.len = GST_VIDEO_INFO_SIZE (&priv->info);
++
++  // Permissions for the memory to be allocated.
++  alloc_data.fd_flags = O_RDWR | O_CLOEXEC;
++  alloc_data.heap_flags = 0;
++
++  result = ioctl (priv->devfd, DMA_HEAP_IOCTL_ALLOC, &alloc_data);
++
++  if (result != 0) {
++    GST_ERROR_OBJECT (vpool, "Failed to allocate DMA memory!");
++    return NULL;
++  }
++
++  fd = alloc_data.fd;
++
++  GST_DEBUG_OBJECT (vpool, "Allocated DMA memory FD %d and size %llu", fd,
++      alloc_data.len);
++
++  if (priv->keepmapped)
++    flags |= GST_FD_MEMORY_FLAG_KEEP_MAPPED;
++
++  // Wrap the allocated FD in FD backed allocator.
++  return gst_dmabuf_allocator_alloc_with_flags (priv->allocator, fd,
++      priv->info.size, flags);
++}
++
++static void
++dma_device_free (GstV4l2ImageBufferPool * vpool, gint fd)
++{
++  GST_DEBUG_OBJECT (vpool, "Closing DMA memory FD %d", fd);
++  close (fd);
++}
++
++static const gchar **
++gst_v4l2_image_buffer_pool_get_options (GstBufferPool * pool)
++{
++  static const gchar *options[] = {
++    GST_BUFFER_POOL_OPTION_VIDEO_META,
++    GST_V4L2_IMAGE_BUFFER_POOL_OPTION_KEEP_MAPPED,
++    NULL
++  };
++  return options;
++}
++
++static gboolean
++gst_v4l2_image_buffer_pool_set_config (GstBufferPool * pool, GstStructure * config)
++{
++  GstV4l2ImageBufferPool *vpool = GST_V4L2_IMAGE_BUFFER_POOL (pool);
++  GstV4l2ImageBufferPoolPrivate *priv = vpool->priv;
++
++  gboolean success;
++  GstVideoInfo info;
++  GstCaps *caps;
++  guint size, minbuffers, maxbuffers;
++  GstAllocator *allocator;
++  GstAllocationParams params;
++
++  success = gst_buffer_pool_config_get_params (config, &caps, &size,
++      &minbuffers, &maxbuffers);
++
++  if (!success) {
++    GST_ERROR_OBJECT (vpool, "Invalid configuration!");
++    return FALSE;
++  } else if (caps == NULL) {
++    GST_ERROR_OBJECT (vpool, "Caps missing from configuration");
++    return FALSE;
++  }
++
++  // Now parse the caps from the configuration.
++  if (!gst_video_info_from_caps (&info, caps)) {
++    GST_ERROR_OBJECT (vpool, "Failed getting geometry from caps %"
++        GST_PTR_FORMAT, caps);
++    return FALSE;
++  } else if (size < info.size) {
++    GST_ERROR_OBJECT (pool, "Provided size is to small for the caps: %u < %"
++        G_GSIZE_FORMAT, size, info.size);
++    return FALSE;
++  }
++
++  if (!gst_buffer_pool_config_get_allocator (config, &allocator, &params)) {
++    GST_ERROR_OBJECT (vpool, "Allocator missing from configuration!");
++    return FALSE;
++  } else if (NULL == allocator) {
++    // No allocator set in configuration, create default FD allocator.
++    if (NULL == (allocator = gst_dmabuf_allocator_new ())) {
++      GST_ERROR_OBJECT (vpool, "Failed to create FD allocator!");
++      return FALSE;
++    }
++  }
++
++  if (!GST_IS_FD_ALLOCATOR (allocator)) {
++     GST_ERROR_OBJECT (vpool, "Allocator %p is not FD backed!", allocator);
++     return FALSE;
++  }
++
++  GST_DEBUG_OBJECT (pool, "Video dimensions %dx%d, caps %" GST_PTR_FORMAT,
++      info.width, info.height, caps);
++
++  priv->params = params;
++  info.size = MAX (size, info.size);
++  priv->info = info;
++
++  // Check whether we should keep buffer memory mapped.
++  priv->keepmapped = gst_buffer_pool_config_has_option (config,
++      GST_V4L2_IMAGE_BUFFER_POOL_OPTION_KEEP_MAPPED);
++
++  // GBM library has its own alignment for the allocated buffers so update
++  // the size, stride and offset for the buffer planes in the video info.
++  if (GST_IS_GBM_MEMORY_TYPE (vpool->priv->memtype)) {
++    struct gbm_buf_info bufinfo = { 0, };
++    guint stride, scanline, usage = 0;
++
++    bufinfo.width = GST_VIDEO_INFO_WIDTH (&priv->info);
++    bufinfo.height = GST_VIDEO_INFO_HEIGHT (&priv->info);
++    bufinfo.format = gst_video_format_to_gbm_format (
++        GST_VIDEO_INFO_FORMAT (&priv->info));
++
++    if (GST_VIDEO_INFO_FORMAT (&priv->info) == GST_VIDEO_FORMAT_P010_10LE)
++      usage |= GBM_BO_USAGE_10BIT_QTI;
++    else if (GST_VIDEO_INFO_FORMAT (&priv->info) == GST_VIDEO_FORMAT_NV12_10LE32)
++      usage |= GBM_BO_USAGE_10BIT_TP_QTI;
++
++    priv->gbm_perform (GBM_PERFORM_GET_BUFFER_STRIDE_SCANLINE_SIZE, &bufinfo,
++        usage, &stride, &scanline, &size);
++
++    GST_VIDEO_INFO_PLANE_STRIDE (&priv->info, 0) = stride;
++    GST_VIDEO_INFO_PLANE_OFFSET (&priv->info, 0) = 0;
++
++    // Check for a second plane and fill its stride and offset.
++    if (GST_VIDEO_INFO_N_PLANES (&priv->info) >= 2) {
++      GST_VIDEO_INFO_PLANE_STRIDE (&priv->info, 1) = stride;
++      GST_VIDEO_INFO_PLANE_OFFSET (&priv->info, 1) = stride * scanline;
++    }
++
++    priv->info.size = MAX (size, priv->info.size);
++  }
++
++  // Remove cached allocator.
++  if (priv->allocator)
++    gst_object_unref (priv->allocator);
++
++  priv->allocator = allocator;
++  gst_object_ref (priv->allocator);
++
++  // Enable metadata based on configuration of the pool.
++  priv->addmeta = gst_buffer_pool_config_has_option (config,
++      GST_BUFFER_POOL_OPTION_VIDEO_META);
++
++  gst_buffer_pool_config_set_params (config, caps, priv->info.size, minbuffers,
++      maxbuffers);
++
++  return GST_BUFFER_POOL_CLASS (parent_class)->set_config (pool, config);
++}
++
++static GstFlowReturn
++gst_v4l2_image_buffer_pool_alloc (GstBufferPool * pool, GstBuffer ** buffer,
++    GstBufferPoolAcquireParams * params)
++{
++  GstV4l2ImageBufferPool *vpool = GST_V4L2_IMAGE_BUFFER_POOL (pool);
++  GstV4l2ImageBufferPoolPrivate *priv = vpool->priv;
++  GstVideoInfo *info = &priv->info;
++  GstMemory *memory = NULL;
++  GstBuffer *newbuffer = NULL;
++
++  if (GST_IS_GBM_MEMORY_TYPE (priv->memtype)) {
++    memory = gbm_device_alloc (vpool);
++  } else if (GST_IS_DMA_MEMORY_TYPE (priv->memtype)) {
++    memory = dma_device_alloc (vpool);
++  }
++
++  if (NULL == memory) {
++    GST_WARNING_OBJECT (pool, "Failed to allocate memory!");
++    return GST_FLOW_ERROR;
++  }
++
++  // Create a GstBuffer.
++  newbuffer = gst_buffer_new ();
++
++  // Append the FD backed memory to the newly created GstBuffer.
++  gst_buffer_append_memory(newbuffer, memory);
++
++  if (priv->addmeta) {
++    GST_DEBUG_OBJECT (vpool, "Adding GstVideoMeta");
++    gst_buffer_add_video_meta_full (
++        newbuffer, GST_VIDEO_FRAME_FLAG_NONE,
++        GST_VIDEO_INFO_FORMAT (info), GST_VIDEO_INFO_WIDTH (info),
++        GST_VIDEO_INFO_HEIGHT (info), GST_VIDEO_INFO_N_PLANES (info),
++        info->offset, info->stride
++    );
++  }
++
++  *buffer = newbuffer;
++  return GST_FLOW_OK;
++}
++
++static void
++gst_v4l2_image_buffer_pool_free (GstBufferPool * pool, GstBuffer * buffer)
++{
++  GstV4l2ImageBufferPool *vpool = GST_V4L2_IMAGE_BUFFER_POOL (pool);
++  gint fd = gst_dmabuf_memory_get_fd (gst_buffer_peek_memory (buffer, 0));
++
++  if (GST_IS_GBM_MEMORY_TYPE (vpool->priv->memtype)) {
++    gbm_device_free (vpool, fd);
++  } else if (GST_IS_DMA_MEMORY_TYPE (vpool->priv->memtype)) {
++    dma_device_free (vpool, fd);
++  }
++  gst_buffer_unref (buffer);
++}
++
++static void
++gst_v4l2_image_buffer_pool_reset (GstBufferPool * pool, GstBuffer * buffer)
++{
++  GstV4l2ImageBufferPoolPrivate *priv = GST_V4L2_IMAGE_BUFFER_POOL (pool)->priv;
++
++  // Resize the buffer to the original size otherwise it will be discarded
++  // due to the mismatch during the default implementation of release_buffer.
++  gst_buffer_resize (buffer, 0, priv->info.size);
++
++  GST_BUFFER_POOL_CLASS (parent_class)->reset_buffer (pool, buffer);
++}
++
++static void
++gst_v4l2_image_buffer_pool_finalize (GObject * object)
++{
++  GstV4l2ImageBufferPool *vpool = GST_V4L2_IMAGE_BUFFER_POOL (object);
++  GstV4l2ImageBufferPoolPrivate *priv = vpool->priv;
++
++  GST_INFO_OBJECT (vpool, "Finalize video buffer pool %p", vpool);
++
++  if (priv->allocator) {
++    GST_INFO_OBJECT (vpool, "Free buffer pool allocator %p", priv->allocator);
++    gst_object_unref (priv->allocator);
++  }
++
++  if (GST_IS_GBM_MEMORY_TYPE (priv->memtype)) {
++    close_gbm_device (vpool);
++  } else if (GST_IS_DMA_MEMORY_TYPE (priv->memtype)) {
++    close_dma_device (vpool);
++  }
++
++  g_mutex_clear (&priv->lock);
++
++  G_OBJECT_CLASS (parent_class)->finalize (object);
++}
++
++static void
++gst_v4l2_image_buffer_pool_class_init (GstV4l2ImageBufferPoolClass * klass)
++{
++  GObjectClass *object = G_OBJECT_CLASS (klass);
++  GstBufferPoolClass *pool = GST_BUFFER_POOL_CLASS (klass);
++
++  object->finalize = gst_v4l2_image_buffer_pool_finalize;
++
++  pool->get_options = gst_v4l2_image_buffer_pool_get_options;
++  pool->set_config = gst_v4l2_image_buffer_pool_set_config;
++  pool->alloc_buffer = gst_v4l2_image_buffer_pool_alloc;
++  pool->free_buffer = gst_v4l2_image_buffer_pool_free;
++  pool->reset_buffer = gst_v4l2_image_buffer_pool_reset;
++
++  GST_DEBUG_CATEGORY_INIT (gst_v4l2_image_pool_debug, "v4l2-image-pool", 0,
++      "v4l2 image-pool object");
++}
++
++static void
++gst_v4l2_image_buffer_pool_init (GstV4l2ImageBufferPool * vpool)
++{
++  vpool->priv = gst_v4l2_image_buffer_pool_get_instance_private (vpool);
++  vpool->priv->devfd = -1;
++
++  g_mutex_init (&vpool->priv->lock);
++}
++
++
++GstBufferPool *
++gst_v4l2_image_buffer_pool_new (const gchar * type)
++{
++  GstV4l2ImageBufferPool *vpool;
++  gboolean success = FALSE;
++
++  vpool = g_object_new (GST_TYPE_V4L2_IMAGE_BUFFER_POOL, NULL);
++
++  vpool->priv->memtype = g_quark_from_string (type);
++
++  if (GST_IS_GBM_MEMORY_TYPE (vpool->priv->memtype)) {
++    GST_INFO_OBJECT (vpool, "Using GBM memory");
++    success = open_gbm_device (vpool);
++  } else if (GST_IS_DMA_MEMORY_TYPE (vpool->priv->memtype)) {
++    GST_INFO_OBJECT (vpool, "Using DMA memory");
++    success = open_dma_device (vpool);
++  } else {
++    GST_ERROR_OBJECT (vpool, "Invalid memory type %s!",
++        g_quark_to_string (vpool->priv->memtype));
++    success = FALSE;
++  }
++
++  if (!success) {
++    gst_object_unref (vpool);
++    return NULL;
++  }
++
++  GST_INFO_OBJECT (vpool, "New video buffer pool %p", vpool);
++  return GST_BUFFER_POOL_CAST (vpool);
++}
++
++const GstVideoInfo *
++gst_v4l2_image_buffer_pool_get_info (GstBufferPool * pool)
++{
++  GstV4l2ImageBufferPool *vpool = GST_V4L2_IMAGE_BUFFER_POOL (pool);
++
++  g_return_val_if_fail (vpool != NULL, NULL);
++
++  return &vpool->priv->info;
++}
+diff --git a/sys/v4l2/gstv4l2imagepool.h b/sys/v4l2/gstv4l2imagepool.h
+new file mode 100644
+index 0000000..7b76733
+--- /dev/null
++++ b/sys/v4l2/gstv4l2imagepool.h
+@@ -0,0 +1,134 @@
++/*
++ * Copyright (c) 2019-2020, The Linux Foundation. All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions are
++ * met:
++ *     * Redistributions of source code must retain the above copyright
++ *       notice, this list of conditions and the following disclaimer.
++ *     * Redistributions in binary form must reproduce the above
++ *       copyright notice, this list of conditions and the following
++ *       disclaimer in the documentation and/or other materials provided
++ *       with the distribution.
++ *     * Neither the name of The Linux Foundation nor the names of its
++ *       contributors may be used to endorse or promote products derived
++ *       from this software without specific prior written permission.
++ *
++ * THIS SOFTWARE IS PROVIDED "AS IS" AND ANY EXPRESS OR IMPLIED
++ * WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
++ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT
++ * ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS
++ * BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
++ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
++ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
++ * BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
++ * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
++ * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
++ * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++ *
++ * Changes from Qualcomm Innovation Center are provided under the following license:
++ *
++ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted (subject to the limitations in the
++ * disclaimer below) provided that the following conditions are met:
++ *
++ *     * Redistributions of source code must retain the above copyright
++ *       notice, this list of conditions and the following disclaimer.
++ *
++ *     * Redistributions in binary form must reproduce the above
++ *       copyright notice, this list of conditions and the following
++ *       disclaimer in the documentation and/or other materials provided
++ *       with the distribution.
++ *
++ *     * Neither the name of Qualcomm Innovation Center, Inc. nor the names of its
++ *       contributors may be used to endorse or promote products derived
++ *       from this software without specific prior written permission.
++ *
++ * NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE
++ * GRANTED BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT
++ * HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED
++ * WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
++ * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
++ * IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
++ * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
++ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE
++ * GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
++ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER
++ * IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
++ * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
++ * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++ */
++
++#ifndef __GST_V4L2_IMAGE_POOL_H__
++#define __GST_V4L2_IMAGE_POOL_H__
++
++#include <gst/video/video.h>
++#include <gst/allocators/allocators.h>
++
++G_BEGIN_DECLS
++
++#define GST_TYPE_V4L2_IMAGE_BUFFER_POOL \
++  (gst_v4l2_image_buffer_pool_get_type ())
++#define GST_V4L2_IMAGE_BUFFER_POOL(obj) \
++  (G_TYPE_CHECK_INSTANCE_CAST ((obj), GST_TYPE_V4L2_IMAGE_BUFFER_POOL, \
++      GstV4l2ImageBufferPool))
++#define GST_V4L2_IMAGE_BUFFER_POOL_CLASS(klass) \
++  (G_TYPE_CHECK_CLASS_CAST ((klass), GST_TYPE_V4L2_IMAGE_BUFFER_POOL, \
++      GstV4l2ImageBufferPoolClass))
++#define GST_IS_V4L2_IMAGE_BUFFER_POOL(obj) \
++  (G_TYPE_CHECK_INSTANCE_TYPE ((obj), GST_TYPE_V4L2_IMAGE_BUFFER_POOL))
++#define GST_IS_V4L2_IMAGE_BUFFER_POOL_CLASS(klass) \
++  (G_TYPE_CHECK_CLASS_TYPE ((klass), GST_TYPE_V4L2_IMAGE_BUFFER_POOL))
++#define GST_V4L2_IMAGE_BUFFER_POOL_CAST(obj) ((GstV4l2ImageBufferPool*)(obj))
++
++/**
++ * GST_V4L2_IMAGE_BUFFER_POOL_OPTION_KEEP_MAPPED:
++ *
++ * An option indicating that once the buffer memory is mapped it will be
++ * kept mapped until the memory is destroyed.
++ */
++#define GST_V4L2_IMAGE_BUFFER_POOL_OPTION_KEEP_MAPPED "GstBufferPoolOptionKeepMapped"
++
++/**
++ * GST_V4L2_IMAGE_BUFFER_POOL_TYPE_DMA:
++ *
++ * Type of memory that the pool will use for allocating buffers.
++ */
++#define GST_V4L2_IMAGE_BUFFER_POOL_TYPE_DMA "GstBufferPoolTypeDmaMemory"
++
++/**
++ * GST_V4L2_IMAGE_BUFFER_POOL_TYPE_GBM:
++ *
++ * Type of memory that the pool will use for allocating buffers.
++ */
++#define GST_V4L2_IMAGE_BUFFER_POOL_TYPE_GBM "GstBufferPoolTypeGbmMemory"
++
++typedef struct _GstV4l2ImageBufferPool GstV4l2ImageBufferPool;
++typedef struct _GstV4l2ImageBufferPoolClass GstV4l2ImageBufferPoolClass;
++typedef struct _GstV4l2ImageBufferPoolPrivate GstV4l2ImageBufferPoolPrivate;
++
++struct _GstV4l2ImageBufferPool
++{
++  GstBufferPool parent;
++
++  GstV4l2ImageBufferPoolPrivate *priv;
++};
++
++struct _GstV4l2ImageBufferPoolClass
++{
++  GstBufferPoolClass parent;
++};
++
++GType gst_v4l2_image_buffer_pool_get_type (void);
++
++/// Creates a buffer pool for managing video frames.
++GstBufferPool * gst_v4l2_image_buffer_pool_new (const gchar * type);
++
++/// Retrieve current set video configuration.
++const GstVideoInfo * gst_v4l2_image_buffer_pool_get_info (GstBufferPool * pool);
++
++G_END_DECLS
++
++#endif /* __GST_V4L2_IMAGE_POOL_H__ */
 diff --git a/sys/v4l2/gstv4l2object.c b/sys/v4l2/gstv4l2object.c
 index 7b707f0..9314364 100644
 --- a/sys/v4l2/gstv4l2object.c
@@ -1241,7 +1241,7 @@ index 3042995..52e53e2 100644
      /* Pool may be NULL if we started going to READY state */
      if (pool == NULL) {
 diff --git a/sys/v4l2/meson.build b/sys/v4l2/meson.build
-index 65f551f..028efc0 100644
+index 65f551f..2a6c85e 100644
 --- a/sys/v4l2/meson.build
 +++ b/sys/v4l2/meson.build
 @@ -33,7 +33,8 @@ v4l2_sources = [
@@ -1250,7 +1250,7 @@ index 65f551f..028efc0 100644
    'tunerchannel.c',
 -  'tunernorm.c'
 +  'tunernorm.c',
-+  'gstimagepool.c'
++  'gstv4l2imagepool.c'
  ]
  
  v4l2 = get_option('v4l2')
