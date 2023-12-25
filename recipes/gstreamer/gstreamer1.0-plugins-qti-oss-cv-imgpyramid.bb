@@ -15,8 +15,8 @@ DEPENDS += "cvp-noship"
 
 FILESPATH =+ "${WORKSPACE}/vendor/qcom/opensource/gst-plugins-qti-oss/:"
 
-SRC_URI = "file://gst-plugin-cvp-imgpyramid/"
-S = "${WORKDIR}/gst-plugin-cvp-imgpyramid"
+SRC_URI = "file://gst-plugin-cv-imgpyramid/"
+S = "${WORKDIR}/gst-plugin-cv-imgpyramid"
 
 # Install directries.
 INSTALL_BINDIR := "${bindir}"
