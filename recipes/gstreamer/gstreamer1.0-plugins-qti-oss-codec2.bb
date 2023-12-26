@@ -1,4 +1,4 @@
-inherit cmake
+inherit cmake pkgconfig
 
 SUMMARY = "QTI open-source GStreamer Plug-in for video encoding decoding with Codec 2.0"
 SECTION = "multimedia"
@@ -10,7 +10,11 @@ LIC_FILES_CHKSUM = "file://${COREBASE}/meta-qti-bsp/files/common-licenses/${LICE
 DEPENDS := "gstreamer1.0"
 DEPENDS += "gstreamer1.0-plugins-base"
 DEPENDS += "codec2"
-DEPENDS += "media-codec2"
+DEPENDS:append:kalama += "media"
+DEPENDS:append:kalama += "media-external"
+DEPENDS:append:qrb5165 += "media-codec2"
+DEPENDS:append:qcs6490 += "media-codec2"
+DEPENDS += "qti-c2-module"
 
 FILESPATH =+ "${WORKSPACE}/vendor/qcom/opensource/gst-plugins-qti-oss/:"
 
@@ -22,11 +26,14 @@ INSTALL_BINDIR := "${bindir}"
 INSTALL_LIBDIR := "${libdir}"
 
 CODEC2_CONFIG_VERSION := "1.0"
+CODEC2_CONFIG_VERSION:kalama := "2.0"
+
+ENABLE_LINEAR_DMABUF:qrb5165 := "TRUE"
 
 EXTRA_OECMAKE += "-DGST_VERSION_REQUIRED=1.14.4"
 EXTRA_OECMAKE += "-DSYSROOT_INCDIR=${STAGING_INCDIR}"
 EXTRA_OECMAKE += "-DSYSROOT_LIBDIR=${STAGING_LIBDIR}"
-EXTRA_OECMAKE += "-DKERNEL_BUILDDIR=${STAGING_KERNEL_BUILDDIR}"
+EXTRA_OECMAKE += "-DKERNEL_BUILDDIR=${STAGING_INCDIR}/linux-msm"
 EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_INSTALL_BINDIR=${INSTALL_BINDIR}"
 EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_INSTALL_LIBDIR=${INSTALL_LIBDIR}"
 
@@ -36,10 +43,11 @@ EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_PACKAGE=${PN}"
 EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_SUMMARY="${SUMMARY}""
 EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_ORIGIN="Unknown package origin""
 EXTRA_OECMAKE += "-DGST_CODEC2_CONFIG_VERSION=${CODEC2_CONFIG_VERSION}"
+EXTRA_OECMAKE += "-DGST_ENABLE_LINEAR_DMABUF=${ENABLE_LINEAR_DMABUF}"
 
-FILES_${PN} += "${INSTALL_BINDIR}"
-FILES_${PN} += "${INSTALL_LIBDIR}"
+FILES:${PN} += "${INSTALL_BINDIR}"
+FILES:${PN} += "${INSTALL_LIBDIR}"
 
 SOLIBS = ".so*"
 FILES_SOLIBSDEV = ""
-TOOLCHAIN = "clang"
+TOOLCHAIN = "sdllvm"

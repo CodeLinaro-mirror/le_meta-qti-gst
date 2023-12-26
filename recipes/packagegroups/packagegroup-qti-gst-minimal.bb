@@ -10,12 +10,8 @@ PACKAGES = " \
       packagegroup-qti-gst-minimal \
     "
 
-RDEPENDS_packagegroup-qti-gst-minimal = " \
-      gstreamer1.0 \
-      gstreamer1.0-plugins-base \
-      gstreamer1.0-plugins-good \
-      gstreamer1.0-plugins-bad \
-      gstreamer1.0-rtsp-server \
+RDEPENDS:packagegroup-qti-gst-minimal = " \
+      packagegroup-qti-gst-basic \
       gstreamer1.0-plugins-qti-oss-base \
       gstreamer1.0-plugins-qti-oss-tools \
       gstreamer1.0-plugins-qti-oss-examples \

@@ -1,7 +1,6 @@
-inherit cmake
+inherit cmake pkgconfig
 
-SUMMARY = "QTI open-source GStreamer Plug-in for CVP image pyramid"
-HOMEPAGE = "https://git.codelinaro.org"
+SUMMARY = "QTI open-source GStreamer Plug-in for Machine Learning using QNN"
 SECTION = "multimedia"
 
 LICENSE = "BSD-3-Clause-Clear"
@@ -11,33 +10,34 @@ LIC_FILES_CHKSUM = "file://${COREBASE}/meta-qti-bsp/files/common-licenses/${LICE
 DEPENDS := "gstreamer1.0"
 DEPENDS += "gstreamer1.0-plugins-base"
 DEPENDS += "gstreamer1.0-plugins-qti-oss-base"
-DEPENDS += "cvp-noship"
+DEPENDS += "qnn"
 
 FILESPATH =+ "${WORKSPACE}/vendor/qcom/opensource/gst-plugins-qti-oss/:"
 
-SRC_URI = "file://gst-plugin-cvp-imgpyramid/"
-S = "${WORKDIR}/gst-plugin-cvp-imgpyramid"
+SRC_URI = "file://gst-plugin-mlqnn/"
+S = "${WORKDIR}/gst-plugin-mlqnn"
 
-# Install directries.
+# Install directories.
 INSTALL_BINDIR := "${bindir}"
 INSTALL_LIBDIR := "${libdir}"
 
 EXTRA_OECMAKE += "-DGST_VERSION_REQUIRED=1.14.4"
 EXTRA_OECMAKE += "-DSYSROOT_INCDIR=${STAGING_INCDIR}"
 EXTRA_OECMAKE += "-DSYSROOT_LIBDIR=${STAGING_LIBDIR}"
+EXTRA_OECMAKE += "-DKERNEL_BUILDDIR=${STAGING_KERNEL_BUILDDIR}"
 EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_INSTALL_BINDIR=${INSTALL_BINDIR}"
 EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_INSTALL_LIBDIR=${INSTALL_LIBDIR}"
-EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_INSTALL_ENGINEDIR=${INSTALL_LIBDIR}"
+
+EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_LICENSE=BSD"
 EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_VERSION=${PV}"
 EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_PACKAGE=${PN}"
 EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_SUMMARY="${SUMMARY}""
-EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_ORIGIN=${HOMEPAGE}"
-EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_LICENSE=BSD"
+EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_ORIGIN="Unknown package origin""
 
-FILES_${PN} += "${INSTALL_BINDIR}"
-FILES_${PN} += "${INSTALL_LIBDIR}"
+FILES:${PN} += "${INSTALL_BINDIR}"
+FILES:${PN} += "${INSTALL_LIBDIR}"
 
-FILES_${PN}-dbg += "${INSTALL_LIBDIR}/gstreamer-1.0/.debug"
+FILES:${PN}-dbg += "${INSTALL_LIBDIR}/gstreamer-1.0/.debug"
 
 SOLIBS = ".so*"
 FILES_SOLIBSDEV = ""

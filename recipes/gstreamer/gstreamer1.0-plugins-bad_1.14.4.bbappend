@@ -4,13 +4,13 @@ CPPFLAGS += " ${@bb.utils.contains('DISTRO_FEATURES', 'wayland', '-D__GBM__', ''
 
 PACKAGE_ARCH = "${MACHINE_ARCH}"
 
-PACKAGECONFIG_remove = " \
+PACKAGECONFIG:remove = " \
        ${@bb.utils.contains('DISTRO_FEATURES','wayland', '', 'wayland', d)} \
       "
 
-FILESEXTRAPATHS_prepend := "${THISDIR}/qti-patches:"
+FILESEXTRAPATHS:prepend := "${THISDIR}/qti-patches:"
 
-SRC_URI_append = " \
+SRC_URI:append = " \
        file://0001-waylandsink-support-fullscreen.patch \
        file://0002-waylandsink-support-for-xdg-shell-protocol.patch \
        file://0003-waylandsink-support-for-scaler-protocol.patch \

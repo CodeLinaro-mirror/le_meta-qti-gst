@@ -1,4 +1,4 @@
-inherit cmake
+inherit cmake pkgconfig
 
 SUMMARY = "QTI open-source GStreamer Plug-in for Machine Learning using SNPE"
 SECTION = "multimedia"
@@ -11,6 +11,8 @@ DEPENDS := "gstreamer1.0"
 DEPENDS += "gstreamer1.0-plugins-base"
 DEPENDS += "gstreamer1.0-plugins-qti-oss-base"
 DEPENDS += "snpe"
+
+do_configure[depends] += "${@bb.utils.contains('PACKAGE_CLASSES', 'package_ipk', 'snpe:do_package_write_ipk', 'snpe:do_package_write_deb', d)}"
 
 FILESPATH =+ "${WORKSPACE}/vendor/qcom/opensource/gst-plugins-qti-oss/:"
 
@@ -34,10 +36,10 @@ EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_PACKAGE=${PN}"
 EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_SUMMARY="${SUMMARY}""
 EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_ORIGIN="Unknown package origin""
 
-FILES_${PN} += "${INSTALL_BINDIR}"
-FILES_${PN} += "${INSTALL_LIBDIR}"
+FILES:${PN} += "${INSTALL_BINDIR}"
+FILES:${PN} += "${INSTALL_LIBDIR}"
 
-FILES_${PN}-dbg += "${INSTALL_LIBDIR}/gstreamer-1.0/.debug"
+FILES:${PN}-dbg += "${INSTALL_LIBDIR}/gstreamer-1.0/.debug"
 
 SOLIBS = ".so*"
 FILES_SOLIBSDEV = ""

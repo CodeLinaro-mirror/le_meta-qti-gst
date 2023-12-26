@@ -1,4 +1,4 @@
-inherit cmake
+inherit cmake pkgconfig
 
 SUMMARY = "Generic tools application for GStreamer pipeline verification."
 SECTION = "multimedia"
@@ -25,8 +25,8 @@ EXTRA_OECMAKE += "-DSYSROOT_LIBDIR=${STAGING_LIBDIR}"
 EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_INSTALL_BINDIR=${INSTALL_BINDIR}"
 EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_INSTALL_LIBDIR=${INSTALL_LIBDIR}"
 
-FILES_${PN} += "${INSTALL_BINDIR}"
-FILES_${PN} += "${INSTALL_LIBDIR}"
+FILES:${PN} += "${INSTALL_BINDIR}"
+FILES:${PN} += "${INSTALL_LIBDIR}"
 
 SOLIBS = ".so*"
 FILES_SOLIBSDEV = ""

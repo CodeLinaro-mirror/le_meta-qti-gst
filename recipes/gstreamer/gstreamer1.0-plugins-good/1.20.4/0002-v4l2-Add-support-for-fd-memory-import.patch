@@ -1,9 +1,9 @@
-From ce4c97fcfb489f906f8810c3875d778d91316a4d Mon Sep 17 00:00:00 2001
-From: Nikolay Hristozov <quic_nhrist@quicinc.com>
-Date: Fri, 10 Feb 2023 18:19:11 +0200
+From 8204f4c605ed457ce171e931a93ecb9bfd546856 Mon Sep 17 00:00:00 2001
+From: Hongyong Huang <quic_hongyong@quicinc.com>
+Date: Wed, 19 Jul 2023 12:15:49 +0800
 Subject: [PATCH] v4l2: Add support for fd memory import
 
-Signed-off-by: Nikolay Hristozov <quic_nhrist@quicinc.com>
+Signed-off-by: Hongyong Huang <quic_hongyong@quicinc.com>
 ---
  sys/v4l2/gstv4l2allocator.c  | 12 ++++++++----
  sys/v4l2/gstv4l2bufferpool.c |  2 +-
@@ -12,10 +12,10 @@ Signed-off-by: Nikolay Hristozov <quic_nhrist@quicinc.com>
  4 files changed, 41 insertions(+), 6 deletions(-)
 
 diff --git a/sys/v4l2/gstv4l2allocator.c b/sys/v4l2/gstv4l2allocator.c
-index 05bde3d..4de7ec3 100644
+index 48d1bb8..ae32389 100644
 --- a/sys/v4l2/gstv4l2allocator.c
 +++ b/sys/v4l2/gstv4l2allocator.c
-@@ -1099,16 +1099,20 @@ gst_v4l2_allocator_import_dmabuf (GstV4l2Allocator * allocator,
+@@ -1102,16 +1102,20 @@ gst_v4l2_allocator_import_dmabuf (GstV4l2Allocator * allocator,
      goto n_mem_missmatch;
 
    for (i = 0; i < group->n_mem; i++) {
@@ -41,10 +41,10 @@ index 05bde3d..4de7ec3 100644
          group->buffer.index, dmafd, i);
 
 diff --git a/sys/v4l2/gstv4l2bufferpool.c b/sys/v4l2/gstv4l2bufferpool.c
-index 49f222b..09017f2 100644
+index d85f036..4de1da4 100644
 --- a/sys/v4l2/gstv4l2bufferpool.c
 +++ b/sys/v4l2/gstv4l2bufferpool.c
-@@ -78,7 +78,7 @@ gst_v4l2_is_buffer_valid (GstBuffer * buffer, GstV4l2MemoryGroup ** out_group)
+@@ -92,7 +92,7 @@ gst_v4l2_is_buffer_valid (GstBuffer * buffer, GstV4l2MemoryGroup ** out_group)
    if (GST_BUFFER_FLAG_IS_SET (buffer, GST_BUFFER_FLAG_TAG_MEMORY))
      goto done;
 
@@ -54,10 +54,10 @@ index 49f222b..09017f2 100644
          GST_V4L2_MEMORY_QUARK);
 
 diff --git a/sys/v4l2/gstv4l2object.c b/sys/v4l2/gstv4l2object.c
-index 2c78e22..975bdcf 100644
+index ee60540..eaefa2a 100644
 --- a/sys/v4l2/gstv4l2object.c
 +++ b/sys/v4l2/gstv4l2object.c
-@@ -4778,7 +4778,7 @@ gst_v4l2_object_try_import (GstV4l2Object * obj, GstBuffer * buffer)
+@@ -5311,7 +5311,7 @@ gst_v4l2_object_try_import (GstV4l2Object * obj, GstBuffer * buffer)
      for (i = 0; i < n_mem; i++) {
        GstMemory *mem = gst_buffer_peek_memory (buffer, i);
 
@@ -67,7 +67,7 @@ index 2c78e22..975bdcf 100644
          return FALSE;
        }
 diff --git a/sys/v4l2/gstv4l2src.c b/sys/v4l2/gstv4l2src.c
-index 3997114..d1e97c8 100644
+index f100407..40e3171 100644
 --- a/sys/v4l2/gstv4l2src.c
 +++ b/sys/v4l2/gstv4l2src.c
 @@ -63,6 +63,9 @@
@@ -80,7 +80,7 @@ index 3997114..d1e97c8 100644
  GST_DEBUG_CATEGORY (v4l2src_debug);
  #define GST_CAT_DEFAULT v4l2src_debug
 
-@@ -992,6 +995,34 @@ retry:
+@@ -1166,6 +1169,34 @@ retry:
    GST_BUFFER_TIMESTAMP (*buf) = timestamp;
    GST_BUFFER_DURATION (*buf) = duration;
 
@@ -116,5 +116,5 @@ index 3997114..d1e97c8 100644
 
    /* ERROR */
 --
-2.17.1
+2.25.1
 

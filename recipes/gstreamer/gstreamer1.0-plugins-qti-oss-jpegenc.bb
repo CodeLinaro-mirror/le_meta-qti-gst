@@ -1,4 +1,4 @@
-inherit cmake
+inherit cmake pkgconfig
 
 SUMMARY = "QTI open-source GStreamer Plug-in for jpeg encoding"
 SECTION = "multimedia"
@@ -21,6 +21,15 @@ S = "${WORKDIR}/gst-plugin-jpegenc"
 INSTALL_BINDIR := "${bindir}"
 INSTALL_LIBDIR := "${libdir}"
 
+# Default platform definitions.
+CAMERA_METADATA_VERSION := "1.0"
+
+# Overwrite the default platform definitions for qrb5165.
+CAMERA_METADATA_VERSION:qrb5165 := "1.1"
+
+# Overwrite the default platform definitions for kalama.
+CAMERA_METADATA_VERSION:kalama := "1.0ns"
+
 EXTRA_OECMAKE += "-DGST_VERSION_REQUIRED=1.14.4"
 EXTRA_OECMAKE += "-DSYSROOT_INCDIR=${STAGING_INCDIR}"
 EXTRA_OECMAKE += "-DSYSROOT_LIBDIR=${STAGING_LIBDIR}"
@@ -34,8 +43,10 @@ EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_PACKAGE=${PN}"
 EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_SUMMARY="${SUMMARY}""
 EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_ORIGIN="Unknown package origin""
 
-FILES_${PN} += "${INSTALL_BINDIR}"
-FILES_${PN} += "${INSTALL_LIBDIR}"
+EXTRA_OECMAKE += "-DCAMERA_METADATA_VERSION=${CAMERA_METADATA_VERSION}"
+
+FILES:${PN} += "${INSTALL_BINDIR}"
+FILES:${PN} += "${INSTALL_LIBDIR}"
 
 SOLIBS = ".so*"
 FILES_SOLIBSDEV = ""
