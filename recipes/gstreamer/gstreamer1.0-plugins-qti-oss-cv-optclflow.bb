@@ -1,6 +1,7 @@
 inherit cmake pkgconfig
 
-SUMMARY = "QTI open-source GStreamer Plug-in for Machine Learning using SNPE"
+SUMMARY = "QTI open-source GStreamer Plug-in for CVP and EVA"
+HOMEPAGE = "https://git.codelinaro.org"
 SECTION = "multimedia"
 
 LICENSE = "BSD-3-Clause-Clear"
@@ -10,31 +11,30 @@ LIC_FILES_CHKSUM = "file://${COREBASE}/meta-qti-bsp/files/common-licenses/${LICE
 DEPENDS := "gstreamer1.0"
 DEPENDS += "gstreamer1.0-plugins-base"
 DEPENDS += "gstreamer1.0-plugins-qti-oss-base"
-DEPENDS += "snpe"
-
-do_configure[depends] += "${@bb.utils.contains('PACKAGE_CLASSES', 'package_ipk', 'snpe:do_package_write_ipk', 'snpe:do_package_write_deb', d)}"
+DEPENDS:append:qrb5165 += "cvp-noship"
+DEPENDS:append:kalama += "eva-noship"
 
 FILESPATH =+ "${WORKSPACE}/vendor/qcom/opensource/gst-plugins-qti-oss/:"
 
-SRC_URI = "file://gst-plugin-mlsnpe/"
-S = "${WORKDIR}/gst-plugin-mlsnpe"
+SRC_URI = "file://gst-plugin-cv-optclflow/"
+S = "${WORKDIR}/gst-plugin-cv-optclflow"
 
-# Install directories.
+# Install directries.
 INSTALL_BINDIR := "${bindir}"
 INSTALL_LIBDIR := "${libdir}"
 
 EXTRA_OECMAKE += "-DGST_VERSION_REQUIRED=1.14.4"
 EXTRA_OECMAKE += "-DSYSROOT_INCDIR=${STAGING_INCDIR}"
 EXTRA_OECMAKE += "-DSYSROOT_LIBDIR=${STAGING_LIBDIR}"
-EXTRA_OECMAKE += "-DKERNEL_BUILDDIR=${STAGING_KERNEL_BUILDDIR}"
 EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_INSTALL_BINDIR=${INSTALL_BINDIR}"
 EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_INSTALL_LIBDIR=${INSTALL_LIBDIR}"
+EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_INSTALL_ENGINEDIR=${INSTALL_LIBDIR}"
 
 EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_LICENSE=BSD"
 EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_VERSION=${PV}"
 EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_PACKAGE=${PN}"
 EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_SUMMARY="${SUMMARY}""
-EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_ORIGIN="Unknown package origin""
+EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_ORIGIN=${HOMEPAGE}"
 
 FILES:${PN} += "${INSTALL_BINDIR}"
 FILES:${PN} += "${INSTALL_LIBDIR}"

@@ -1,6 +1,6 @@
-inherit cmake
+inherit cmake pkgconfig
 
-SUMMARY = "QTI open-source GStreamer Plug-in for CVP"
+SUMMARY = "QTI open-source GStreamer Plug-in for CVP image pyramid"
 HOMEPAGE = "https://git.codelinaro.org"
 SECTION = "multimedia"
 
@@ -11,12 +11,13 @@ LIC_FILES_CHKSUM = "file://${COREBASE}/meta-qti-bsp/files/common-licenses/${LICE
 DEPENDS := "gstreamer1.0"
 DEPENDS += "gstreamer1.0-plugins-base"
 DEPENDS += "gstreamer1.0-plugins-qti-oss-base"
-DEPENDS += "cvp-noship"
+DEPENDS:append:qrb5165 += "cvp-noship"
+DEPENDS:append:kalama += "eva-noship"
 
 FILESPATH =+ "${WORKSPACE}/vendor/qcom/opensource/gst-plugins-qti-oss/:"
 
-SRC_URI = "file://gst-plugin-cvp-optclflow/"
-S = "${WORKDIR}/gst-plugin-cvp-optclflow"
+SRC_URI = "file://gst-plugin-cv-imgpyramid/"
+S = "${WORKDIR}/gst-plugin-cv-imgpyramid"
 
 # Install directries.
 INSTALL_BINDIR := "${bindir}"
@@ -29,11 +30,11 @@ EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_INSTALL_BINDIR=${INSTALL_BINDIR}"
 EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_INSTALL_LIBDIR=${INSTALL_LIBDIR}"
 EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_INSTALL_ENGINEDIR=${INSTALL_LIBDIR}"
 
-EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_LICENSE=BSD"
 EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_VERSION=${PV}"
 EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_PACKAGE=${PN}"
 EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_SUMMARY="${SUMMARY}""
 EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_ORIGIN=${HOMEPAGE}"
+EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_LICENSE=BSD"
 
 FILES:${PN} += "${INSTALL_BINDIR}"
 FILES:${PN} += "${INSTALL_LIBDIR}"

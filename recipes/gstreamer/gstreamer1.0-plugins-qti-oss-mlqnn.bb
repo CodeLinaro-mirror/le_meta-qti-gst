@@ -1,6 +1,6 @@
 inherit cmake pkgconfig
 
-SUMMARY = "QTI open-source GStreamer Plug-in for Machine Learning using SNPE"
+SUMMARY = "QTI open-source GStreamer Plug-in for Machine Learning using QNN"
 SECTION = "multimedia"
 
 LICENSE = "BSD-3-Clause-Clear"
@@ -10,14 +10,12 @@ LIC_FILES_CHKSUM = "file://${COREBASE}/meta-qti-bsp/files/common-licenses/${LICE
 DEPENDS := "gstreamer1.0"
 DEPENDS += "gstreamer1.0-plugins-base"
 DEPENDS += "gstreamer1.0-plugins-qti-oss-base"
-DEPENDS += "snpe"
-
-do_configure[depends] += "${@bb.utils.contains('PACKAGE_CLASSES', 'package_ipk', 'snpe:do_package_write_ipk', 'snpe:do_package_write_deb', d)}"
+DEPENDS += "qnn"
 
 FILESPATH =+ "${WORKSPACE}/vendor/qcom/opensource/gst-plugins-qti-oss/:"
 
-SRC_URI = "file://gst-plugin-mlsnpe/"
-S = "${WORKDIR}/gst-plugin-mlsnpe"
+SRC_URI = "file://gst-plugin-mlqnn/"
+S = "${WORKDIR}/gst-plugin-mlqnn"
 
 # Install directories.
 INSTALL_BINDIR := "${bindir}"

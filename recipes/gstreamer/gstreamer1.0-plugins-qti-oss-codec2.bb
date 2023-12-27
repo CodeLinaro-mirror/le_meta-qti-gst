@@ -14,6 +14,7 @@ DEPENDS:append:kalama += "media"
 DEPENDS:append:kalama += "media-external"
 DEPENDS:append:qrb5165 += "media-codec2"
 DEPENDS:append:qcs6490 += "media-codec2"
+DEPENDS += "qti-c2-module"
 
 FILESPATH =+ "${WORKSPACE}/vendor/qcom/opensource/gst-plugins-qti-oss/:"
 
