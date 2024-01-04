@@ -1,4 +1,4 @@
-From abb9a59f1b992191f323cba8764a048fb6a0c70f Mon Sep 17 00:00:00 2001
+From 4c124ef18edb6fef4794bf23b41a3eb42c58c68d Mon Sep 17 00:00:00 2001
 From: ppachang <quic_ppachang@quicinc.com>
 Date: Sat, 28 Oct 2023 16:42:14 +0530
 Subject: [PATCH] v4l2 : Add support for dma memory allocation
@@ -16,7 +16,7 @@ Signed-off-by: ppachang <quic_ppachang@quicinc.com>
  sys/v4l2/gstv4l2object.c     |  56 ++-
  sys/v4l2/gstv4l2videodec.c   |   2 +-
  sys/v4l2/meson.build         |   3 +-
- 10 files changed, 991 insertions(+), 16 deletions(-)
+ 10 files changed, 986 insertions(+), 16 deletions(-)
  create mode 100644 sys/v4l2/gstv4l2imagepool.c
  create mode 100644 sys/v4l2/gstv4l2imagepool.h
 
@@ -33,7 +33,7 @@ index 24832ee..93a138a 100644
  /* two non contiguous planes - one Y, one Cr + Cb interleaved  */
  #define V4L2_PIX_FMT_NV12M   v4l2_fourcc('N', 'M', '1', '2') /* 12  Y/CbCr 4:2:0  */
 diff --git a/sys/v4l2/gstv4l2allocator.c b/sys/v4l2/gstv4l2allocator.c
-index ed4c2ed..2d1bad4 100644
+index ed4c2ed..67f48c3 100644
 --- a/sys/v4l2/gstv4l2allocator.c
 +++ b/sys/v4l2/gstv4l2allocator.c
 @@ -39,6 +39,8 @@
@@ -144,7 +144,7 @@ index ed4c2ed..2d1bad4 100644
 +
 +      gst_memory_map (dma_mem[i], &info, GST_MAP_READ);
 +
-+      memcpy (data, info.data, dma_mem[i]->size);
++      memcpy (data, info.data + dma_mem[i]->offset, dma_mem[i]->size);
 +
 +      gst_memory_unmap (dma_mem[i], &info);
 +      if (munmap (data, maxsize))
@@ -206,7 +206,7 @@ index eb51524..2166b6b 100644
  
  #endif /* __GST_V4L2_ALLOCATOR_H__ */
 diff --git a/sys/v4l2/gstv4l2bufferpool.c b/sys/v4l2/gstv4l2bufferpool.c
-index 4de1da4..c22a63c 100644
+index 4de1da4..8ce8e94 100644
 --- a/sys/v4l2/gstv4l2bufferpool.c
 +++ b/sys/v4l2/gstv4l2bufferpool.c
 @@ -46,12 +46,16 @@
@@ -238,19 +238,7 @@ index 4de1da4..c22a63c 100644
    if (!gst_v4l2_allocator_import_dmabuf (pool->vallocator, group, n_mem,
            dma_mem))
      goto import_failed;
-@@ -712,6 +721,11 @@ gst_v4l2_buffer_pool_streamon (GstV4l2BufferPool * pool)
-       break;
-   }
- 
-+  // TODO: This is temporary workaround to add a delay after streamon to avoid
-+  // a bug from driver where the driver is sending EOS on first buffer itself
-+  // sleep for 10ms
-+  usleep (10000);
-+
-   return TRUE;
- 
- streamon_failed:
-@@ -776,6 +790,40 @@ gst_v4l2_buffer_pool_streamoff (GstV4l2BufferPool * pool)
+@@ -776,6 +785,40 @@ gst_v4l2_buffer_pool_streamoff (GstV4l2BufferPool * pool)
    }
  }
  
@@ -291,7 +279,7 @@ index 4de1da4..c22a63c 100644
  static gboolean
  gst_v4l2_buffer_pool_start (GstBufferPool * bpool)
  {
-@@ -1337,7 +1385,7 @@ gst_v4l2_buffer_pool_dqbuf (GstV4l2BufferPool * pool, GstBuffer ** buffer,
+@@ -1337,7 +1380,7 @@ gst_v4l2_buffer_pool_dqbuf (GstV4l2BufferPool * pool, GstBuffer ** buffer,
    GST_LOG_OBJECT (pool, "dequeueing a buffer");
  
    res = gst_v4l2_allocator_dqbuf (pool->vallocator, &group);
@@ -300,7 +288,7 @@ index 4de1da4..c22a63c 100644
      goto eos;
    if (res != GST_FLOW_OK)
      goto dqbuf_failed;
-@@ -1692,7 +1740,10 @@ gst_v4l2_buffer_pool_complete_release_buffer (GstBufferPool * bpool,
+@@ -1692,7 +1735,10 @@ gst_v4l2_buffer_pool_complete_release_buffer (GstBufferPool * bpool,
                  GST_V4L2_IMPORT_QUARK, NULL, NULL);
  
              /* reset to default size */
