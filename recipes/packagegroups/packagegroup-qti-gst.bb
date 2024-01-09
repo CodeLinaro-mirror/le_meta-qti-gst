@@ -66,10 +66,4 @@ RDEPENDS:packagegroup-qti-gst:remove:qcm6490 = " \
       gstreamer1.0-plugins-qti-oss-codec2 \
       gstreamer1.0-plugins-qti-oss-socket \
       gstreamer1.0-plugins-qti-oss-batch \
-      gstreamer1.0-plugins-qti-oss-mlvconverter \
-      gstreamer1.0-plugins-qti-oss-mlvdetection \
-      gstreamer1.0-plugins-qti-oss-mlvclassification \
-      gstreamer1.0-plugins-qti-oss-mlvsegmentation \
-      gstreamer1.0-plugins-qti-oss-mlvpose \
-      gstreamer1.0-plugins-qti-oss-mldemux \
     "
