@@ -61,7 +61,6 @@ RDEPENDS:packagegroup-qti-gst:remove:qrb5165 = " \
 RDEPENDS:packagegroup-qti-gst:remove:qcm6490 = " \
       gstd \
       gstreamer1.0-plugins-ugly \
-      gstreamer1.0-plugins-qti-oss-tools \
       gstreamer1.0-plugins-qti-oss-examples \
       gstreamer1.0-plugins-qti-oss-codec2 \
       gstreamer1.0-plugins-qti-oss-socket \
@@ -72,4 +71,8 @@ RDEPENDS:packagegroup-qti-gst:remove:qcm6490 = " \
       gstreamer1.0-plugins-qti-oss-mlvsegmentation \
       gstreamer1.0-plugins-qti-oss-mlvpose \
       gstreamer1.0-plugins-qti-oss-mldemux \
+    "
+
+RDEPENDS:packagegroup-qti-gst:append:qcm6490 = " \
+      gstreamer1.0-plugins-qti-oss-qmmfsrc \
     "
