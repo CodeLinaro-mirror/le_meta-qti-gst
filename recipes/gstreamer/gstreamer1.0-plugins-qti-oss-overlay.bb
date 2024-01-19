@@ -12,12 +12,15 @@ DEPENDS := "gstreamer1.0"
 DEPENDS += "gstreamer1.0-plugins-base"
 DEPENDS += "gstreamer1.0-plugins-qti-oss-mlmeta"
 DEPENDS += "gstreamer1.0-plugins-qti-oss-base"
-DEPENDS += "libion"
 DEPENDS += "adreno"
 DEPENDS += "graphicsdlkm"
 DEPENDS += "cairo"
 DEPENDS += "liblog"
-DEPENDS:remove:qcs6490 += "graphicsdlkm"
+DEPENDS:remove:qcm6490 = "liblog"
+DEPENDS:append:qcm6490 = " property-vault syslog-plumber"
+DEPENDS:remove:qcs6490 = "graphicsdlkm"
+
+RDEPENDS:${PN}:append:qcm6490 = " property-vault"
 
 FILESPATH =+ "${WORKSPACE}/vendor/qcom/opensource/gst-plugins-qti-oss/:"
 
