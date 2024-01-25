@@ -1,4 +1,4 @@
-From 0c4be64e48187d5b145dbc301f359a7604234c1b Mon Sep 17 00:00:00 2001
+From 4b904094da56efbae335f8dc5265e46894a6aac3 Mon Sep 17 00:00:00 2001
 From: ppachang <quic_ppachang@quicinc.com>
 Date: Sat, 28 Oct 2023 16:42:14 +0530
 Subject: [PATCH] v4l2 : Add support for dma memory allocation
@@ -13,12 +13,12 @@ Signed-off-by: ppachang <quic_ppachang@quicinc.com>
  sys/v4l2/gstv4l2bufferpool.h |   2 +
  sys/v4l2/gstv4l2imagepool.c  | 667 +++++++++++++++++++++++++++++++++++
  sys/v4l2/gstv4l2imagepool.h  | 134 +++++++
- sys/v4l2/gstv4l2object.c     |  60 +++-
+ sys/v4l2/gstv4l2object.c     |  61 +++-
  sys/v4l2/gstv4l2object.h     |   1 +
  sys/v4l2/gstv4l2videodec.c   |   2 +-
  sys/v4l2/gstv4l2videoenc.c   |  38 +-
  sys/v4l2/meson.build         |   3 +-
- 12 files changed, 1045 insertions(+), 20 deletions(-)
+ 12 files changed, 1046 insertions(+), 20 deletions(-)
  create mode 100644 sys/v4l2/gstv4l2imagepool.c
  create mode 100644 sys/v4l2/gstv4l2imagepool.h
 
@@ -1161,7 +1161,7 @@ index 0000000..7b76733
 +
 +#endif /* __GST_V4L2_IMAGE_POOL_H__ */
 diff --git a/sys/v4l2/gstv4l2object.c b/sys/v4l2/gstv4l2object.c
-index 7b707f0..f8b3341 100644
+index 7b707f0..52fd716 100644
 --- a/sys/v4l2/gstv4l2object.c
 +++ b/sys/v4l2/gstv4l2object.c
 @@ -1338,6 +1338,12 @@ gst_v4l2_object_v4l2fourcc_to_video_format (guint32 fourcc)
@@ -1195,7 +1195,7 @@ index 7b707f0..f8b3341 100644
          fourcc = V4L2_PIX_FMT_H264_NO_SC;
        else
          fourcc = V4L2_PIX_FMT_H264;
-@@ -4974,14 +4980,36 @@ gst_v4l2_object_decide_allocation (GstV4l2Object * obj, GstQuery * query)
+@@ -4974,14 +4980,37 @@ gst_v4l2_object_decide_allocation (GstV4l2Object * obj, GstQuery * query)
      case GST_V4L2_IO_DMABUF_IMPORT:
        /* in importing mode, prefer our own pool, and pass the other pool to
         * our own, so it can serve itself */
@@ -1205,6 +1205,7 @@ index 7b707f0..f8b3341 100644
 +      if (pool) {
 +        GstStructure *s = gst_buffer_pool_get_config (pool);
 +        if (gst_buffer_pool_config_get_allocator (s, &allocator, NULL) &&
++            allocator &&
 +            !g_strcmp0 (allocator->mem_type, GST_ALLOCATOR_DMABUF)) {
 +          GST_DEBUG_OBJECT (obj->dbg_obj, "Downstream pool is of dmabuf type");
 +        } else {
@@ -1236,7 +1237,7 @@ index 7b707f0..f8b3341 100644
        break;
  
      case GST_V4L2_IO_MMAP:
-@@ -5089,9 +5117,23 @@ gst_v4l2_object_decide_allocation (GstV4l2Object * obj, GstQuery * query)
+@@ -5089,9 +5118,23 @@ gst_v4l2_object_decide_allocation (GstV4l2Object * obj, GstQuery * query)
      other_pool = pool;
  
    if (other_pool) {
@@ -1261,7 +1262,7 @@ index 7b707f0..f8b3341 100644
  
      GST_DEBUG_OBJECT (obj->dbg_obj, "setting other pool config to %"
          GST_PTR_FORMAT, config);
-@@ -5106,7 +5148,7 @@ gst_v4l2_object_decide_allocation (GstV4l2Object * obj, GstQuery * query)
+@@ -5106,7 +5149,7 @@ gst_v4l2_object_decide_allocation (GstV4l2Object * obj, GstQuery * query)
      if (!gst_buffer_pool_set_config (other_pool, config)) {
        config = gst_buffer_pool_get_config (other_pool);
  
@@ -1270,7 +1271,7 @@ index 7b707f0..f8b3341 100644
                max)) {
          gst_structure_free (config);
          goto config_failed;
-@@ -5115,6 +5157,8 @@ gst_v4l2_object_decide_allocation (GstV4l2Object * obj, GstQuery * query)
+@@ -5115,6 +5158,8 @@ gst_v4l2_object_decide_allocation (GstV4l2Object * obj, GstQuery * query)
        if (!gst_buffer_pool_set_config (other_pool, config))
          goto config_failed;
      }
@@ -1373,3 +1374,6 @@ index 65f551f..2a6c85e 100644
  ]
  
  v4l2 = get_option('v4l2')
+-- 
+2.25.1
+
