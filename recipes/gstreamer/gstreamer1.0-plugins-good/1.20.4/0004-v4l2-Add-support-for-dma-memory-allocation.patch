@@ -1,4 +1,4 @@
-From 343a10cc6940f10f4435f90baf641005e92c59e7 Mon Sep 17 00:00:00 2001
+From 32d1ef706acdab7a42570f2a3a591ae18271b445 Mon Sep 17 00:00:00 2001
 From: ppachang <quic_ppachang@quicinc.com>
 Date: Sat, 28 Oct 2023 16:42:14 +0530
 Subject: [PATCH] v4l2 : Add support for dma memory allocation
@@ -16,9 +16,9 @@ Signed-off-by: ppachang <quic_ppachang@quicinc.com>
  sys/v4l2/gstv4l2object.c     |  61 +++-
  sys/v4l2/gstv4l2object.h     |   1 +
  sys/v4l2/gstv4l2videodec.c   |   2 +-
- sys/v4l2/gstv4l2videoenc.c   |  37 +-
+ sys/v4l2/gstv4l2videoenc.c   |  40 ++-
  sys/v4l2/meson.build         |   3 +-
- 12 files changed, 1044 insertions(+), 20 deletions(-)
+ 12 files changed, 1048 insertions(+), 20 deletions(-)
  create mode 100644 sys/v4l2/gstv4l2imagepool.c
  create mode 100644 sys/v4l2/gstv4l2imagepool.h
 
@@ -1306,10 +1306,10 @@ index 3042995..52e53e2 100644
      /* Pool may be NULL if we started going to READY state */
      if (pool == NULL) {
 diff --git a/sys/v4l2/gstv4l2videoenc.c b/sys/v4l2/gstv4l2videoenc.c
-index c52def0..afbba70 100644
+index c52def0..f9ba215 100644
 --- a/sys/v4l2/gstv4l2videoenc.c
 +++ b/sys/v4l2/gstv4l2videoenc.c
-@@ -334,14 +334,47 @@ gst_v4l2_video_enc_set_format (GstVideoEncoder * encoder,
+@@ -334,14 +334,50 @@ gst_v4l2_video_enc_set_format (GstVideoEncoder * encoder,
    output = gst_video_encoder_set_output_state (encoder, outcaps, state);
    gst_video_codec_state_unref (output);
  
@@ -1347,6 +1347,9 @@ index c52def0..afbba70 100644
 +
 +    gst_caps_unref (caps);
 +  }
++
++  if (GST_V4L2_IS_OPEN (self->v4l2output) && self->v4l2output->extra_controls)
++    gst_v4l2_set_controls (self->v4l2output, self->v4l2output->extra_controls);
  
    if (!gst_v4l2_object_set_format (self->v4l2output, state->caps, &error)) {
      gst_v4l2_error (self, &error);
@@ -1373,6 +1376,3 @@ index 65f551f..2a6c85e 100644
  ]
  
  v4l2 = get_option('v4l2')
--- 
-2.25.1
-
