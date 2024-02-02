@@ -11,6 +11,8 @@ LIC_FILES_CHKSUM = "file://${COREBASE}/meta-qti-bsp/files/common-licenses/${LICE
 DEPENDS := "gstreamer1.0"
 DEPENDS += "gstreamer1.0-plugins-base"
 DEPENDS += "qmmf-sdk"
+DEPENDS:remove:qcm6490 = "qmmf-sdk"
+DEPENDS:append:qcm6490 = " camera-server"
 
 FILESPATH =+ "${WORKSPACE}/vendor/qcom/opensource/gst-plugins-qti-oss/:"
 SRC_URI = "file://gst-plugin-qmmfsrc/"
