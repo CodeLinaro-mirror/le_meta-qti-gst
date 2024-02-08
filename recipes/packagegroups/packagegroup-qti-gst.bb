@@ -66,4 +66,5 @@ RDEPENDS:packagegroup-qti-gst:remove:qcm6490 = " \
 
 RDEPENDS:packagegroup-qti-gst:append:qcm6490 = " \
       gstreamer1.0-plugins-qti-oss-qmmfsrc \
+      gstreamer1.0-qti-oss-sample-apps \
     "
