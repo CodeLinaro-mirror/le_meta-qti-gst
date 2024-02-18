@@ -1,4 +1,4 @@
-From f02b48f01d0946db1d878c4de05283b019d9c8bf Mon Sep 17 00:00:00 2001
+From be81845ee63ba8d13a26782d452ac648a951417d Mon Sep 17 00:00:00 2001
 From: Raja Ganapathi Busam <quic_rbusam@quicinc.com>
 Date: Sat, 10 Feb 2024 20:18:27 +0530
 Subject: [PATCH] v4l2: Add support for UBWC input
@@ -7,12 +7,12 @@ Signed-off-by: Raja Ganapathi Busam <quic_rbusam@quicinc.com>
 
 ---
  sys/v4l2/gstv4l2.c          |  8 ++++++++
- sys/v4l2/gstv4l2allocator.c | 22 ++++++++++++++++++----
+ sys/v4l2/gstv4l2allocator.c | 28 ++++++++++++++++++++++++----
  sys/v4l2/gstv4l2allocator.h |  1 +
  sys/v4l2/gstv4l2imagepool.c |  8 ++++----
  sys/v4l2/gstv4l2object.c    | 32 ++++++++++++++++++++++++++++----
  sys/v4l2/gstv4l2videoenc.c  |  6 +++---
- 6 files changed, 62 insertions(+), 15 deletions(-)
+ 6 files changed, 68 insertions(+), 15 deletions(-)
 
 diff --git a/sys/v4l2/gstv4l2.c b/sys/v4l2/gstv4l2.c
 index ec53bc9..b7ff559 100644
@@ -34,7 +34,7 @@ index ec53bc9..b7ff559 100644
    }
  
 diff --git a/sys/v4l2/gstv4l2allocator.c b/sys/v4l2/gstv4l2allocator.c
-index 632c135..3abb390 100644
+index 632c135..f9deabf 100644
 --- a/sys/v4l2/gstv4l2allocator.c
 +++ b/sys/v4l2/gstv4l2allocator.c
 @@ -359,8 +359,11 @@ gst_v4l2_allocator_release (GstV4l2Allocator * allocator, GstV4l2Memory * mem)
@@ -59,13 +59,26 @@ index 632c135..3abb390 100644
  
    g_return_val_if_fail (allocator->memory == V4L2_MEMORY_DMABUF, FALSE);
  
-@@ -1169,12 +1173,15 @@ gst_v4l2_allocator_import_dmabuf (GstV4l2Allocator * allocator,
+@@ -1148,6 +1152,7 @@ gst_v4l2_allocator_import_dmabuf (GstV4l2Allocator * allocator,
+ 
+       GST_DEBUG_OBJECT (allocator, "Memory %i is not of DMABUF", i);
+ 
++      // Get the driver proposed size
+       maxsize = (V4L2_TYPE_IS_MULTIPLANAR (obj->type) ?
+         obj->format.fmt.pix_mp.plane_fmt[i].sizeimage :
+         obj->format.fmt.pix.sizeimage);
+@@ -1169,12 +1174,20 @@ gst_v4l2_allocator_import_dmabuf (GstV4l2Allocator * allocator,
  
        gst_memory_map (dma_mem[i], &info, GST_MAP_READ);
  
 -      memcpy (data, info.data, dma_mem[i]->size);
-+      memcpy (data, info.data, maxsize);
-+      size = maxsize;
++      // Check if the buffer size is greater than driver proposed size
++      // if yes, copy only driver proposed size of bytes from buffer
++      // if no, copy buffer size of bytes from buffer
++      size = dma_mem[i]->size > maxsize ? maxsize : dma_mem[i]->size;
++      GST_DEBUG_OBJECT(allocator, "copying buffer size: %u", size);
++
++      memcpy (data, info.data, size);
  
        gst_memory_unmap (dma_mem[i], &info);
        if (munmap (data, maxsize))
@@ -76,7 +89,7 @@ index 632c135..3abb390 100644
      }
  
      GST_LOG_OBJECT (allocator, "[%i] imported DMABUF as fd %i plane %d",
-@@ -1187,6 +1194,7 @@ gst_v4l2_allocator_import_dmabuf (GstV4l2Allocator * allocator,
+@@ -1187,6 +1200,7 @@ gst_v4l2_allocator_import_dmabuf (GstV4l2Allocator * allocator,
      mem->mem.offset = offset;
      mem->mem.size = size;
      mem->dmafd = dmafd;
@@ -84,7 +97,7 @@ index 632c135..3abb390 100644
  
      /* Update v4l2 structure */
      group->planes[i].length = maxsize;
-@@ -1327,9 +1335,12 @@ gst_v4l2_allocator_qbuf (GstV4l2Allocator * allocator,
+@@ -1327,9 +1341,12 @@ gst_v4l2_allocator_qbuf (GstV4l2Allocator * allocator,
  
    /* update sizes */
    if (V4L2_TYPE_IS_MULTIPLANAR (obj->type)) {
@@ -98,7 +111,7 @@ index 632c135..3abb390 100644
    } else {
      group->buffer.bytesused = gst_memory_get_sizes (group->mem[0], NULL, NULL);
    }
-@@ -1338,6 +1349,9 @@ gst_v4l2_allocator_qbuf (GstV4l2Allocator * allocator,
+@@ -1338,6 +1355,9 @@ gst_v4l2_allocator_qbuf (GstV4l2Allocator * allocator,
    for (i = 0; i < group->n_mem; i++)
      gst_memory_ref (group->mem[i]);
  
