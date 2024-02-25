@@ -1,4 +1,4 @@
-inherit cmake pkgconfig qimsdk-base
+inherit cmake pkgconfig
 
 SUMMARY = "Qualcomm open-source GStreamer Plug-in for socket fd transfer"
 HOMEPAGE = "https://git.codelinaro.org"
@@ -11,9 +11,9 @@ LIC_FILES_CHKSUM = "file://${COMMON_LICENSE_DIR}/${LICENSE};md5=7a434440b651f4a4
 DEPENDS := "gstreamer1.0"
 DEPENDS += "gstreamer1.0-plugins-base"
 
-SRCDIR = "gst-plugin-socket"
-SRC_URI = "file://${SRCDIR}"
-S = "${WORKDIR}/${SRCDIR}"
+FILESPATH =+ "${WORKSPACE}/gst-plugins-qti-oss/:"
+SRC_URI = "file://gst-plugin-socket"
+S = "${WORKDIR}/gst-plugin-socket"
 
 # Install directries.
 INSTALL_BINDIR := "${bindir}"

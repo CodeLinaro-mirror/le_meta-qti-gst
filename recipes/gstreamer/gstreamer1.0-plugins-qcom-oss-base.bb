@@ -1,4 +1,4 @@
-inherit cmake pkgconfig qimsdk-base
+inherit cmake pkgconfig
 
 SUMMARY = "Qualcomm open-source GStreamer base"
 SECTION = "multimedia"
@@ -13,9 +13,9 @@ DEPENDS += "gbm"
 DEPENDS += "adreno"
 DEPENDS += "fastcv-binaries"
 
-SRCDIR = "gst-plugin-base"
-SRC_URI = "file://${SRCDIR}"
-S = "${WORKDIR}/${SRCDIR}"
+FILESPATH =+ "${WORKSPACE}/gst-plugins-qti-oss/:"
+SRC_URI = "file://gst-plugin-base"
+S = "${WORKDIR}/gst-plugin-base"
 
 # Install directries.
 INSTALL_INCDIR := "${includedir}"

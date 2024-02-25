@@ -1,4 +1,4 @@
-inherit cmake pkgconfig qimsdk-base
+inherit cmake pkgconfig
 
 SUMMARY = "Qualcomm open-source GStreamer Plug-in for qmmf-sdk"
 HOMEPAGE = "http://www.qualcomm.com"
@@ -12,9 +12,9 @@ DEPENDS := "gstreamer1.0"
 DEPENDS += "gstreamer1.0-plugins-base"
 DEPENDS += "camera-server"
 
-SRCDIR = "gst-plugin-qmmfsrc"
-SRC_URI = "file://${SRCDIR}"
-S = "${WORKDIR}/${SRCDIR}"
+FILESPATH =+ "${WORKSPACE}/gst-plugins-qti-oss/:"
+SRC_URI = "file://gst-plugin-qmmfsrc"
+S = "${WORKDIR}/gst-plugin-qmmfsrc"
 
 # Install directries.
 INSTALL_BINDIR := "${bindir}"

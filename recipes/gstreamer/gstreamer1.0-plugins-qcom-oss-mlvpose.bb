@@ -1,4 +1,4 @@
-inherit cmake pkgconfig qimsdk-base
+inherit cmake pkgconfig
 
 SUMMARY = "Qualcomm open-source GStreamer Plug-in for ML Pose Estimation"
 SECTION = "multimedia"
@@ -12,9 +12,9 @@ DEPENDS += "gstreamer1.0-plugins-base"
 DEPENDS += "gstreamer1.0-plugins-qcom-oss-base"
 DEPENDS += "cairo"
 
-SRCDIR = "gst-plugin-mlvpose"
-SRC_URI = "file://${SRCDIR}"
-S = "${WORKDIR}/${SRCDIR}"
+FILESPATH =+ "${WORKSPACE}/gst-plugins-qti-oss/:"
+SRC_URI = "file://gst-plugin-mlvpose"
+S = "${WORKDIR}/gst-plugin-mlvpose"
 
 # Install directories.
 INSTALL_INCDIR := "${includedir}"

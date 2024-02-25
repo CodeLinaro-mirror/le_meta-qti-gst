@@ -1,4 +1,4 @@
-inherit cmake pkgconfig qimsdk-base
+inherit cmake pkgconfig
 
 SUMMARY = "Qualcomm open-source GStreamer Plug-in for Machine Learning using SNPE"
 SECTION = "multimedia"
@@ -14,9 +14,9 @@ DEPENDS += "snpe"
 
 do_configure[depends] += "${@bb.utils.contains('PACKAGE_CLASSES', 'package_ipk', 'snpe:do_package_write_ipk', 'snpe:do_package_write_deb', d)}"
 
-SRCDIR = "gst-plugin-mlsnpe"
-SRC_URI = "file://${SRCDIR}"
-S = "${WORKDIR}/${SRCDIR}"
+FILESPATH =+ "${WORKSPACE}/gst-plugins-qti-oss/:"
+SRC_URI = "file://gst-plugin-mlsnpe"
+S = "${WORKDIR}/gst-plugin-mlsnpe"
 
 # Install directories.
 INSTALL_BINDIR := "${bindir}"

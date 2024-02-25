@@ -1,4 +1,4 @@
-inherit cmake qimsdk-base
+inherit cmake
 
 SUMMARY = "Qualcomm open-source GStreamer Plug-in for Machine Learning using AIC100"
 SECTION = "multimedia"
@@ -13,9 +13,9 @@ DEPENDS += "gstreamer1.0-plugins-qcom-oss-base"
 DEPENDS += "protobuf"
 DEPENDS += "qaic-rt"
 
-SRCDIR = "gst-plugin-mlaic"
-SRC_URI = "file://${SRCDIR}"
-S = "${WORKDIR}/${SRCDIR}"
+FILESPATH =+ "${WORKSPACE}/gst-plugins-qti-oss/:"
+SRC_URI = "file://gst-plugin-mlaic"
+S = "${WORKDIR}/gst-plugin-mlaic"
 
 # Install directories.
 INSTALL_BINDIR := "${bindir}"

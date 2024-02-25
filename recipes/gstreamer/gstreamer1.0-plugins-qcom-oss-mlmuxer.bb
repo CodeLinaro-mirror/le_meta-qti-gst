@@ -1,4 +1,4 @@
-inherit cmake qimsdk-base
+inherit cmake
 
 SUMMARY = "Qualcomm open-source GStreamer Plug-in for muxing multiple tensor streams"
 SECTION = "multimedia"
@@ -10,9 +10,9 @@ LIC_FILES_CHKSUM = "file://${COMMON_LICENSE_DIR}/${LICENSE};md5=7a434440b651f4a4
 DEPENDS := "gstreamer1.0"
 DEPENDS += "gstreamer1.0-plugins-base"
 
-SRCDIR = "gst-plugin-qtimuxserialize"
-SRC_URI = "file://${SRCDIR}"
-S = "${WORKDIR}/${SRCDIR}"
+FILESPATH =+ "${WORKSPACE}/gst-plugins-qti-oss/:"
+SRC_URI = "file://gst-plugin-qtimuxserialize"
+S = "${WORKDIR}/gst-plugin-qtimuxserialize"
 
 # Install directries.
 INSTALL_BINDIR := "${bindir}"

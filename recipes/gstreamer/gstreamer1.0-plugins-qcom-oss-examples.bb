@@ -1,4 +1,4 @@
-inherit cmake pkgconfig qimsdk-base
+inherit cmake pkgconfig
 
 SUMMARY = "Generic examples for GStreamer pipelines."
 SECTION = "multimedia"
@@ -16,17 +16,13 @@ DEPENDS += "media-headers"
 DEPENDS += "libutils"
 DEPENDS += "qmmf-sdk"
 
-SRCDIR = "gst-plugins-qcom-oss"
-SRC_URI = "file://${SRCDIR}"
-S = "${WORKDIR}/${SRCDIR}"
+FILESPATH =+ "${WORKSPACE}/gst-plugins-qti-oss/:"
+SRC_URI = "file://gst-plugin-examples"
+S = "${WORKDIR}/gst-plugin-examples"
 
 # Install directries.
 INSTALL_BINDIR := "${bindir}"
 INSTALL_LIBDIR := "${libdir}"
-
-PACKAGECONFIG ??= " \
-   ${@bb.utils.contains("QCOM_AFR_ALGO", "TRUE", "auto-framing", "", d)} \
-   "
 
 PACKAGECONFIG[auto-framing] = "-DENABLE_TRACKING_CAM=true, -DENABLE_TRACKING_CAM=false, qti-auto-framing-stabilization, qti-auto-framing-stabilization"
 

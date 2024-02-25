@@ -1,4 +1,4 @@
-inherit cmake pkgconfig qimsdk-base
+inherit cmake pkgconfig
 
 SUMMARY = "Qualcomm open-source GStreamer Plug-in for CVP image pyramid"
 HOMEPAGE = "https://git.codelinaro.org"
@@ -14,9 +14,9 @@ DEPENDS += "gstreamer1.0-plugins-qcom-oss-base"
 DEPENDS += "cvp-noship"
 DEPENDS += "eva-noship"
 
-SRCDIR = "gst-plugin-cv-imgpyramid"
-SRC_URI = "file://${SRCDIR}"
-S = "${WORKDIR}/${SRCDIR}"
+FILESPATH =+ "${WORKSPACE}/gst-plugins-qti-oss/:"
+SRC_URI = "file://gst-plugin-cv-imgpyramid"
+S = "${WORKDIR}/gst-plugin-cv-imgpyramid"
 
 # Install directries.
 INSTALL_BINDIR := "${bindir}"

@@ -1,4 +1,4 @@
-inherit cmake pkgconfig qimsdk-base
+inherit cmake pkgconfig
 
 SUMMARY = "Generic tools application for GStreamer pipeline verification."
 SECTION = "multimedia"
@@ -11,9 +11,9 @@ DEPENDS := "gstreamer1.0"
 DEPENDS += "gstreamer1.0-plugins-base"
 DEPENDS += "gstreamer1.0-rtsp-server"
 
-SRCDIR = "gst-plugin-tools"
-SRC_URI = "file://${SRCDIR}"
-S = "${WORKDIR}/${SRCDIR}"
+FILESPATH =+ "${WORKSPACE}/gst-plugins-qti-oss/:"
+SRC_URI = "file://gst-plugin-tools"
+S = "${WORKDIR}/gst-plugin-tools"
 
 # Install directries.
 INSTALL_BINDIR := "${bindir}"

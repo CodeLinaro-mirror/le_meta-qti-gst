@@ -1,4 +1,4 @@
-inherit cmake pkgconfig qimsdk-base
+inherit cmake pkgconfig
 
 SUMMARY = "Qualcomm open-source GStreamer Plug-in for muxing video or audio streams with meta stream"
 SECTION = "multimedia"
@@ -11,9 +11,9 @@ DEPENDS := "gstreamer1.0"
 DEPENDS += "gstreamer1.0-plugins-base"
 DEPENDS += "gstreamer1.0-plugins-qcom-oss-base"
 
-SRCDIR = "gst-plugin-metamux"
-SRC_URI = "file://${SRCDIR}"
-S = "${WORKDIR}/${SRCDIR}"
+FILESPATH =+ "${WORKSPACE}/gst-plugins-qti-oss/:"
+SRC_URI = "file://gst-plugin-metamux"
+S = "${WORKDIR}/gst-plugin-metamux"
 
 # Install directries.
 INSTALL_BINDIR := "${bindir}"

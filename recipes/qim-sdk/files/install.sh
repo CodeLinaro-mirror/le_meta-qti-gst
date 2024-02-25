@@ -6,8 +6,8 @@
 SDK_NAME="QIM_SDK"
 
 FOUND_PKGS=""
-PKG_LIST_DIR="/home/root/qim/"
-PKG_LIST_FILE="$PKG_LIST_DIR/$SDK_NAME.list"
+QIM_PKG_DIR="$1"
+PKG_LIST_FILE="/opt/qcom/qimsdk/$SDK_NAME.list"
 
 
 # check permission for execute this script
@@ -20,29 +20,31 @@ function check_permission() {
 
 # scan packages in current path
 function scan_qim_packages() {
-    FOUND_PKGS=`find . -name "*.ipk" -o -name "*.deb" \
+    FOUND_PKGS=`find . -name "*.ipk" \
         | grep -v "\-dbg_" \
         | grep -v "\-dev_" \
         | grep -v "\-staticdev_" \
         | tr '\n' ' '`
 }
 
+function qim_sdk_env_file() {
+    echo "export PATH=\$PATH:${QIM_PKG_DIR}/usr/bin" > ${QIM_PKG_DIR}/qim-sdk.sh
+    echo "export LD_LIBRARY_PATH=\$LD_LIBRARY_PATH:${QIM_PKG_DIR}/usr/lib" >> ${QIM_PKG_DIR}/qim-sdk.sh
+    echo "export GST_PLUGIN_PATH=\$GST_PLUGIN_PATH:${QIM_PKG_DIR}/usr/lib/gstreamer-1.0" >> ${QIM_PKG_DIR}/qim-sdk.sh
+    echo "export LD_LIBRARY_PATH=\$LD_LIBRARY_PATH:${QIM_PKG_DIR}/lib" >> ${QIM_PKG_DIR}/qim-sdk.sh
+    echo "export GST_PLUGIN_SCANNER=${QIM_PKG_DIR}/usr/libexec/gstreamer-1.0/gst-plugin-scanner" >> ${QIM_PKG_DIR}/qim-sdk.sh
+
+    chmod +x ${QIM_PKG_DIR}/qim-sdk.sh
+}
+
 # install packages and save list to file
 function install_qim_packages() {
 
-    if lsb_release -a 2>/dev/null | grep -q "Ubuntu"; then
-        install_command="dpkg -i --force-overwrite --force-depends "
-    else
-        install_command="opkg install --force-reinstall --force-depends --force-overwrite"
-    fi
+    install_command="opkg install --force-reinstall --force-depends --force-overwrite"
 
     for PKG_FILE in $FOUND_PKGS; do
         $install_command $PKG_FILE
     done
-
-    if [ ! -d "$PKG_LIST_DIR" ]; then
-        mkdir -p "$PKG_LIST_DIR"
-    fi
 
     if [ -f "$PKG_LIST_FILE" ]; then
         rm -f "$PKG_LIST_FILE"
@@ -75,18 +77,24 @@ function main() {
         done
     fi
 
-    scan_packages
-#    for pkg in $ALL_PKGS; do
-#        if echo "$FOUND_PKGS" | grep -q "$pkg"; then
-#            echo "NOTE: found package: '$pkg'"
-#        else
-#            echo "ERROR: not found package: '$pkg'"
-#            exit 1
-#        fi
-#    done
+    scan_qim_packages
 
-    install_packages
+    if [ ! -d "/opt/qcom/qimsdk/" ]; then
+        mkdir -p /opt/qcom/qimsdk
+    fi
+
+    if [ ! -d "$QIM_PKG_DIR" ]; then
+        mkdir -p "$QIM_PKG_DIR"
+    fi
+
+    install_qim_packages
+    qim_sdk_env_file
+
+    echo ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
+    echo ">>> Installation done for $SDK_NAME at $QIM_PKG_DIR"
+    echo ">>> source $QIM_PKG_DIR/qim-sdk.sh before running usecases"
+    echo "<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<"
+    echo
 }
 
 main "$@"
-

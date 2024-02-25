@@ -1,4 +1,4 @@
-inherit cmake qimsdk-base
+inherit cmake
 
 SUMMARY = "Qualcomm open-source GStreamer Plug-in for DFS (Depth From Stereo)"
 HOMEPAGE = "https://git.codelinaro.org"
@@ -13,9 +13,9 @@ DEPENDS += "gstreamer1.0-plugins-base"
 DEPENDS += "gstreamer1.0-plugins-qcom-oss-base"
 DEPENDS += "vslam"
 
-SRCDIR = "gst-plugin-dfs"
-SRC_URI = "file://${SRCDIR}"
-S = "${WORKDIR}/${SRCDIR}"
+FILESPATH =+ "${WORKSPACE}/gst-plugins-qti-oss/:"
+SRC_URI = "file://gst-plugin-dfs"
+S = "${WORKDIR}/gst-plugin-dfs"
 
 # Install directries.
 INSTALL_BINDIR := "${bindir}"

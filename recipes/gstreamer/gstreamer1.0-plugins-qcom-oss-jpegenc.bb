@@ -1,4 +1,4 @@
-inherit cmake pkgconfig qimsdk-base
+inherit cmake pkgconfig
 
 SUMMARY = "Qualcomm open-source GStreamer Plug-in for jpeg encoding"
 SECTION = "multimedia"
@@ -12,9 +12,9 @@ DEPENDS += "gstreamer1.0-plugins-base"
 DEPENDS += "gstreamer1.0-plugins-qcom-oss-base"
 DEPENDS += "qmmf-sdk"
 
-SRCDIR = "gst-plugin-jpegenc"
-SRC_URI = "file://${SRCDIR}"
-S = "${WORKDIR}/${SRCDIR}"
+FILESPATH =+ "${WORKSPACE}/gst-plugins-qti-oss/:"
+SRC_URI = "file://gst-plugin-jpegenc"
+S = "${WORKDIR}/gst-plugin-jpegenc"
 
 # Install directries.
 INSTALL_BINDIR := "${bindir}"

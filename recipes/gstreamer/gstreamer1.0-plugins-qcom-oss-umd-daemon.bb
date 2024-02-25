@@ -1,4 +1,4 @@
-inherit cmake pkgconfig qimsdk-base
+inherit cmake pkgconfig
 
 SUMMARY = "GStreamer based daemon utilizing Qualcomm UMD gadget library"
 SECTION = "multimedia"
@@ -15,9 +15,9 @@ DEPENDS += "${@bb.utils.contains("QCOM_AFR_ALGO", "TRUE", "qti-auto-framing-stab
 RDEPENDS:${PN} := "qti-umd-gadget"
 RDEPENDS:${PN} += "${@bb.utils.contains("QCOM_AFR_ALGO", "TRUE", "qti-auto-framing-stabilization", "", d)}"
 
-SRCDIR = "gst-umd-daemon"
-SRC_URI = "file://${SRCDIR}"
-S = "${WORKDIR}/${SRCDIR}"
+FILESPATH =+ "${WORKSPACE}/gst-plugins-qti-oss/:"
+SRC_URI = "file://gst-umd-daemon"
+S = "${WORKDIR}/gst-umd-daemon"
 
 # Install directries.
 INSTALL_BINDIR := "${bindir}"

@@ -1,4 +1,4 @@
-inherit cmake pkgconfig qimsdk-base
+inherit cmake pkgconfig
 
 SUMMARY = "Qualcomm open-source GStreamer Plug-in for Machine Learning using QNN"
 SECTION = "multimedia"
@@ -12,9 +12,9 @@ DEPENDS += "gstreamer1.0-plugins-base"
 DEPENDS += "gstreamer1.0-plugins-qcom-oss-base"
 DEPENDS += "qnn"
 
-SRCDIR = "gst-plugin-mlqnn"
-SRC_URI = "file://${SRCDIR}"
-S = "${WORKDIR}/${SRCDIR}"
+FILESPATH =+ "${WORKSPACE}/gst-plugins-qti-oss/:"
+SRC_URI = "file://gst-plugin-mlqnn"
+S = "${WORKDIR}/gst-plugin-mlqnn"
 
 # Install directories.
 INSTALL_BINDIR := "${bindir}"

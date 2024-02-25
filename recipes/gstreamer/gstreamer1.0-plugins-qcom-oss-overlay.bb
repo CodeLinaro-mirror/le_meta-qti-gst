@@ -1,4 +1,4 @@
-inherit cmake pkgconfig qimsdk-base
+inherit cmake pkgconfig
 
 SUMMARY = "Qualcomm open-source GStreamer Plug-in for overlay"
 HOMEPAGE = "https://git.codelinaro.org"
@@ -18,9 +18,9 @@ DEPENDS += "property-vault syslog-plumber"
 
 RDEPENDS:${PN}:append = " property-vault"
 
-SRCDIR = "gst-plugin-overlay"
-SRC_URI = "file://${SRCDIR}"
-S = "${WORKDIR}/${SRCDIR}"
+FILESPATH =+ "${WORKSPACE}/gst-plugins-qti-oss/:"
+SRC_URI = "file://gst-plugin-overlay"
+S = "${WORKDIR}/gst-plugin-overlay"
 
 # Install directries.
 INSTALL_BINDIR := "${bindir}"
