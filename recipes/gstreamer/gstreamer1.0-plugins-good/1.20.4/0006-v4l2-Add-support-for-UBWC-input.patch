@@ -1,4 +1,4 @@
-From bab76ea8f05d376a9e2b9014362b174008c00bf9 Mon Sep 17 00:00:00 2001
+From c625d83bc16b114e35d8a36d68985061c96b197c Mon Sep 17 00:00:00 2001
 From: Raja Ganapathi Busam <quic_rbusam@quicinc.com>
 Date: Sat, 10 Feb 2024 20:18:27 +0530
 Subject: [PATCH] v4l2: Add support for UBWC input
@@ -10,12 +10,12 @@ Signed-off-by: Raja Ganapathi Busam <quic_rbusam@quicinc.com>
  sys/v4l2/gstv4l2.c           |  8 ++++
  sys/v4l2/gstv4l2allocator.c  | 28 ++++++++++++--
  sys/v4l2/gstv4l2allocator.h  |  1 +
- sys/v4l2/gstv4l2bufferpool.c |  2 +-
+ sys/v4l2/gstv4l2bufferpool.c |  4 +-
  sys/v4l2/gstv4l2imagepool.c  |  8 ++--
  sys/v4l2/gstv4l2object.c     | 54 ++++++++++++++++++++++----
  sys/v4l2/gstv4l2videodec.c   | 75 +++++++++++++++++++++++++++++++++++-
  sys/v4l2/gstv4l2videoenc.c   |  6 +--
- 9 files changed, 161 insertions(+), 22 deletions(-)
+ 9 files changed, 162 insertions(+), 23 deletions(-)
 
 diff --git a/sys/v4l2/ext/videodev2.h b/sys/v4l2/ext/videodev2.h
 index 93a138a..d968da8 100644
@@ -149,9 +149,18 @@ index 2166b6b..06c74b9 100644
  
  struct _GstV4l2MemoryGroup
 diff --git a/sys/v4l2/gstv4l2bufferpool.c b/sys/v4l2/gstv4l2bufferpool.c
-index c8a8f5d..28ac2b7 100644
+index c8a8f5d..1cfb673 100644
 --- a/sys/v4l2/gstv4l2bufferpool.c
 +++ b/sys/v4l2/gstv4l2bufferpool.c
+@@ -967,7 +967,7 @@ gst_v4l2_buffer_pool_start (GstBufferPool * bpool)
+   pool->size = size;
+   pool->copy_threshold = copy_threshold;
+   pool->max_latency = max_latency;
+-  pool->min_latency = min_latency;
++  pool->min_latency = min_buffers;
+   pool->num_queued = 0;
+ 
+   if (max_buffers != 0 && max_buffers < min_buffers)
 @@ -2074,7 +2074,7 @@ gst_v4l2_buffer_pool_process (GstV4l2BufferPool * pool, GstBuffer ** buf,
                GST_V4L2_IMPORT_QUARK);
  
