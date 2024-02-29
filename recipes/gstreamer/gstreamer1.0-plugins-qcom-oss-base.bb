@@ -12,6 +12,7 @@ DEPENDS += "gstreamer1.0-plugins-base"
 DEPENDS += "gbm"
 DEPENDS += "adreno"
 DEPENDS += "fastcv-binaries"
+DEPENDS += "qti-ib2c"
 
 FILESPATH =+ "${WORKSPACE}/gst-plugins-qti-oss/:"
 SRC_URI = "file://gst-plugin-base"

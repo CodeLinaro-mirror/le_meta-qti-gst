@@ -31,4 +31,6 @@ RDEPENDS:packagegroup-qcom-gst = " \
       gstreamer1.0-plugins-qcom-oss-vsplit \
       gstreamer1.0-plugins-qcom-oss-vtransform \
       gstreamer1.0-qcom-oss-sample-apps \
+      gstreamer1.0-plugins-qcom-oss-mlsnpe \
+      gstreamer1.0-plugins-qcom-oss-mlqnn \
    "

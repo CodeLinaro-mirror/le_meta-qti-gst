@@ -21,7 +21,6 @@ python __anonymous () {
 }
 
 addtask do_generate_qim_sdk_setscene
-do_generate_qim_sdk[postfuncs] += "organize_qim_sdk_files"
 do_generate_qim_sdk[sstate-inputdirs] = "${SSTATE_IN_DIR}"
 do_generate_qim_sdk[sstate-outputdirs] = "${SSTATE_OUT_DIR}"
 do_generate_qim_sdk[dirs] = "${SSTATE_IN_DIR} ${SSTATE_OUT_DIR} ${TMP_SSTATE_IN_DIR}"
@@ -51,6 +50,8 @@ do_generate_qim_sdk[depends] = " \
       gstreamer1.0-plugins-qcom-oss-vsplit:do_packagedata \
       gstreamer1.0-plugins-qcom-oss-vtransform:do_packagedata \
       gstreamer1.0-qcom-oss-sample-apps:do_packagedata \
+      gstreamer1.0-plugins-qcom-oss-mlsnpe:do_packagedata \
+      gstreamer1.0-plugins-qcom-oss-mlqnn:do_packagedata \
     "
 
 
@@ -66,32 +67,29 @@ do_generate_qim_sdk () {
     do
         cp ${pkg} ${TMP_SSTATE_IN_DIR}/${SDK_PN}/
     done
+
     cd ${TMP_SSTATE_IN_DIR}
-    tar -zcf ${SSTATE_IN_DIR}/${SDK_PN}.tar.gz ./${SDK_PN}/*
-}
-
-# Add a task to copy sample code/toolchain/setup scripts,
-# and orgnanize as finial sdk artifact
-organize_qim_sdk_files () {
-    # orgnanize runtime packages
-    if ls ${SSTATE_IN_DIR}/${SDK_PN}* >/dev/null 2>&1; then
-        install -d ${SSTATE_IN_DIR}/${SDK_PN}/runtime
-        mv ${SSTATE_IN_DIR}/${SDK_PN}*.tar.gz ${SSTATE_IN_DIR}/${SDK_PN}/runtime/
-    else
-        bbfatal "No ${SDK_PN} packages generated, will miss base function! Please check it!"
-    fi
-
-    # orgnanize README docs
-    if ls ${README_PATH} >/dev/null 2>&1; then
-        cp -r ${README_PATH} ${SSTATE_IN_DIR}/${SDK_PN}/
-    else
-        bbwarn "No README docs find in ${README_PATH}, Please Note it!"
-    fi
-
-    # organize all files as finial sdk
-    cd ${SSTATE_IN_DIR}
     tar -zcf ${SSTATE_IN_DIR}/${SDK_PN}_${PV}.tar.gz ./${SDK_PN}/*
-    rm -r ${SSTATE_IN_DIR}/${SDK_PN}
+    mkdir -p ./${SDK_PN}/dev/
+    for f in `find . -type f \( -name "*-dev_*" \)`
+    do
+        mv $f ./${SDK_PN}/dev/
+    done
+    tar -zcf ${SSTATE_IN_DIR}/${SDK_PN}-dev_${PV}.tar.gz ./${SDK_PN}/dev/*
+    rm -rf ./${SDK_PN}/dev
+    mkdir -p ./${SDK_PN}/dbg/
+    for f in `find . -type f \( -name "*-dbg_*" \)`
+    do
+        mv $f ./${SDK_PN}/dbg/
+    done
+    tar -zcf ${SSTATE_IN_DIR}/${SDK_PN}-dbg_${PV}.tar.gz ./${SDK_PN}/dbg/*
+    rm -rf ./${SDK_PN}/dbg
+    for f in `find . -type f \( -name "*-doc_*" -o -name "*-staticdev_*" \)`
+    do
+        rm -rf $f
+    done
+    tar -zcf ${SSTATE_IN_DIR}/${SDK_PN}-rel_${PV}.tar.gz ./${SDK_PN}/*
+    rm -rf ${TMP_SSTATE_IN_DIR}
 }
 
 def get_pkgs_list(d):
@@ -104,7 +102,6 @@ def get_pkgs_list(d):
     for pkgdir in pkgdirs:
       for f in os.listdir(os.path.join(deploydir, pkgtype, pkgdir)):
         if "gstreamer" in os.path.basename(f) or "libgst" in os.path.basename(f) :
-          #bb.warn(os.path.basename(f))
           pkgslist.append(os.path.join(deploydir, pkgtype, pkgdir, f))
   return " \\\n ".join(pkgslist)
 

@@ -6,7 +6,7 @@
 SDK_NAME="QIM_SDK"
 
 FOUND_PKGS=""
-QIM_PKG_DIR="$1"
+QIM_PKG_DIR="/opt/qcom/qimsdk/"
 PKG_LIST_FILE="/opt/qcom/qimsdk/$SDK_NAME.list"
 
 
@@ -28,10 +28,10 @@ function scan_qim_packages() {
 }
 
 function qim_sdk_env_file() {
-    echo "export PATH=\$PATH:${QIM_PKG_DIR}/usr/bin" > ${QIM_PKG_DIR}/qim-sdk.sh
-    echo "export LD_LIBRARY_PATH=\$LD_LIBRARY_PATH:${QIM_PKG_DIR}/usr/lib" >> ${QIM_PKG_DIR}/qim-sdk.sh
-    echo "export GST_PLUGIN_PATH=\$GST_PLUGIN_PATH:${QIM_PKG_DIR}/usr/lib/gstreamer-1.0" >> ${QIM_PKG_DIR}/qim-sdk.sh
-    echo "export LD_LIBRARY_PATH=\$LD_LIBRARY_PATH:${QIM_PKG_DIR}/lib" >> ${QIM_PKG_DIR}/qim-sdk.sh
+    echo "export PATH=${QIM_PKG_DIR}/usr/bin:\$PATH" > ${QIM_PKG_DIR}/qim-sdk.sh
+    echo "export LD_LIBRARY_PATH=${QIM_PKG_DIR}/usr/lib:\$LD_LIBRARY_PATH" >> ${QIM_PKG_DIR}/qim-sdk.sh
+    echo "export GST_PLUGIN_PATH=${QIM_PKG_DIR}/usr/lib/gstreamer-1.0:\$GST_PLUGIN_PATH" >> ${QIM_PKG_DIR}/qim-sdk.sh
+    echo "export LD_LIBRARY_PATH=${QIM_PKG_DIR}/lib:\$LD_LIBRARY_PATH" >> ${QIM_PKG_DIR}/qim-sdk.sh
     echo "export GST_PLUGIN_SCANNER=${QIM_PKG_DIR}/usr/libexec/gstreamer-1.0/gst-plugin-scanner" >> ${QIM_PKG_DIR}/qim-sdk.sh
 
     chmod +x ${QIM_PKG_DIR}/qim-sdk.sh
@@ -40,7 +40,7 @@ function qim_sdk_env_file() {
 # install packages and save list to file
 function install_qim_packages() {
 
-    install_command="opkg install --force-reinstall --force-depends --force-overwrite"
+    install_command="opkg install --force-reinstall --force-depends --force-overwrite -o ${QIM_PKG_DIR}"
 
     for PKG_FILE in $FOUND_PKGS; do
         $install_command $PKG_FILE
