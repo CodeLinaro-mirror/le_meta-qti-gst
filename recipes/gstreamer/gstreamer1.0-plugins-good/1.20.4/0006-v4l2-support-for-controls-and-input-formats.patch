@@ -1,7 +1,14 @@
-From c625d83bc16b114e35d8a36d68985061c96b197c Mon Sep 17 00:00:00 2001
+From 9739e82c77eb56b42dc04650a0beb29f88fe4528 Mon Sep 17 00:00:00 2001
 From: Raja Ganapathi Busam <quic_rbusam@quicinc.com>
 Date: Sat, 10 Feb 2024 20:18:27 +0530
-Subject: [PATCH] v4l2: Add support for UBWC input
+Subject: [PATCH] v4l2: Support for controls and input formats
+
+- Add support for NV12 UBWC format
+- Support for dynamically changing extra-controls
+- Fix for the transcode use-case
+- Add support for TP10 UBWC format
+- Fix for B-Frames encoder control use-case
+- Fix for extra-controls for HEVC
 
 Signed-off-by: Raja Ganapathi Busam <quic_rbusam@quicinc.com>
 
@@ -13,9 +20,11 @@ Signed-off-by: Raja Ganapathi Busam <quic_rbusam@quicinc.com>
  sys/v4l2/gstv4l2bufferpool.c |  4 +-
  sys/v4l2/gstv4l2imagepool.c  |  8 ++--
  sys/v4l2/gstv4l2object.c     | 54 ++++++++++++++++++++++----
+ sys/v4l2/gstv4l2object.h     |  1 +
  sys/v4l2/gstv4l2videodec.c   | 75 +++++++++++++++++++++++++++++++++++-
- sys/v4l2/gstv4l2videoenc.c   |  6 +--
- 9 files changed, 162 insertions(+), 23 deletions(-)
+ sys/v4l2/gstv4l2videoenc.c   | 20 ++++++++--
+ sys/v4l2/v4l2_calls.c        |  2 +-
+ 11 files changed, 177 insertions(+), 25 deletions(-)
 
 diff --git a/sys/v4l2/ext/videodev2.h b/sys/v4l2/ext/videodev2.h
 index 93a138a..d968da8 100644
@@ -341,6 +350,18 @@ index 87f86da..2d14f1a 100644
        gst_structure_set (structure, "height", G_TYPE_INT,
            obj->format.fmt.pix_mp.height, NULL);
      } else {
+diff --git a/sys/v4l2/gstv4l2object.h b/sys/v4l2/gstv4l2object.h
+index a6edbd3..4642c16 100644
+--- a/sys/v4l2/gstv4l2object.h
++++ b/sys/v4l2/gstv4l2object.h
+@@ -334,6 +334,7 @@ gboolean     gst_v4l2_object_set_crop (GstV4l2Object * obj, struct v4l2_rect *re
+ gboolean     gst_v4l2_open           (GstV4l2Object * v4l2object, GstV4l2Error * error);
+ gboolean     gst_v4l2_dup            (GstV4l2Object * v4l2object, GstV4l2Object * other);
+ gboolean     gst_v4l2_close          (GstV4l2Object * v4l2object);
++gboolean     gst_v4l2_fill_lists     (GstV4l2Object * v4l2object);
+ 
+ /* norm/input/output */
+ gboolean     gst_v4l2_get_norm       (GstV4l2Object * v4l2object, v4l2_std_id * norm);
 diff --git a/sys/v4l2/gstv4l2videodec.c b/sys/v4l2/gstv4l2videodec.c
 index 403a0c8..ee481f4 100644
 --- a/sys/v4l2/gstv4l2videodec.c
@@ -456,10 +477,45 @@ index 403a0c8..ee481f4 100644
        filter);
  
 diff --git a/sys/v4l2/gstv4l2videoenc.c b/sys/v4l2/gstv4l2videoenc.c
-index f9ba215..6c66b6d 100644
+index f9ba215..fc554c0 100644
 --- a/sys/v4l2/gstv4l2videoenc.c
 +++ b/sys/v4l2/gstv4l2videoenc.c
-@@ -587,9 +587,9 @@ gst_v4l2_video_enc_negotiate (GstVideoEncoder * encoder)
+@@ -310,6 +310,7 @@ gst_v4l2_video_enc_set_format (GstVideoEncoder * encoder,
+   GstV4l2Error error = GST_V4L2_ERROR_INIT;
+   GstCaps *outcaps;
+   GstVideoCodecState *output;
++  gboolean format_updated = FALSE;
+ 
+   GST_DEBUG_OBJECT (self, "Setting format: %" GST_PTR_FORMAT, state->caps);
+ 
+@@ -356,7 +357,13 @@ gst_v4l2_video_enc_set_format (GstVideoEncoder * encoder,
+       return FALSE;
+     }
+ 
+-    format.fmt.pix.pixelformat = fmtdesc->pixelformat;
++    if (format.fmt.pix.pixelformat != fmtdesc->pixelformat) {
++      format_updated = TRUE;
++      format.fmt.pix.pixelformat = fmtdesc->pixelformat;
++    }
++
++    GST_DEBUG_OBJECT (self, "pixelformat set to %" GST_FOURCC_FORMAT,
++        GST_FOURCC_ARGS (fmtdesc->pixelformat));
+     if (v4l2object->ioctl (v4l2object->video_fd, VIDIOC_S_FMT, &format) < 0) {
+       GST_ERROR_OBJECT (self, "Call to S_FMT failed for %" GST_FOURCC_FORMAT
+           " with error %s", GST_FOURCC_ARGS (fmtdesc->pixelformat),
+@@ -367,6 +374,11 @@ gst_v4l2_video_enc_set_format (GstVideoEncoder * encoder,
+     gst_caps_unref (caps);
+   }
+ 
++  if (format_updated && !gst_v4l2_fill_lists (self->v4l2output))
++    return FALSE;
++
++  GST_DEBUG_OBJECT (self, "Setting extra controls");
++
+   if (GST_V4L2_IS_OPEN (self->v4l2output) && self->v4l2output->extra_controls)
+     gst_v4l2_set_controls (self->v4l2output, self->v4l2output->extra_controls);
+ 
+@@ -587,9 +599,9 @@ gst_v4l2_video_enc_negotiate (GstVideoEncoder * encoder)
      /* negotiate_profile_and_level() will return TRUE on failure to keep
       * iterating, if gst_caps_foreach() returns TRUE it means there was no
       * compatible profile and level in any of the structure */
@@ -472,3 +528,16 @@ index f9ba215..6c66b6d 100644
  
      gst_caps_unref (allowed_caps);
      allowed_caps = NULL;
+diff --git a/sys/v4l2/v4l2_calls.c b/sys/v4l2/v4l2_calls.c
+index c13b142..20b2a9e 100644
+--- a/sys/v4l2/v4l2_calls.c
++++ b/sys/v4l2/v4l2_calls.c
+@@ -125,7 +125,7 @@ gst_v4l2_normalise_control_name (gchar * name)
+  *   fill/empty the lists of enumerations
+  * return value: TRUE on success, FALSE on error
+  ******************************************************/
+-static gboolean
++gboolean
+ gst_v4l2_fill_lists (GstV4l2Object * v4l2object)
+ {
+   gint n, next;
