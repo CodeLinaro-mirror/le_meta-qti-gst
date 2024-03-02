@@ -50,8 +50,6 @@ do_generate_qim_sdk[depends] = " \
       gstreamer1.0-plugins-qcom-oss-vsplit:do_packagedata \
       gstreamer1.0-plugins-qcom-oss-vtransform:do_packagedata \
       gstreamer1.0-qcom-oss-sample-apps:do_packagedata \
-      gstreamer1.0-plugins-qcom-oss-mlsnpe:do_packagedata \
-      gstreamer1.0-plugins-qcom-oss-mlqnn:do_packagedata \
     "
 
 
