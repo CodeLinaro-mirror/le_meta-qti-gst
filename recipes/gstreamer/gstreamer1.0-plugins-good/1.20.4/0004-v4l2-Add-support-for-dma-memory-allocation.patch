@@ -1,4 +1,4 @@
-From 32d1ef706acdab7a42570f2a3a591ae18271b445 Mon Sep 17 00:00:00 2001
+From 827f656daec6ae0619afbdc517f80a93555bc32d Mon Sep 17 00:00:00 2001
 From: ppachang <quic_ppachang@quicinc.com>
 Date: Sat, 28 Oct 2023 16:42:14 +0530
 Subject: [PATCH] v4l2 : Add support for dma memory allocation
@@ -208,7 +208,7 @@ index eb51524..2166b6b 100644
  
  #endif /* __GST_V4L2_ALLOCATOR_H__ */
 diff --git a/sys/v4l2/gstv4l2bufferpool.c b/sys/v4l2/gstv4l2bufferpool.c
-index 4de1da4..d48e158 100644
+index 4de1da4..5eea56c 100644
 --- a/sys/v4l2/gstv4l2bufferpool.c
 +++ b/sys/v4l2/gstv4l2bufferpool.c
 @@ -46,12 +46,16 @@
@@ -232,7 +232,7 @@ index 4de1da4..d48e158 100644
    for (i = 0; i < n_mem; i++)
      dma_mem[i] = gst_buffer_peek_memory (src, i);
  
-+  if (!gst_is_dmabuf_memory (dma_mem[0])) {
++  if (group->n_mem == 1 && n_mem > 1) {
 +    dma_mem[0] = gst_buffer_get_all_memory (src);
 +    n_mem = 1;
 +  }
