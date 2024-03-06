@@ -8,6 +8,7 @@ LIC_FILES_CHKSUM = "file://${QCOM_COMMON_LICENSE_DIR}${LICENSE};md5=3771d4920bd6
 
 # Dependencies.
 DEPENDS := "gstreamer1.0"
+DEPENDS += "gstreamer1.0-plugins-base"
 
 FILESPATH =+ "${WORKSPACE}/gst-plugins-qti-oss/:"
 SRC_URI = "file://gst-sample-apps"
