@@ -6,18 +6,22 @@ SECTION = "multimedia"
 
 LICENSE = "BSD-3-Clause-Clear"
 LIC_FILES_CHKSUM = "file://${COREBASE}/meta-qti-bsp/files/common-licenses/${LICENSE};md5=3771d4920bd6cdb8cbdf1e8344489ee0"
+LIC_FILES_CHKSUM:qcm6490 = "file://${COMMON_LICENSE_DIR}/${LICENSE};md5=7a434440b651f4a472ca93716d01033a"
 
 # Dependencies.
 DEPENDS := "gstreamer1.0"
 DEPENDS += "gstreamer1.0-plugins-base"
 DEPENDS += "gstreamer1.0-plugins-qti-oss-mlmeta"
 DEPENDS += "gstreamer1.0-plugins-qti-oss-base"
-DEPENDS += "libion"
 DEPENDS += "adreno"
 DEPENDS += "graphicsdlkm"
 DEPENDS += "cairo"
 DEPENDS += "liblog"
-DEPENDS:remove:qcs6490 += "graphicsdlkm"
+DEPENDS:remove:qcm6490 = "liblog"
+DEPENDS:append:qcm6490 = " property-vault syslog-plumber"
+DEPENDS:remove:qcs6490 = "graphicsdlkm"
+
+RDEPENDS:${PN}:append:qcm6490 = " property-vault"
 
 FILESPATH =+ "${WORKSPACE}/vendor/qcom/opensource/gst-plugins-qti-oss/:"
 
