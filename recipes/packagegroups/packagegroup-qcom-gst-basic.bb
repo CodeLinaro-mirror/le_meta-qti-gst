@@ -7,11 +7,9 @@ PACKAGE_ARCH = "${MACHINE_ARCH}"
 
 inherit packagegroup
 
-PACKAGES = " \
-      packagegroup-qcom-gst-basic \
-    "
+PACKAGES = "${PN}"
 
-RDEPENDS:packagegroup-qcom-gst-basic = " \
+RDEPENDS:${PN} = " \
       gstreamer1.0 \
       gstreamer1.0-plugins-base \
       gstreamer1.0-plugins-good \
