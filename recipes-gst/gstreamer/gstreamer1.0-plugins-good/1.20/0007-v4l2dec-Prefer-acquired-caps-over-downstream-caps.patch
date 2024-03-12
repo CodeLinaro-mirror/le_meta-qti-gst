@@ -1,4 +1,4 @@
-From 962ba9606cb0a5febeeaf2c9bc957e10e3917545 Mon Sep 17 00:00:00 2001
+From d1c170900dc8b61879767b4b30082ba822038c90 Mon Sep 17 00:00:00 2001
 From: iraj <quic_iraj@quicinc.com>
 Date: Wed, 6 Mar 2024 19:52:11 +0530
 Subject: [PATCH] v4l2dec: Prefer acquired caps over downstream caps
@@ -10,11 +10,11 @@ This ensures we preserve correct colorimetry, which might be incorrect after cap
 fixation process.
 
 ---
- sys/v4l2/gstv4l2videodec.c | 23 +++++++++++++----------
- 1 file changed, 13 insertions(+), 10 deletions(-)
+ sys/v4l2/gstv4l2videodec.c | 24 ++++++++++++++----------
+ 1 file changed, 14 insertions(+), 10 deletions(-)
 
 diff --git a/sys/v4l2/gstv4l2videodec.c b/sys/v4l2/gstv4l2videodec.c
-index ee481f4..26218cf 100644
+index ee481f4..fedc879 100644
 --- a/sys/v4l2/gstv4l2videodec.c
 +++ b/sys/v4l2/gstv4l2videodec.c
 @@ -440,7 +440,7 @@ gst_v4l2_video_dec_negotiate (GstVideoDecoder * decoder)
@@ -26,7 +26,7 @@ index ee481f4..26218cf 100644
    GstStructure *st;
    GstBufferPool *cpool;
    GstCapsFeatures *features;
-@@ -503,17 +503,16 @@ gst_v4l2_video_dec_negotiate (GstVideoDecoder * decoder)
+@@ -503,17 +503,17 @@ gst_v4l2_video_dec_negotiate (GstVideoDecoder * decoder)
    /* Create caps from the acquired format, remove the format field */
    acquired_caps = gst_video_info_to_caps (&info);
    GST_DEBUG_OBJECT (self, "Acquired caps: %" GST_PTR_FORMAT, acquired_caps);
@@ -45,12 +45,13 @@ index ee481f4..26218cf 100644
  
 +  fixation_caps = gst_caps_copy (acquired_caps);
 +  st = gst_caps_get_structure (fixation_caps, 0);
-+  gst_structure_remove_fields (st, "format", "colorimetry", "chroma-site"),
++  gst_structure_remove_fields (st, "format", "colorimetry", "chroma-site",
++      NULL);
 +
    /* Probe currently available pixel formats */
    available_caps = gst_caps_copy (self->probed_srccaps);
    GST_DEBUG_OBJECT (self, "Available caps: %" GST_PTR_FORMAT, available_caps);
-@@ -522,10 +521,10 @@ gst_v4l2_video_dec_negotiate (GstVideoDecoder * decoder)
+@@ -522,10 +522,10 @@ gst_v4l2_video_dec_negotiate (GstVideoDecoder * decoder)
     * with downstream, not coded size. */
    gst_caps_map_in_place (available_caps, gst_v4l2_video_remove_padding, self);
  
@@ -63,7 +64,7 @@ index ee481f4..26218cf 100644
    gst_caps_unref (available_caps);
    caps = gst_pad_peer_query_caps (decoder->srcpad, filter);
    gst_caps_unref (filter);
-@@ -536,6 +535,10 @@ gst_v4l2_video_dec_negotiate (GstVideoDecoder * decoder)
+@@ -536,6 +536,10 @@ gst_v4l2_video_dec_negotiate (GstVideoDecoder * decoder)
      goto not_negotiated;
    }
  
