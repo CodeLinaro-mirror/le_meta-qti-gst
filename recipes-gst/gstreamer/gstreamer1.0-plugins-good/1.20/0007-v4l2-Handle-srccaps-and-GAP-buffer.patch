@@ -1,8 +1,12 @@
-From d1c170900dc8b61879767b4b30082ba822038c90 Mon Sep 17 00:00:00 2001
+From c0fb3c4b41de43f0eff323caeeed865215f2a595 Mon Sep 17 00:00:00 2001
 From: iraj <quic_iraj@quicinc.com>
 Date: Wed, 6 Mar 2024 19:52:11 +0530
-Subject: [PATCH] v4l2dec: Prefer acquired caps over downstream caps
+Subject: [PATCH] v4l2: Handle srccaps and GAP buffer
 
+- Handle GAP buffer in encoder
+For GAP buffers, encoder errors out and crashes. Add handling for such buffers.
+
+- Prefer acquired caps over downstream caps in decoder
 When caps acquired from driver is subset of final caps (intersection of
 driver-acquired, downstream-suggested and srcpad template caps), use the acquired
 caps for negotiation instead of final caps in dec_negotiate.
@@ -11,7 +15,8 @@ fixation process.
 
 ---
  sys/v4l2/gstv4l2videodec.c | 24 ++++++++++++++----------
- 1 file changed, 14 insertions(+), 10 deletions(-)
+ sys/v4l2/gstv4l2videoenc.c |  3 +++
+ 2 files changed, 17 insertions(+), 10 deletions(-)
 
 diff --git a/sys/v4l2/gstv4l2videodec.c b/sys/v4l2/gstv4l2videodec.c
 index ee481f4..fedc879 100644
@@ -75,3 +80,17 @@ index ee481f4..fedc879 100644
    /* Fixate pixel format */
    caps = gst_caps_fixate (caps);
  
+diff --git a/sys/v4l2/gstv4l2videoenc.c b/sys/v4l2/gstv4l2videoenc.c
+index fc554c0..00443e4 100644
+--- a/sys/v4l2/gstv4l2videoenc.c
++++ b/sys/v4l2/gstv4l2videoenc.c
+@@ -800,6 +800,9 @@ gst_v4l2_video_enc_handle_frame (GstVideoEncoder * encoder,
+   if (G_UNLIKELY (!g_atomic_int_get (&self->active)))
+     goto flushing;
+ 
++  if (GST_BUFFER_FLAG_IS_SET (frame->input_buffer, GST_BUFFER_FLAG_GAP))
++    goto drop;
++
+   task_state = gst_pad_get_task_state (GST_VIDEO_ENCODER_SRC_PAD (self));
+   if (task_state == GST_TASK_STOPPED || task_state == GST_TASK_PAUSED) {
+     GstBufferPool *pool = gst_v4l2_object_get_buffer_pool (self->v4l2output);
