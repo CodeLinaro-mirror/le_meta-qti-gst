@@ -1,4 +1,4 @@
-From 32d1ef706acdab7a42570f2a3a591ae18271b445 Mon Sep 17 00:00:00 2001
+From feb77c7c641365e04794c4786d49fe01f9653f63 Mon Sep 17 00:00:00 2001
 From: ppachang <quic_ppachang@quicinc.com>
 Date: Sat, 28 Oct 2023 16:42:14 +0530
 Subject: [PATCH] v4l2 : Add support for dma memory allocation
@@ -9,7 +9,7 @@ Signed-off-by: ppachang <quic_ppachang@quicinc.com>
  sys/v4l2/ext/videodev2.h     |   1 +
  sys/v4l2/gstv4l2allocator.c  |  78 +++-
  sys/v4l2/gstv4l2allocator.h  |   9 +
- sys/v4l2/gstv4l2bufferpool.c |  70 +++-
+ sys/v4l2/gstv4l2bufferpool.c |  77 +++-
  sys/v4l2/gstv4l2bufferpool.h |   2 +
  sys/v4l2/gstv4l2imagepool.c  | 667 +++++++++++++++++++++++++++++++++++
  sys/v4l2/gstv4l2imagepool.h  | 134 +++++++
@@ -18,7 +18,7 @@ Signed-off-by: ppachang <quic_ppachang@quicinc.com>
  sys/v4l2/gstv4l2videodec.c   |   2 +-
  sys/v4l2/gstv4l2videoenc.c   |  40 ++-
  sys/v4l2/meson.build         |   3 +-
- 12 files changed, 1048 insertions(+), 20 deletions(-)
+ 12 files changed, 1055 insertions(+), 20 deletions(-)
  create mode 100644 sys/v4l2/gstv4l2imagepool.c
  create mode 100644 sys/v4l2/gstv4l2imagepool.h
 
@@ -208,7 +208,7 @@ index eb51524..2166b6b 100644
  
  #endif /* __GST_V4L2_ALLOCATOR_H__ */
 diff --git a/sys/v4l2/gstv4l2bufferpool.c b/sys/v4l2/gstv4l2bufferpool.c
-index 4de1da4..d48e158 100644
+index 4de1da4..914b0f4 100644
 --- a/sys/v4l2/gstv4l2bufferpool.c
 +++ b/sys/v4l2/gstv4l2bufferpool.c
 @@ -46,12 +46,16 @@
@@ -232,7 +232,7 @@ index 4de1da4..d48e158 100644
    for (i = 0; i < n_mem; i++)
      dma_mem[i] = gst_buffer_peek_memory (src, i);
  
-+  if (!gst_is_dmabuf_memory (dma_mem[0])) {
++  if (group->n_mem == 1 && n_mem > 1) {
 +    dma_mem[0] = gst_buffer_get_all_memory (src);
 +    n_mem = 1;
 +  }
@@ -308,11 +308,12 @@ index 4de1da4..d48e158 100644
  
              /* playback, put the buffer back in the queue to refill later. */
              pclass->release_buffer (bpool, buffer);
-@@ -2091,11 +2143,25 @@ gst_v4l2_buffer_pool_process (GstV4l2BufferPool * pool, GstBuffer ** buf,
+@@ -2091,11 +2143,32 @@ gst_v4l2_buffer_pool_process (GstV4l2BufferPool * pool, GstBuffer ** buf,
          case GST_V4L2_IO_DMABUF_IMPORT:
          {
            GstBuffer *tmp;
 +          GstMemory *mem;
++          GstVideoMeta *vmeta;
 +
 +          if (GST_VIDEO_INFO_FORMAT (&pool->caps_info) ==
 +              GST_VIDEO_FORMAT_ENCODED) {
@@ -330,6 +331,12 @@ index 4de1da4..d48e158 100644
  
 +          mem = gst_buffer_get_memory (tmp, 0);
 +          gst_memory_resize (mem, 0, gst_buffer_get_memory(*buf, 0)->size);
++
++          vmeta = gst_buffer_get_video_meta (tmp);
++          if (vmeta) {
++            vmeta->width = pool->caps_info.width;
++            vmeta->height = pool->caps_info.height;
++          }
 +
            gst_buffer_copy_into (tmp, *buf,
                GST_BUFFER_COPY_FLAGS | GST_BUFFER_COPY_TIMESTAMPS, 0, -1);
