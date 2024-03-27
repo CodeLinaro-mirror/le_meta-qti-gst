@@ -28,6 +28,7 @@ RDEPENDS:${PN}-dependencies = " \
     sbc \
     speex \
     taglib \
+    mosquitto \
     "
 
 RDEPENDS:${PN} = " \
@@ -55,6 +56,7 @@ RDEPENDS:${PN} = " \
     gstreamer1.0-plugins-qcom-oss-vtransform \
     gstreamer1.0-plugins-qcom-oss-rtspbin \
     gstreamer1.0-qcom-oss-sample-apps \
+    gstreamer1.0-plugins-qcom-oss-msgbroker \
    "
 
 RDEPENDS:${PN}:remove:qcs9100 = " \

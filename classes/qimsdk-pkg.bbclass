@@ -41,6 +41,7 @@ GST_PLUGINS = " \
     gstreamer1.0-plugins-qcom-oss-vsplit:do_package_write_ipk \
     gstreamer1.0-plugins-qcom-oss-vtransform:do_package_write_ipk \
     gstreamer1.0-qcom-oss-sample-apps:do_package_write_ipk \
+    gstreamer1.0-plugins-qcom-oss-msgbroker:do_package_write_ipk \
   "
 
 GST_PLUGINS:remove:qcs9100 = " \
@@ -71,6 +72,7 @@ do_generate_qim_sdk[depends] = " \
     sbc:do_package_write_ipk \
     speex:do_package_write_ipk \
     taglib:do_package_write_ipk \
+    mosquitto:do_package_write_ipk \
     ${GST_PLUGINS} \
   "
 
@@ -128,7 +130,8 @@ def get_pkgs_list(d):
                 "libdaemon0", "libgudev-1.0-0", "lame_", "libmp3lame0",
                 "libpsl5", "librsvg-2-2", "libsoup-2.4_",
                 "libtheora_", "libwebp_", "mpg123_",
-                "liborc-0", "libsbc1", "libspeex1", "libtag1", "libjson-glib-1.0-0"]
+                "liborc-0", "libsbc1", "libspeex1", "libtag1", "libjson-glib-1.0-0",
+                "libmosquitto1"]
     for _, pkgdirs, _ in os.walk(os.path.join(deploydir, pkgtype)):
         for pkgdir in pkgdirs:
             for f in os.listdir(os.path.join(deploydir, pkgtype, pkgdir)):
