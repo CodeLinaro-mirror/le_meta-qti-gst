@@ -6,7 +6,7 @@
 SDK_NAME="QIM_SDK"
 
 FOUND_PKGS=""
-PKG_LIST_FILE="/opt/qcom/qimsdk/${SDK_NAME}.list"
+PKG_LIST_FILE="/opt/qti/qimsdk/${SDK_NAME}.list"
 IS_DEB=0
 
 
@@ -78,7 +78,7 @@ function main() {
 
     scan_qim_packages
 
-    mkdir -p /opt/qcom/qimsdk
+    mkdir -p /opt/qti/qimsdk
 
     install_qim_packages
 
