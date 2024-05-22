@@ -22,7 +22,6 @@ do_generate_qim_sdk[dirs] = "${SSTATE_IN_DIR} ${SSTATE_OUT_DIR}"
 do_generate_qim_sdk[cleandirs] = "${SSTATE_IN_DIR} ${SSTATE_OUT_DIR}"
 do_generate_qim_sdk[stamp-extra-info] = "${MACHINE_ARCH}"
 do_generate_qim_sdk[depends] = " \
-    cairo:do_packagedata \
     gdk-pixbuf:do_packagedata \
     liba52:do_packagedata \
     libdaemon:do_packagedata \
@@ -113,7 +112,7 @@ def get_pkgs_list(d):
     deploydir = d.getVar("DEPLOY_DIR", True)
     timestampfile = os.path.join(deploydir, "qimsdk-timestamp")
     pkgslist = []
-    dep_list = ["libcairo2", "libgdk-pixbuf-2.0-0", "liba52-0", "a52"
+    dep_list = ["libgdk-pixbuf-2.0-0", "liba52-0", "a52"
                 "libdaemon0", "libgudev-1.0-0", "lame_", "libmp3lame0",
                 "libpsl5", "librsvg-2-2", "libsoup-2.4_",
                 "libtheora_", "libwebp_", "mpg123_",
