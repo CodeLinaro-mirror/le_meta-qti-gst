@@ -65,6 +65,7 @@ Description=GSTreamer Daemon
 [Service]
 User=system
 Group=video
+SupplementaryGroups=system
 Type=forking
 EnvironmentFile=-/etc/default/gstd
 ExecStart=/usr/bin/gstd $OPTARGS
