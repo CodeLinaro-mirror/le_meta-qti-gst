@@ -51,6 +51,7 @@ do_generate_qim_sdk[depends] = " \
     gstreamer1.0-plugins-qcom-oss-mlmeta:do_package_write_ipk \
     gstreamer1.0-plugins-qcom-oss-mlvconverter:do_package_write_ipk \
     gstreamer1.0-plugins-qcom-oss-mlvclassification:do_package_write_ipk \
+    gstreamer1.0-plugins-qcom-oss-mlvsuperresolution:do_package_write_ipk \
     gstreamer1.0-plugins-qcom-oss-mlvdetection:do_package_write_ipk \
     gstreamer1.0-plugins-qcom-oss-mlvpose:do_package_write_ipk \
     gstreamer1.0-plugins-qcom-oss-mlvsegmentation:do_package_write_ipk \
@@ -60,7 +61,7 @@ do_generate_qim_sdk[depends] = " \
     gstreamer1.0-plugins-qcom-oss-vcomposer:do_package_write_ipk \
     gstreamer1.0-plugins-qcom-oss-vsplit:do_package_write_ipk \
     gstreamer1.0-plugins-qcom-oss-vtransform:do_package_write_ipk \
-    gstreamer1.0-qcom-oss-sample-apps:do_package_write_ipk \
+    gstreamer1.0-qcom-oss-sample-apps:do_package_write_ipk \ 
   "
 
 
