@@ -33,6 +33,7 @@ RDEPENDS_packagegroup-qti-gst = " \
       gstreamer1.0-plugins-qti-oss-mlvdetection \
       gstreamer1.0-plugins-qti-oss-mlvclassification \
       gstreamer1.0-plugins-qti-oss-mlvsegmentation \
+      gstreamer1.0-plugins-qti-oss-mlvsuperresolution \
       gstreamer1.0-plugins-qti-oss-mlvpose \
       gstreamer1.0-plugins-qti-oss-mldemux \
       ${@bb.utils.contains("MACHINE_FEATURES", "qti-aic", "gstreamer1.0-plugins-qti-oss-mlaic", "", d)} \
