@@ -12,6 +12,9 @@ DEPENDS := "gstreamer1.0"
 DEPENDS += "gstreamer1.0-plugins-base"
 DEPENDS += "gstreamer1.0-plugins-qti-oss-base"
 DEPENDS += "vslam"
+DEPENDS:remove:qcs6490 += "vslam"
+DEPENDS:remove:kalama += "vslam"
+DEPENDS:append:qcs6490 += "rv"
 
 FILESPATH =+ "${WORKSPACE}/vendor/qcom/opensource/gst-plugins-qti-oss/:"
 
@@ -21,6 +24,18 @@ S = "${WORKDIR}/gst-plugin-dfs"
 # Install directries.
 INSTALL_BINDIR := "${bindir}"
 INSTALL_LIBDIR := "${libdir}"
+
+# Default RVSDK api version definitions.
+RVSDK_API_VERSION := "0x202207"
+
+#Overwrite the default RVSDK version definitions for qrb5165
+RVSDK_API_VERSION:qrb5165 := "0x202307"
+
+#Overwrite the default RVSDK version definitions for qcs6490
+RVSDK_API_VERSION:qcs6490 := "0x202403"
+
+#Overwrite the default RVSDK version definitions for kalama
+RVSDK_API_VERSION:kalama := "0x202404"
 
 EXTRA_OECMAKE += "-DGST_VERSION_REQUIRED=1.14.4"
 EXTRA_OECMAKE += "-DSYSROOT_INCDIR=${STAGING_INCDIR}"
@@ -34,7 +49,7 @@ EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_VERSION=${PV}"
 EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_PACKAGE=${PN}"
 EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_SUMMARY="${SUMMARY}""
 EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_ORIGIN=${HOMEPAGE}"
-EXTRA_OECMAKE += "-DTARGET_BOARD_PLATFORM=${BASEMACHINE}"
+EXTRA_OECMAKE += "-DRVSDK_API_VERSION=${RVSDK_API_VERSION}"
 
 FILES_${PN} += "${INSTALL_BINDIR}"
 FILES_${PN} += "${INSTALL_LIBDIR}"
