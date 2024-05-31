@@ -48,6 +48,7 @@ RDEPENDS:${PN} = " \
     gstreamer1.0-plugins-qcom-oss-mlvsegmentation \
     gstreamer1.0-plugins-qcom-oss-overlay \
     gstreamer1.0-plugins-qcom-oss-qmmfsrc \
+    gstreamer1.0-plugins-qcom-oss-smartvencbin \
     gstreamer1.0-plugins-qcom-oss-socket \
     gstreamer1.0-plugins-qcom-oss-vcomposer \
     gstreamer1.0-plugins-qcom-oss-vsplit \
