@@ -15,29 +15,7 @@ python __anonymous () {
         bb.build.addtask('do_generate_qim_sdk', 'do_package_write_ipk', 'do_packagedata' , d)
 }
 
-addtask do_generate_qim_sdk_setscene
-do_generate_qim_sdk[sstate-inputdirs] = "${SSTATE_IN_DIR}"
-do_generate_qim_sdk[sstate-outputdirs] = "${SSTATE_OUT_DIR}"
-do_generate_qim_sdk[dirs] = "${SSTATE_IN_DIR} ${SSTATE_OUT_DIR}"
-do_generate_qim_sdk[cleandirs] = "${SSTATE_IN_DIR} ${SSTATE_OUT_DIR}"
-do_generate_qim_sdk[stamp-extra-info] = "${MACHINE_ARCH}"
-do_generate_qim_sdk[depends] = " \
-    qim-sdk:do_patch \
-    gdk-pixbuf:do_package_write_ipk \
-    liba52:do_package_write_ipk \
-    libdaemon:do_package_write_ipk \
-    libgudev:do_package_write_ipk \
-    lame:do_package_write_ipk \
-    libpsl:do_package_write_ipk \
-    librsvg:do_package_write_ipk \
-    libsoup-2.4:do_package_write_ipk \
-    libtheora:do_package_write_ipk \
-    libwebp:do_package_write_ipk \
-    mpg123:do_package_write_ipk \
-    orc:do_package_write_ipk \
-    sbc:do_package_write_ipk \
-    speex:do_package_write_ipk \
-    taglib:do_package_write_ipk \
+GST_PLUGINS = " \
     gstreamer1.0:do_package_write_ipk \
     gstreamer1.0-plugins-base:do_package_write_ipk \
     gstreamer1.0-plugins-good:do_package_write_ipk \
@@ -62,6 +40,54 @@ do_generate_qim_sdk[depends] = " \
     gstreamer1.0-plugins-qcom-oss-vsplit:do_package_write_ipk \
     gstreamer1.0-plugins-qcom-oss-vtransform:do_package_write_ipk \
     gstreamer1.0-qcom-oss-sample-apps:do_package_write_ipk \
+  "
+
+GST_PLUGINS:remove:qcs9100 = " \
+    gstreamer1.0-plugins-qcom-oss-base:do_package_write_ipk \
+    gstreamer1.0-plugins-qcom-oss-tools:do_package_write_ipk \
+    gstreamer1.0-plugins-qcom-oss-batch:do_package_write_ipk \
+    gstreamer1.0-plugins-qcom-oss-metamux:do_package_write_ipk \
+    gstreamer1.0-plugins-qcom-oss-mldemux:do_package_write_ipk \
+    gstreamer1.0-plugins-qcom-oss-mlmeta:do_package_write_ipk \
+    gstreamer1.0-plugins-qcom-oss-mlvconverter:do_package_write_ipk \
+    gstreamer1.0-plugins-qcom-oss-mlvclassification:do_package_write_ipk \
+    gstreamer1.0-plugins-qcom-oss-mlvsuperresolution:do_package_write_ipk \
+    gstreamer1.0-plugins-qcom-oss-mlvdetection:do_package_write_ipk \
+    gstreamer1.0-plugins-qcom-oss-mlvpose:do_package_write_ipk \
+    gstreamer1.0-plugins-qcom-oss-mlvsegmentation:do_package_write_ipk \
+    gstreamer1.0-plugins-qcom-oss-overlay:do_package_write_ipk \
+    gstreamer1.0-plugins-qcom-oss-qmmfsrc:do_package_write_ipk \
+    gstreamer1.0-plugins-qcom-oss-socket:do_package_write_ipk \
+    gstreamer1.0-plugins-qcom-oss-vcomposer:do_package_write_ipk \
+    gstreamer1.0-plugins-qcom-oss-vsplit:do_package_write_ipk \
+    gstreamer1.0-plugins-qcom-oss-vtransform:do_package_write_ipk \
+    gstreamer1.0-qcom-oss-sample-apps:do_package_write_ipk \
+  "
+
+addtask do_generate_qim_sdk_setscene
+do_generate_qim_sdk[sstate-inputdirs] = "${SSTATE_IN_DIR}"
+do_generate_qim_sdk[sstate-outputdirs] = "${SSTATE_OUT_DIR}"
+do_generate_qim_sdk[dirs] = "${SSTATE_IN_DIR} ${SSTATE_OUT_DIR}"
+do_generate_qim_sdk[cleandirs] = "${SSTATE_IN_DIR} ${SSTATE_OUT_DIR}"
+do_generate_qim_sdk[stamp-extra-info] = "${MACHINE_ARCH}"
+do_generate_qim_sdk[depends] = " \
+    qim-sdk:do_patch \
+    gdk-pixbuf:do_package_write_ipk \
+    liba52:do_package_write_ipk \
+    libdaemon:do_package_write_ipk \
+    libgudev:do_package_write_ipk \
+    lame:do_package_write_ipk \
+    libpsl:do_package_write_ipk \
+    librsvg:do_package_write_ipk \
+    libsoup-2.4:do_package_write_ipk \
+    libtheora:do_package_write_ipk \
+    libwebp:do_package_write_ipk \
+    mpg123:do_package_write_ipk \
+    orc:do_package_write_ipk \
+    sbc:do_package_write_ipk \
+    speex:do_package_write_ipk \
+    taglib:do_package_write_ipk \
+    ${GST_PLUGINS} \
   "
 
 
