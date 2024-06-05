@@ -24,42 +24,45 @@ do_generate_qim_sdk[dirs] = "${SSTATE_IN_DIR} ${SSTATE_OUT_DIR}"
 do_generate_qim_sdk[cleandirs] = "${SSTATE_IN_DIR} ${SSTATE_OUT_DIR}"
 do_generate_qim_sdk[stamp-extra-info] = "${MACHINE_ARCH}"
 do_generate_qim_sdk[depends] = " \
-    gstd:do_packagedata \
-    gstreamer1.0:do_packagedata \
-    gstreamer1.0-plugins-base:do_packagedata \
-    gstreamer1.0-plugins-good:do_packagedata \
-    gstreamer1.0-plugins-bad:do_packagedata \
-    gstreamer1.0-rtsp-server:do_packagedata \
-    gstreamer1.0-plugins-qti-oss-base:do_packagedata \
-    gstreamer1.0-plugins-qti-oss-tools:do_packagedata \
-    gstreamer1.0-plugins-qti-oss-batch:do_packagedata \
-    gstreamer1.0-plugins-qti-oss-metamux:do_packagedata \
-    gstreamer1.0-plugins-qti-oss-mldemux:do_packagedata \
-    gstreamer1.0-plugins-qti-oss-mlmeta:do_packagedata \
-    gstreamer1.0-plugins-qti-oss-mlvconverter:do_packagedata \
-    gstreamer1.0-plugins-qti-oss-mlvclassification:do_packagedata \
-    gstreamer1.0-plugins-qti-oss-mlvdetection:do_packagedata \
-    gstreamer1.0-plugins-qti-oss-mlvpose:do_packagedata \
-    gstreamer1.0-plugins-qti-oss-mlvsegmentation:do_packagedata \
-    gstreamer1.0-plugins-qti-oss-overlay:do_packagedata \
-    ${@bb.utils.contains("DISTRO_FEATURES", "qti-qmmf", "gstreamer1.0-plugins-qti-oss-qmmfsrc:do_packagedata", "", d)} \
-    gstreamer1.0-plugins-qti-oss-socket:do_packagedata \
-    gstreamer1.0-plugins-qti-oss-vcomposer:do_packagedata \
-    gstreamer1.0-plugins-qti-oss-vsplit:do_packagedata \
-    gstreamer1.0-plugins-qti-oss-vtransform:do_packagedata \
-    gstreamer1.0-plugins-qti-oss-codec2:do_packagedata \
-    gstreamer1.0-plugins-qti-oss-examples:do_packagedata \
-    ${@bb.utils.contains("MACHINE_FEATURES", "qti-aic", "gstreamer1.0-plugins-qti-oss-mlaic:do_packagedata", "", d)} \
-    ${@bb.utils.contains("COMBINED_FEATURES", "qti-uvc", "gstreamer1.0-plugins-qti-oss-umd-daemon:do_packagedata", "", d)} \
-    ${@bb.utils.contains_any("COMBINED_FEATURES", "qti-video qti-audio", "gstreamer1.0-libav:do_packagedata", "",d)} \
-    ${@bb.utils.contains("DISTRO_FEATURES", "qti-dfs", "gstreamer1.0-plugins-qti-oss-dfs:do_packagedata", "", d)} \
-    ${@bb.utils.contains_any("MACHINE_FEATURES", "qti-cvp qti-eva", "gstreamer1.0-plugins-qti-oss-cv-imgpyramid:do_packagedata", "", d)} \
-    ${@bb.utils.contains_any("MACHINE_FEATURES", "qti-cvp qti-eva", "gstreamer1.0-plugins-qti-oss-cv-optclflow:do_packagedata", "", d)} \
-    ${@bb.utils.contains("BASEMACHINE", "kalama", "gstreamer1.0-plugins-qti-oss-jpegenc:do_packagedata", "", d)} \
-    ${@bb.utils.contains("BASEMACHINE", "qrb5165", "gstreamer1.0-plugins-qti-oss-jpegenc:do_packagedata", "", d)} \
-    ${@bb.utils.contains("BASEMACHINE", "qcs6490", "gstreamer1.0-plugins-qti-oss-jpegenc:do_packagedata", "", d)} \
-    ${@bb.utils.contains("BASEMACHINE", "qrb5165", "gstreamer1.0-plugins-qti-oss-drmdecryptor:do_packagedata", "", d)} \
-    ${@bb.utils.contains("BASEMACHINE", "qcs6490", bb.utils.contains_any("COMBINED_FEATURES", "qti-video qti-audio", "gstreamer1.0-omx:do_packagedata", "", d), "", d)} \
+    ${@bb.utils.contains(d.getVar("IMAGE_PKGTYPE", True), "ipk", "gstd:do_package_write_ipk", "gstd:do_package_write_deb", d)} \
+    ${@bb.utils.contains(d.getVar("IMAGE_PKGTYPE", True), "ipk", "gstreamer1.0:do_package_write_ipk", "gstreamer1.0:do_package_write_deb", d)} \
+    ${@bb.utils.contains(d.getVar("IMAGE_PKGTYPE", True), "ipk", "gstreamer1.0-plugins-base:do_package_write_ipk", "gstreamer1.0-plugins-base:do_package_write_deb", d)} \
+    ${@bb.utils.contains(d.getVar("IMAGE_PKGTYPE", True), "ipk", "gstreamer1.0-plugins-good:do_package_write_ipk", "gstreamer1.0-plugins-good:do_package_write_deb", d)} \
+    ${@bb.utils.contains(d.getVar("IMAGE_PKGTYPE", True), "ipk", "gstreamer1.0-plugins-bad:do_package_write_ipk", "gstreamer1.0-plugins-bad:do_package_write_deb", d)} \
+    ${@bb.utils.contains(d.getVar("IMAGE_PKGTYPE", True), "ipk", "gstreamer1.0-rtsp-server:do_package_write_ipk", "gstreamer1.0-rtsp-server:do_package_write_deb", d)} \
+    ${@bb.utils.contains(d.getVar("IMAGE_PKGTYPE", True), "ipk", "gstreamer1.0-plugins-qti-oss-base:do_package_write_ipk", "gstreamer1.0-plugins-qti-oss-base:do_package_write_deb", d)} \
+    ${@bb.utils.contains(d.getVar("IMAGE_PKGTYPE", True), "ipk", "gstreamer1.0-plugins-qti-oss-tools:do_package_write_ipk", "gstreamer1.0-plugins-qti-oss-tools:do_package_write_deb", d)} \
+    ${@bb.utils.contains(d.getVar("IMAGE_PKGTYPE", True), "ipk", "gstreamer1.0-plugins-qti-oss-batch:do_package_write_ipk", "gstreamer1.0-plugins-qti-oss-batch:do_package_write_deb", d)} \
+    ${@bb.utils.contains(d.getVar("IMAGE_PKGTYPE", True), "ipk", "gstreamer1.0-plugins-qti-oss-metamux:do_package_write_ipk", "gstreamer1.0-plugins-qti-oss-metamux:do_package_write_deb", d)} \
+    ${@bb.utils.contains(d.getVar("IMAGE_PKGTYPE", True), "ipk", "gstreamer1.0-plugins-qti-oss-mldemux:do_package_write_ipk", "gstreamer1.0-plugins-qti-oss-mldemux:do_package_write_deb", d)} \
+    ${@bb.utils.contains(d.getVar("IMAGE_PKGTYPE", True), "ipk", "gstreamer1.0-plugins-qti-oss-mlmeta:do_package_write_ipk", "gstreamer1.0-plugins-qti-oss-mlmeta:do_package_write_deb", d)} \
+    ${@bb.utils.contains(d.getVar("IMAGE_PKGTYPE", True), "ipk", "gstreamer1.0-plugins-qti-oss-mlvconverter:do_package_write_ipk", "gstreamer1.0-plugins-qti-oss-mlvconverter:do_package_write_deb", d)} \
+    ${@bb.utils.contains(d.getVar("IMAGE_PKGTYPE", True), "ipk", "gstreamer1.0-plugins-qti-oss-mlvclassification:do_package_write_ipk", "gstreamer1.0-plugins-qti-oss-mlvclassification:do_package_write_deb", d)} \
+    ${@bb.utils.contains(d.getVar("IMAGE_PKGTYPE", True), "ipk", "gstreamer1.0-plugins-qti-oss-mlvdetection:do_package_write_ipk", "gstreamer1.0-plugins-qti-oss-mlvdetection:do_package_write_deb", d)} \
+    ${@bb.utils.contains(d.getVar("IMAGE_PKGTYPE", True), "ipk", "gstreamer1.0-plugins-qti-oss-mlvpose:do_package_write_ipk", "gstreamer1.0-plugins-qti-oss-mlvpose:do_package_write_deb", d)} \
+    ${@bb.utils.contains(d.getVar("IMAGE_PKGTYPE", True), "ipk", "gstreamer1.0-plugins-qti-oss-mlvsegmentation:do_package_write_ipk", "gstreamer1.0-plugins-qti-oss-mlvsegmentation:do_package_write_deb", d)} \
+    ${@bb.utils.contains(d.getVar("IMAGE_PKGTYPE", True), "ipk", "gstreamer1.0-plugins-qti-oss-overlay:do_package_write_ipk", "gstreamer1.0-plugins-qti-oss-overlay:do_package_write_deb", d)} \
+    ${@bb.utils.contains(d.getVar("IMAGE_PKGTYPE", True), "ipk", bb.utils.contains("DISTRO_FEATURES", "qti-qmmf", "gstreamer1.0-plugins-qti-oss-qmmfsrc:do_package_write_ipk", "", d), bb.utils.contains("DISTRO_FEATURES", "qti-qmmf", "gstreamer1.0-plugins-qti-oss-qmmfsrc:do_package_write_deb", "", d), d)} \
+    ${@bb.utils.contains(d.getVar("IMAGE_PKGTYPE", True), "ipk", "gstreamer1.0-plugins-qti-oss-socket:do_package_write_ipk", "gstreamer1.0-plugins-qti-oss-socket:do_package_write_deb", d)} \
+    ${@bb.utils.contains(d.getVar("IMAGE_PKGTYPE", True), "ipk", "gstreamer1.0-plugins-qti-oss-vcomposer:do_package_write_ipk", "gstreamer1.0-plugins-qti-oss-vcomposer:do_package_write_deb", d)} \
+    ${@bb.utils.contains(d.getVar("IMAGE_PKGTYPE", True), "ipk", "gstreamer1.0-plugins-qti-oss-vsplit:do_package_write_ipk", "gstreamer1.0-plugins-qti-oss-vsplit:do_package_write_deb", d)} \
+    ${@bb.utils.contains(d.getVar("IMAGE_PKGTYPE", True), "ipk", "gstreamer1.0-plugins-qti-oss-vtransform:do_package_write_ipk", "gstreamer1.0-plugins-qti-oss-vtransform:do_package_write_deb", d)} \
+    ${@bb.utils.contains(d.getVar("IMAGE_PKGTYPE", True), "ipk", "gstreamer1.0-plugins-qti-oss-codec2:do_package_write_ipk", "gstreamer1.0-plugins-qti-oss-codec2:do_package_write_deb", d)} \
+    ${@bb.utils.contains(d.getVar("IMAGE_PKGTYPE", True), "ipk", "gstreamer1.0-plugins-qti-oss-examples:do_package_write_ipk", "gstreamer1.0-plugins-qti-oss-examples:do_package_write_deb", d)} \
+    ${@bb.utils.contains(d.getVar("IMAGE_PKGTYPE", True), "ipk", bb.utils.contains("MACHINE_FEATURES", "qti-aic", "gstreamer1.0-plugins-qti-oss-mlaic:do_package_write_ipk", "", d), bb.utils.contains("MACHINE_FEATURES", "qti-aic", "gstreamer1.0-plugins-qti-oss-mlaic:do_package_write_deb", "", d), d)} \
+    ${@bb.utils.contains(d.getVar("IMAGE_PKGTYPE", True), "ipk", bb.utils.contains("COMBINED_FEATURES", "qti-uvc", "gstreamer1.0-plugins-qti-oss-umd-daemon:do_package_write_ipk", "", d), bb.utils.contains("COMBINED_FEATURES", "qti-uvc", "gstreamer1.0-plugins-qti-oss-umd-daemon:do_package_write_deb", "", d), d)} \
+    ${@bb.utils.contains(d.getVar("IMAGE_PKGTYPE", True), "ipk", bb.utils.contains_any("COMBINED_FEATURES", "qti-video qti-audio", "gstreamer1.0-libav:do_package_write_ipk", "",d), bb.utils.contains_any("COMBINED_FEATURES", "qti-video qti-audio", "gstreamer1.0-libav:do_package_write_deb", "",d), d)} \
+    ${@bb.utils.contains(d.getVar("IMAGE_PKGTYPE", True), "ipk", bb.utils.contains("DISTRO_FEATURES", "qti-dfs", "gstreamer1.0-plugins-qti-oss-dfs:do_package_write_ipk", "", d), bb.utils.contains("DISTRO_FEATURES", "qti-dfs", "gstreamer1.0-plugins-qti-oss-dfs:do_package_write_deb", "", d), d)} \
+    ${@bb.utils.contains(d.getVar("IMAGE_PKGTYPE", True), "ipk", bb.utils.contains_any("MACHINE_FEATURES", "qti-cvp qti-eva", "gstreamer1.0-plugins-qti-oss-cv-imgpyramid:do_package_write_ipk", "", d), bb.utils.contains_any("MACHINE_FEATURES", "qti-cvp qti-eva", "gstreamer1.0-plugins-qti-oss-cv-imgpyramid:do_package_write_deb", "", d), d)} \
+    ${@bb.utils.contains(d.getVar("IMAGE_PKGTYPE", True), "ipk", bb.utils.contains_any("MACHINE_FEATURES", "qti-cvp qti-eva", "gstreamer1.0-plugins-qti-oss-cv-optclflow:do_package_write_ipk", "", d), bb.utils.contains_any("MACHINE_FEATURES", "qti-cvp qti-eva", "gstreamer1.0-plugins-qti-oss-cv-optclflow:do_package_write_deb", "", d), d)} \
+    ${@bb.utils.contains(d.getVar("IMAGE_PKGTYPE", True), "ipk", bb.utils.contains("BASEMACHINE", "kalama", "gstreamer1.0-plugins-qti-oss-jpegenc:do_package_write_ipk", "", d), bb.utils.contains("BASEMACHINE", "kalama", "gstreamer1.0-plugins-qti-oss-jpegenc:do_package_write_deb", "", d), d)} \
+    ${@bb.utils.contains(d.getVar("IMAGE_PKGTYPE", True), "ipk", bb.utils.contains("BASEMACHINE", "qrb5165", "gstreamer1.0-plugins-qti-oss-jpegenc:do_package_write_ipk", "", d), bb.utils.contains("BASEMACHINE", "kalama", "gstreamer1.0-plugins-qti-oss-jpegenc:do_package_write_deb", "", d), d)} \
+    ${@bb.utils.contains(d.getVar("IMAGE_PKGTYPE", True), "ipk", bb.utils.contains("BASEMACHINE", "qcs6490", "gstreamer1.0-plugins-qti-oss-jpegenc:do_package_write_ipk", "", d), bb.utils.contains("BASEMACHINE", "kalama", "gstreamer1.0-plugins-qti-oss-jpegenc:do_package_write_deb", "", d), d)} \
+    ${@bb.utils.contains(d.getVar("IMAGE_PKGTYPE", True), "ipk", bb.utils.contains("BASEMACHINE", "qrb5165", "gstreamer1.0-plugins-qti-oss-drmdecryptor:do_package_write_ipk", "", d), bb.utils.contains("BASEMACHINE", "qrb5165", "gstreamer1.0-plugins-qti-oss-drmdecryptor:do_package_write_deb", "", d), d)} \
+    ${@bb.utils.contains(d.getVar("IMAGE_PKGTYPE", True), "ipk", bb.utils.contains("BASEMACHINE", "qcs6490", bb.utils.contains_any("COMBINED_FEATURES", "qti-video qti-audio", "gstreamer1.0-omx:do_package_write_ipk", "", d), "", d), bb.utils.contains("BASEMACHINE", "qcs6490", bb.utils.contains_any("COMBINED_FEATURES", "qti-video qti-audio", "gstreamer1.0-omx:do_package_write_deb", "", d), "", d), d)} \
+    ${@bb.utils.contains("DISTRO_FEATURES", "tensorflow-lite", bb.utils.contains(d.getVar("IMAGE_PKGTYPE", True), "ipk", "gstreamer1.0-plugins-qti-oss-mltflite:do_package_write_ipk", "gstreamer1.0-plugins-qti-oss-mltflite:do_package_write_deb", d), "", d)} \
+    ${@bb.utils.contains("DISTRO_FEATURES", "qti-snpe", bb.utils.contains(d.getVar("IMAGE_PKGTYPE", True), "ipk", "gstreamer1.0-plugins-qti-oss-mlsnpe:do_package_write_ipk", "gstreamer1.0-plugins-qti-oss-mlsnpe:do_package_write_deb", d), "", d)} \
+    ${@bb.utils.contains("DISTRO_FEATURES", "qti-qnn", bb.utils.contains(d.getVar("IMAGE_PKGTYPE", True), "ipk", "gstreamer1.0-plugins-qti-oss-mlqnn:do_package_write_ipk", "gstreamer1.0-plugins-qti-oss-mlqnn:do_package_write_deb", d), "", d)} \
   "
 
 
