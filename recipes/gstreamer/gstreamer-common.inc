@@ -17,3 +17,15 @@ EOF
 }
 
 DEPENDS += "tiff shared-mime-info"
+
+PACKAGESPLITFUNCS:remove = "split_gstreamer10_packages"
+PACKAGESPLITFUNCS:remove = "set_gstreamer10_metapkg_rdepends"
+PACKAGES:remove = "${PN}-apps ${PN}-meta ${PN}-glib"
+RRECOMMENDS:${PN}:remove = "${PN}-meta"
+FILES:${PN} += "${libdir}/gstreamer-1.0/libgst*.so"
+FILES:${PN} += "${libdir}/libgst*.so*"
+FILES:${PN} += "${bindir}/*"
+FILES:${PN} += "${libexecdir}/*"
+FILES:${PN} += "${datadir}/*"
+
+INSANE_SKIP:${PN} += "installed-vs-shipped"
