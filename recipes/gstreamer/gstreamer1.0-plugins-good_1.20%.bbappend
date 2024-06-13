@@ -1,3 +1,5 @@
+require ${@bb.utils.contains('BASEMACHINE', 'kalama', bb.utils.contains('PRODUCT', 'ubuntu', 'gstreamer-common.inc', '', d), '', d)}
+
 DEPENDS += "qemu-native"
 FILESEXTRAPATHS:prepend := "${THISDIR}/gstreamer1.0-plugins-good/1.20.4:"
 
