@@ -1,7 +1,7 @@
-From 3dbb9ea7afda8be5fa5cc9449c2024a58480b9fd Mon Sep 17 00:00:00 2001
+From 40f8d248e75e2b01f1bbca2a76885d1230112dce Mon Sep 17 00:00:00 2001
 From: "Petar G. Georgiev" <quic_petarg@quicinc.com>
 Date: Tue, 7 Mar 2023 17:25:59 +0200
-Subject: [PATCH] waylandsink: support gbm buffer backend protocol
+Subject: [PATCH 3/6] waylandsink: support gbm buffer backend protocol
 
 Support the wayland gbm_buffer_backend protocol.
 SHM formats, DMABuf formats and GBM formats are exposed differently
@@ -12,18 +12,17 @@ element responsibility to provide with such buffers
 Signed-off-by: Petar G. Georgiev <quic_petarg@quicinc.com>
 Signed-off-by: Shyam Komakula <quic_skomakul@quicinc.com>
 Signed-off-by: Pratik Pachange <quic_ppachang@quicinc.com>
-
 ---
  ext/wayland/gstwaylandsink.c |  46 ++++++++-
  ext/wayland/gstwaylandsink.h |   3 +
- ext/wayland/meson.build      |   8 +-
- ext/wayland/wldisplay.c      |  57 ++++++++++++
- ext/wayland/wldisplay.h      |  10 ++
+ ext/wayland/meson.build      |   5 +-
+ ext/wayland/wldisplay.c      |  96 +++++++++++++++++++
+ ext/wayland/wldisplay.h      |  18 ++++
  ext/wayland/wlgbmallocator.c | 175 +++++++++++++++++++++++++++++++++++
  ext/wayland/wlgbmallocator.h |  38 ++++++++
  ext/wayland/wlvideoformat.c  |  95 +++++++++++++------
  ext/wayland/wlvideoformat.h  |   4 +-
- 9 files changed, 400 insertions(+), 36 deletions(-)
+ 9 files changed, 445 insertions(+), 35 deletions(-)
  create mode 100644 ext/wayland/wlgbmallocator.c
  create mode 100644 ext/wayland/wlgbmallocator.h
 
@@ -170,10 +169,10 @@ index 690e8f2..65d75c3 100644
    gboolean video_info_changed;
    GstVideoInfo video_info;
 diff --git a/ext/wayland/meson.build b/ext/wayland/meson.build
-index 0ec0199..3a0bc5a 100644
+index 0ec0199..1920229 100644
 --- a/ext/wayland/meson.build
 +++ b/ext/wayland/meson.build
-@@ -5,10 +5,12 @@ wl_sources = [
+@@ -5,7 +5,8 @@ wl_sources = [
      'wldisplay.c',
      'wlwindow.c',
      'wlvideoformat.c',
@@ -183,11 +182,7 @@ index 0ec0199..3a0bc5a 100644
  ]
  
  libdrm_dep = dependency('libdrm', version: '>= 2.4.55', required:get_option('wayland'))
-+libgbm_dep = dependency('gbm', version: '>= 21.1.1', required:true)
- 
- if use_wayland
-     protocols_datadir = wl_protocol_dep.get_variable('pkgdatadir')
-@@ -17,6 +19,8 @@ if use_wayland
+@@ -17,6 +18,8 @@ if use_wayland
          ['/stable/viewporter/viewporter.xml', 'viewporter-protocol.c', 'viewporter-client-protocol.h'],
          ['/unstable/linux-dmabuf/linux-dmabuf-unstable-v1.xml',
           'linux-dmabuf-unstable-v1-protocol.c', 'linux-dmabuf-unstable-v1-client-protocol.h'],
@@ -196,29 +191,21 @@ index 0ec0199..3a0bc5a 100644
          ['/unstable/fullscreen-shell/fullscreen-shell-unstable-v1.xml',
           'fullscreen-shell-unstable-v1-protocol.c', 'fullscreen-shell-unstable-v1-client-protocol.h'],
          ['/stable/xdg-shell/xdg-shell.xml', 'xdg-shell-protocol.c', 'xdg-shell-client-protocol.h'],
-@@ -52,7 +56,7 @@ if use_wayland
-         c_args : gst_plugins_bad_args + wayland_cargs + ['-DGST_USE_UNSTABLE_API'],
-         include_directories : [configinc],
-         dependencies : [gst_dep, gstvideo_dep, gstwayland_dep, gstallocators_dep,
--                        wl_client_dep, wl_protocol_dep, libdrm_dep],
-+                        wl_client_dep, wl_protocol_dep, libdrm_dep, libgbm_dep],
-         install : true,
-         install_dir : plugins_install_dir,
-     )
 diff --git a/ext/wayland/wldisplay.c b/ext/wayland/wldisplay.c
-index 0e62642..27e071a 100644
+index 0e62642..30a0a64 100644
 --- a/ext/wayland/wldisplay.c
 +++ b/ext/wayland/wldisplay.c
-@@ -27,6 +27,8 @@
+@@ -27,6 +27,9 @@
  #include "wlvideoformat.h"
  
  #include <errno.h>
 +#include <fcntl.h>
 +#include <unistd.h>
++#include <dlfcn.h>
  
  GST_DEBUG_CATEGORY_EXTERN (gstwayland_debug);
  #define GST_CAT_DEFAULT gstwayland_debug
-@@ -47,6 +49,7 @@ gst_wl_display_init (GstWlDisplay * self)
+@@ -47,9 +50,40 @@ gst_wl_display_init (GstWlDisplay * self)
  {
    self->shm_formats = g_array_new (FALSE, FALSE, sizeof (uint32_t));
    self->dmabuf_formats = g_array_new (FALSE, FALSE, sizeof (uint32_t));
@@ -226,7 +213,40 @@ index 0e62642..27e071a 100644
    self->wl_fd_poll = gst_poll_new (TRUE);
    self->buffers = g_hash_table_new (g_direct_hash, g_direct_equal);
    g_mutex_init (&self->buffers_mutex);
-@@ -80,6 +83,7 @@ gst_wl_display_finalize (GObject * gobject)
++
++  dlerror();
++  self->libgbm_handle = dlopen ("libgbm.so", RTLD_LAZY);
++
++  char* err;
++  err = dlerror();
++
++  if ((NULL != self->libgbm_handle) && (NULL != err)) {
++    self->gbm_perform =
++      (void *)dlsym (self->libgbm_handle, "gbm_perform");
++    self->gbm_bo_destroy =
++      (void*)dlsym (self->libgbm_handle, "gbm_bo_destroy");
++    self->gbm_bo_import =
++      (void*)dlsym (self->libgbm_handle, "gbm_bo_import");
++    self->gbm_device_destroy =
++      (void*)dlsym (self->libgbm_handle, "gbm_device_destroy");
++    self->gbm_create_device =
++      (void*)dlsym (self->libgbm_handle, "gbm_create_device");
++  }
++
++  err = dlerror();
++
++  if (NULL != err) {
++    self->gbm_perform = NULL;
++    self->gbm_bo_destroy = NULL;
++    self->gbm_bo_import = NULL;
++    self->gbm_device_destroy = NULL;
++    self->gbm_create_device = NULL;
++    self->libgbm_handle = NULL;
++  }
+ }
+ 
+ static void
+@@ -80,6 +114,7 @@ gst_wl_display_finalize (GObject * gobject)
  
    g_array_unref (self->shm_formats);
    g_array_unref (self->dmabuf_formats);
@@ -234,7 +254,7 @@ index 0e62642..27e071a 100644
    gst_poll_free (self->wl_fd_poll);
    g_hash_table_unref (self->buffers);
    g_mutex_clear (&self->buffers_mutex);
-@@ -98,6 +102,9 @@ gst_wl_display_finalize (GObject * gobject)
+@@ -98,6 +133,9 @@ gst_wl_display_finalize (GObject * gobject)
    if (self->dmabuf)
      zwp_linux_dmabuf_v1_destroy (self->dmabuf);
  
@@ -244,19 +264,25 @@ index 0e62642..27e071a 100644
    if (self->wl_shell)
      wl_shell_destroy (self->wl_shell);
  
-@@ -127,6 +134,11 @@ gst_wl_display_finalize (GObject * gobject)
+@@ -127,6 +165,17 @@ gst_wl_display_finalize (GObject * gobject)
      wl_display_disconnect (self->display);
    }
  
 +  if (self->gbmfd) {
-+    gbm_device_destroy (self->gbmdevice);
++    if (NULL != self->gbm_device_destroy) {
++      self->gbm_device_destroy (self->gbmdevice);
++    }
 +    close (self->gbmfd);
++  }
++
++  if (NULL != self->libgbm_handle) {
++    dlclose (self->libgbm_handle);
 +  }
 +
    G_OBJECT_CLASS (gst_wl_display_parent_class)->finalize (gobject);
  }
  
-@@ -200,6 +212,29 @@ gst_wl_display_check_format_for_dmabuf (GstWlDisplay * display,
+@@ -200,6 +249,29 @@ gst_wl_display_check_format_for_dmabuf (GstWlDisplay * display,
    return FALSE;
  }
  
@@ -286,7 +312,7 @@ index 0e62642..27e071a 100644
  static void
  handle_xdg_wm_base_ping (void *user_data, struct xdg_wm_base *xdg_wm_base,
      uint32_t serial)
-@@ -247,6 +282,24 @@ registry_handle_global (void *data, struct wl_registry *registry,
+@@ -247,6 +319,26 @@ registry_handle_global (void *data, struct wl_registry *registry,
      self->dmabuf =
          wl_registry_bind (registry, id, &zwp_linux_dmabuf_v1_interface, 1);
      zwp_linux_dmabuf_v1_add_listener (self->dmabuf, &dmabuf_listener, self);
@@ -299,7 +325,9 @@ index 0e62642..27e071a 100644
 +      g_return_if_fail (self->gbmfd >= 0);
 +    }
 +
-+    self->gbmdevice = gbm_create_device (self->gbmfd);
++    if (NULL != self->gbm_create_device) {
++      self->gbmdevice = self->gbm_create_device (self->gbmfd);
++    }
 +    g_return_if_fail (self->gbmdevice != NULL);
 +
 +    guint formats[] = {
@@ -311,7 +339,7 @@ index 0e62642..27e071a 100644
    }
  }
  
-@@ -380,6 +433,10 @@ gst_wl_display_new_existing (struct wl_display * display,
+@@ -380,6 +472,10 @@ gst_wl_display_new_existing (struct wl_display * display,
      g_warning ("Could not bind to zwp_linux_dmabuf_v1");
    }
  
@@ -323,7 +351,7 @@ index 0e62642..27e071a 100644
      /* If wl_surface and wl_display are passed via GstContext
       * wl_shell, xdg_shell and zwp_fullscreen_shell are not used.
 diff --git a/ext/wayland/wldisplay.h b/ext/wayland/wldisplay.h
-index 9c82e17..bdd00ba 100644
+index 9c82e17..ee36dcf 100644
 --- a/ext/wayland/wldisplay.h
 +++ b/ext/wayland/wldisplay.h
 @@ -23,10 +23,12 @@
@@ -339,7 +367,7 @@ index 9c82e17..bdd00ba 100644
  #include "fullscreen-shell-unstable-v1-client-protocol.h"
  #ifdef HAVE_SCALER_PROTOCOL_H
  #include "scaler-client-protocol.h"
-@@ -66,14 +68,20 @@ struct _GstWlDisplay
+@@ -66,17 +68,31 @@ struct _GstWlDisplay
    struct wl_scaler *scaler;
  #endif /* HAVE_SCALER_PROTOCOL_H */
    struct zwp_linux_dmabuf_v1 *dmabuf;
@@ -360,7 +388,18 @@ index 9c82e17..bdd00ba 100644
    GMutex buffers_mutex;
    GHashTable *buffers;
    gboolean shutting_down;
-@@ -100,6 +108,8 @@ gboolean gst_wl_display_check_format_for_shm (GstWlDisplay * display,
++
++  void* libgbm_handle;
++  int (* gbm_perform) (int operation,...);
++  void (*gbm_bo_destroy) (struct gbm_bo *bo);
++  struct gbm_bo* (*gbm_bo_import) (struct gbm_device *gbm_dev,
++      uint32_t type, void *buffer, uint32_t usage);
++  void (*gbm_device_destroy) (struct gbm_device *gbm);
++  struct gbm_device* (*gbm_create_device) (int fd);
+ };
+ 
+ struct _GstWlDisplayClass
+@@ -100,6 +116,8 @@ gboolean gst_wl_display_check_format_for_shm (GstWlDisplay * display,
      GstVideoFormat format);
  gboolean gst_wl_display_check_format_for_dmabuf (GstWlDisplay * display,
      GstVideoFormat format);
@@ -371,7 +410,7 @@ index 9c82e17..bdd00ba 100644
  
 diff --git a/ext/wayland/wlgbmallocator.c b/ext/wayland/wlgbmallocator.c
 new file mode 100644
-index 0000000..323ac51
+index 0000000..aa46e19
 --- /dev/null
 +++ b/ext/wayland/wlgbmallocator.c
 @@ -0,0 +1,175 @@
@@ -494,10 +533,10 @@ index 0000000..323ac51
 +    return NULL;
 +  }
 +
-+  bo = gbm_bo_import (display->gbmdevice, GBM_BO_IMPORT_FD, &bufinfo, flags);
++  bo = display->gbm_bo_import (display->gbmdevice, GBM_BO_IMPORT_FD, &bufinfo, flags);
 +  g_return_val_if_fail (bo != NULL, NULL);
 +
-+  gbm_perform (GBM_PERFORM_GET_METADATA_ION_FD, bo, &metafd);
++  display->gbm_perform (GBM_PERFORM_GET_METADATA_ION_FD, bo, &metafd);
 +  g_return_val_if_fail (metafd != -1, NULL);
 +
 +  GST_DEBUG_OBJECT (display, "Creating wl_buffer from GBM of size %"
@@ -546,7 +585,7 @@ index 0000000..323ac51
 +  g_mutex_clear (&gbmdata.lock);
 +  g_cond_clear (&gbmdata.cond);
 +
-+  gbm_bo_destroy (bo);
++  display->gbm_bo_destroy (bo);
 +
 +  return gbmdata.wbuffer;
 +}
@@ -753,3 +792,6 @@ index 331f582..bcf3835 100644
  
  G_END_DECLS
  
+-- 
+2.34.1
+
