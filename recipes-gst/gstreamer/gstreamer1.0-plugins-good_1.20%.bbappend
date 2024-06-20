@@ -11,3 +11,4 @@ SRC_URI:append:qcm6490 = " file://0004-v4l2-Add-support-for-dma-memory-allocatio
 SRC_URI:append:qcm6490 = " file://0005-v4l2-Add-support-for-dynamic-resolution-change.patch"
 SRC_URI:append:qcm6490 = " file://0006-v4l2-support-for-controls-and-input-formats.patch"
 SRC_URI:append:qcm6490 = " file://0007-v4l2-Handle-srccaps-and-GAP-buffer.patch"
+SRC_URI:append:qcm6490 = " file://0008-gstreamer1.0-plugins-good-Add-meson-option-to-build-.patch"
