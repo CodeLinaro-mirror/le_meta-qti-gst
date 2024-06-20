@@ -5,7 +5,7 @@ LICENSE = "BSD-3-Clause-Clear"
 LIC_FILES_CHKSUM = "file://${COMMON_LICENSE_DIR}/${LICENSE};md5=7a434440b651f4a472ca93716d01033a"
 
 SSTATETASKS += "do_generate_qim_sdk "
-SSTATE_OUT_DIR = "${DEPLOY_DIR}/qimsdk_artifacts/"
+SSTATE_OUT_DIR:${MACHINE} = "${DEPLOY_DIR}/qimsdk_artifacts/${MACHINE}/"
 SSTATE_IN_DIR = "${TOPDIR}/${SDK_PN}"
 TMP_SSTATE_IN_DIR = "${TOPDIR}/${SDK_PN}_tmp"
 
