@@ -67,9 +67,10 @@ do_generate_qim_sdk[depends] = " \
 # Add a task to generate QIM sdk
 do_generate_qim_sdk () {
     # generate QIM SDK package
-    if [ ! -d ${TMP_SSTATE_IN_DIR}/${SDK_PN} ]; then
-        mkdir -p ${TMP_SSTATE_IN_DIR}/${SDK_PN}/
+    if [ -d ${TMP_SSTATE_IN_DIR}/${SDK_PN} ]; then
+        rm -rf ${TMP_SSTATE_IN_DIR}/${SDK_PN}/
     fi
+    mkdir -p ${TMP_SSTATE_IN_DIR}/${SDK_PN}/
     cp -r ${WORKDIR}/*install.sh ${TMP_SSTATE_IN_DIR}/${SDK_PN}/
     PKG_LISTS="${@get_pkgs_list(d)}"
     for pkg in "${PKG_LISTS}"
