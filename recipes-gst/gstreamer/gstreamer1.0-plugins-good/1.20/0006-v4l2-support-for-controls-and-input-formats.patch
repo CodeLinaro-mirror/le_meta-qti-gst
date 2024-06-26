@@ -1,4 +1,4 @@
-From 3d466188b5657cc327792011623ab98814091912 Mon Sep 17 00:00:00 2001
+From 9108fb16a640aa37bd131894da809f41f1887dc7 Mon Sep 17 00:00:00 2001
 From: Raja Ganapathi Busam <quic_rbusam@quicinc.com>
 Date: Sat, 10 Feb 2024 20:18:27 +0530
 Subject: [PATCH] v4l2: Support for controls and input formats
@@ -158,10 +158,10 @@ index 2166b6b..06c74b9 100644
  
  struct _GstV4l2MemoryGroup
 diff --git a/sys/v4l2/gstv4l2bufferpool.c b/sys/v4l2/gstv4l2bufferpool.c
-index 057c3e5..f085262 100644
+index 825294d..acf2360 100644
 --- a/sys/v4l2/gstv4l2bufferpool.c
 +++ b/sys/v4l2/gstv4l2bufferpool.c
-@@ -967,7 +967,7 @@ gst_v4l2_buffer_pool_start (GstBufferPool * bpool)
+@@ -970,7 +970,7 @@ gst_v4l2_buffer_pool_start (GstBufferPool * bpool)
    pool->size = size;
    pool->copy_threshold = copy_threshold;
    pool->max_latency = max_latency;
@@ -170,17 +170,17 @@ index 057c3e5..f085262 100644
    pool->num_queued = 0;
  
    if (max_buffers != 0 && max_buffers < min_buffers)
-@@ -2080,7 +2080,7 @@ gst_v4l2_buffer_pool_process (GstV4l2BufferPool * pool, GstBuffer ** buf,
+@@ -2083,7 +2083,7 @@ gst_v4l2_buffer_pool_process (GstV4l2BufferPool * pool, GstBuffer ** buf,
                GST_V4L2_IMPORT_QUARK);
  
            mem = gst_buffer_get_memory (tmp, 0);
 -          gst_memory_resize (mem, 0, gst_buffer_get_memory(*buf, 0)->size);
 +          gst_memory_resize (mem, 0, gst_buffer_peek_memory(*buf, 0)->size);
+           gst_memory_unref (mem);
  
            vmeta = gst_buffer_get_video_meta (tmp);
-           if (vmeta) {
 diff --git a/sys/v4l2/gstv4l2imagepool.c b/sys/v4l2/gstv4l2imagepool.c
-index 2e0e7ce..a792fec 100644
+index 0fe2cc9..f638007 100644
 --- a/sys/v4l2/gstv4l2imagepool.c
 +++ b/sys/v4l2/gstv4l2imagepool.c
 @@ -232,8 +232,8 @@ open_gbm_device (GstV4l2ImageBufferPool * vpool)
