@@ -54,3 +54,17 @@ RDEPENDS:${PN} = " \
     gstreamer1.0-plugins-qcom-oss-vtransform \
     gstreamer1.0-qcom-oss-sample-apps \
    "
+
+RDEPENDS:${PN}:remove:qcs9100 = " \
+    gstreamer1.0-plugins-qcom-oss-tools \
+    gstreamer1.0-plugins-qcom-oss-batch \
+    gstreamer1.0-plugins-qcom-oss-mldemux \
+    gstreamer1.0-plugins-qcom-oss-mlvclassification \
+    gstreamer1.0-plugins-qcom-oss-mlvsuperresolution \
+    gstreamer1.0-plugins-qcom-oss-mlvdetection \
+    gstreamer1.0-plugins-qcom-oss-mlvpose \
+    gstreamer1.0-plugins-qcom-oss-mlvsegmentation \
+    gstreamer1.0-plugins-qcom-oss-qmmfsrc \
+    gstreamer1.0-plugins-qcom-oss-socket \
+    gstreamer1.0-qcom-oss-sample-apps \
+  "
