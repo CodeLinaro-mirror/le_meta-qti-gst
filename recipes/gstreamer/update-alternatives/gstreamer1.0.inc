@@ -2,7 +2,7 @@ inherit update-alternatives-ubuntu_v2
 
 ALTERNATIVE_PRIORITY:gstreamer1.0 = "100"
 
-ALTERNATIVE:gstreamer1.0 = "gst-inspect-1.0 gst-launch-1.0 gst-stats-1.0 gst-typefind-1.0 libgstcoreelements.so libgstbase-1.0.so.0 libgstcheck-1.0.so.0 libgstcontroller-1.0.so.0 libgstnet-1.0.so.0 libgstreamer-1.0.so.0 gst-plugin-scanner gst-ptp-helper Gst-1.0.typelib GstBase-1.0.typelib GstCheck-1.0.typelib GstController-1.0.typelib GstNet-1.0.typelib"
+ALTERNATIVE:gstreamer1.0 = "gst-inspect-1.0 gst-launch-1.0 gst-stats-1.0 gst-typefind-1.0 glib_gobject_helper.py gst_gdb.py libgstcoreelements.so libgstbase-1.0.so.0 libgstcheck-1.0.so.0 libgstcontroller-1.0.so.0 libgstnet-1.0.so.0 libgstreamer-1.0.so.0 gst-plugin-scanner gst-ptp-helper Gst-1.0.typelib GstBase-1.0.typelib GstCheck-1.0.typelib GstController-1.0.typelib GstNet-1.0.typelib"
 
 ALTERNATIVE_LINK_NAME[gst-inspect-1.0] = "/usr/bin/gst-inspect-1.0"
 
@@ -11,6 +11,10 @@ ALTERNATIVE_LINK_NAME[gst-launch-1.0] = "/usr/bin/gst-launch-1.0"
 ALTERNATIVE_LINK_NAME[gst-stats-1.0] = "/usr/bin/gst-stats-1.0"
 
 ALTERNATIVE_LINK_NAME[gst-typefind-1.0] = "/usr/bin/gst-typefind-1.0"
+
+ALTERNATIVE_LINK_NAME[glib_gobject_helper.py] = "/usr/share/gstreamer-1.0/gdb/glib_gobject_helper.py"
+
+ALTERNATIVE_LINK_NAME[gst_gdb.py] = "/usr/share/gstreamer-1.0/gdb/gst_gdb.py"
 
 QTI_SEPECIFIC_LINK[libgstcoreelements.so] = "/usr/lib/gstreamer-1.0/libgstcoreelements.so"
 ALTERNATIVE_LINK_NAME[libgstcoreelements.so] = "/usr/lib/aarch64-linux-gnu/gstreamer-1.0/libgstcoreelements.so"
