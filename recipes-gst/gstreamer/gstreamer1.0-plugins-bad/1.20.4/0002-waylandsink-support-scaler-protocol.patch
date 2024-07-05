@@ -1,4 +1,4 @@
-From 106be21fcb491e809f3370c304a26f4240b6c9e8 Mon Sep 17 00:00:00 2001
+From 1de39753fc2f402ae84880a63e6b574c9df5ce65 Mon Sep 17 00:00:00 2001
 From: Amrutha Sai Gattu <agattu@codeaurora.org>
 Date: Fri, 1 Nov 2019 09:56:20 +0530
 Subject: [PATCH] waylandsink: support scaler protocol

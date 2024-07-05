@@ -1,4 +1,4 @@
-From 850241141d677be6b608e3dac595908d6f65c0d8 Mon Sep 17 00:00:00 2001
+From dd70c5133f19868a3bc1d6669b4c1b5220e09021 Mon Sep 17 00:00:00 2001
 From: "Petar G. Georgiev" <petarg@codeaurora.org>
 Date: Fri, 29 Nov 2019 14:56:55 +0200
 Subject: [PATCH] waylandsink: release pending buffers in composer
@@ -13,14 +13,14 @@ Subject: [PATCH] waylandsink: release pending buffers in composer
 
 Signed-off-by: Petar G. Georgiev <quic_petarg@quicinc.com>
 ---
- ext/wayland/gstwaylandsink.c | 42 ++++++++++++++++++++++++++++++++++++
- ext/wayland/wlbuffer.c       | 24 ++++++++++-----------
- ext/wayland/wldisplay.c      | 14 ++++++++++++
- ext/wayland/wldisplay.h      |  2 ++
+ ext/wayland/gstwaylandsink.c  | 42 +++++++++++++++++++
+ ext/wayland/wlbuffer.c        | 24 +++++------
+ ext/wayland/wldisplay.c       | 14 +++++++
+ ext/wayland/wldisplay.h       |  2 +
  4 files changed, 70 insertions(+), 12 deletions(-)
 
 diff --git a/ext/wayland/gstwaylandsink.c b/ext/wayland/gstwaylandsink.c
-index 7674397..0de9821 100644
+index 7b9b60a044..f6dad30121 100644
 --- a/ext/wayland/gstwaylandsink.c
 +++ b/ext/wayland/gstwaylandsink.c
 @@ -105,6 +105,8 @@ static GstCaps *gst_wayland_sink_get_caps (GstBaseSink * bsink,
@@ -31,14 +31,14 @@ index 7674397..0de9821 100644
 +static gboolean gst_wayland_sink_event (GstBaseSink * bsink, GstEvent * event);
  static GstFlowReturn gst_wayland_sink_show_frame (GstVideoSink * bsink,
      GstBuffer * buffer);
- 
+
 @@ -205,6 +207,8 @@ gst_wayland_sink_class_init (GstWaylandSinkClass * klass)
    gstbasesink_class->set_caps = GST_DEBUG_FUNCPTR (gst_wayland_sink_set_caps);
    gstbasesink_class->propose_allocation =
        GST_DEBUG_FUNCPTR (gst_wayland_sink_propose_allocation);
 +  gstbasesink_class->query = GST_DEBUG_FUNCPTR (gst_wayland_sink_query);
 +  gstbasesink_class->event = GST_DEBUG_FUNCPTR (gst_wayland_sink_event);
- 
+
    gstvideosink_class->show_frame =
        GST_DEBUG_FUNCPTR (gst_wayland_sink_show_frame);
 @@ -519,6 +523,8 @@ gst_wayland_sink_change_state (GstElement * element, GstStateChange transition)
@@ -53,7 +53,7 @@ index 7674397..0de9821 100644
 @@ -769,6 +775,42 @@ gst_wayland_sink_propose_allocation (GstBaseSink * bsink, GstQuery * query)
    return TRUE;
  }
- 
+
 +static gboolean
 +gst_wayland_sink_query (GstBaseSink * bsink, GstQuery * query)
 +{
@@ -94,7 +94,7 @@ index 7674397..0de9821 100644
  frame_redraw_callback (void *data, struct wl_callback *callback, uint32_t time)
  {
 diff --git a/ext/wayland/wlbuffer.c b/ext/wayland/wlbuffer.c
-index caab58d..1e11c5a 100644
+index caab58d352..1e11c5a4d1 100644
 --- a/ext/wayland/wlbuffer.c
 +++ b/ext/wayland/wlbuffer.c
 @@ -203,8 +203,19 @@ gst_buffer_get_wl_buffer (GstWlDisplay * display, GstBuffer * gstbuffer)
@@ -121,7 +121,7 @@ index caab58d..1e11c5a 100644
 @@ -214,17 +225,6 @@ gst_wl_buffer_force_release_and_unref (GstBuffer * buf, GstWlBuffer * self)
      gst_buffer_unref (self->current_gstbuffer);
    }
- 
+
 -  /* Finalize this GstWlBuffer early.
 -   * This method has been called as a result of the display shutting down,
 -   * so we need to stop using any wayland resources and disconnect from
@@ -134,13 +134,13 @@ index caab58d..1e11c5a 100644
 -  self->wlbuffer = NULL;
 -  self->display = NULL;
    self->current_gstbuffer = NULL;
- 
+
    /* remove the reference that the caller (GstWlDisplay) owns */
 diff --git a/ext/wayland/wldisplay.c b/ext/wayland/wldisplay.c
-index 27e071a..3e3d816 100644
+index dc711f20b4..dade8bb173 100644
 --- a/ext/wayland/wldisplay.c
 +++ b/ext/wayland/wldisplay.c
-@@ -492,3 +492,17 @@ gst_wl_display_unregister_buffer (GstWlDisplay * self, gpointer gstmem)
+@@ -523,3 +523,17 @@ gst_wl_display_unregister_buffer (GstWlDisplay * self, gpointer gstmem)
      g_hash_table_remove (self->buffers, gstmem);
    g_mutex_unlock (&self->buffers_mutex);
  }
@@ -159,18 +159,18 @@ index 27e071a..3e3d816 100644
 +  g_hash_table_remove_all (self->buffers);
 +}
 diff --git a/ext/wayland/wldisplay.h b/ext/wayland/wldisplay.h
-index bdd00ba..f988ebb 100644
+index 9a4a02bcac..898325f034 100644
 --- a/ext/wayland/wldisplay.h
 +++ b/ext/wayland/wldisplay.h
-@@ -104,6 +104,8 @@ void gst_wl_display_register_buffer (GstWlDisplay * self, gpointer gstmem,
+@@ -112,6 +112,8 @@ void gst_wl_display_register_buffer (GstWlDisplay * self, gpointer gstmem,
  void gst_wl_display_unregister_buffer (GstWlDisplay * self, gpointer gstmem);
  gpointer gst_wl_display_lookup_buffer (GstWlDisplay * self, gpointer gstmem);
- 
+
 +void gst_wl_display_force_release_buffers (GstWlDisplay * self);
 +
  gboolean gst_wl_display_check_format_for_shm (GstWlDisplay * display,
      GstVideoFormat format);
  gboolean gst_wl_display_check_format_for_dmabuf (GstWlDisplay * display,
--- 
-2.25.1
+--
+2.17.1
 
