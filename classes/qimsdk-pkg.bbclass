@@ -43,16 +43,7 @@ GST_PLUGINS = " \
   "
 
 GST_PLUGINS:remove:qcs9100 = " \
-    gstreamer1.0-plugins-qcom-oss-tools:do_package_write_ipk \
-    gstreamer1.0-plugins-qcom-oss-batch:do_package_write_ipk \
-    gstreamer1.0-plugins-qcom-oss-mldemux:do_package_write_ipk \
-    gstreamer1.0-plugins-qcom-oss-mlvclassification:do_package_write_ipk \
-    gstreamer1.0-plugins-qcom-oss-mlvsuperresolution:do_package_write_ipk \
-    gstreamer1.0-plugins-qcom-oss-mlvdetection:do_package_write_ipk \
-    gstreamer1.0-plugins-qcom-oss-mlvpose:do_package_write_ipk \
-    gstreamer1.0-plugins-qcom-oss-mlvsegmentation:do_package_write_ipk \
     gstreamer1.0-plugins-qcom-oss-qmmfsrc:do_package_write_ipk \
-    gstreamer1.0-plugins-qcom-oss-socket:do_package_write_ipk \
     gstreamer1.0-qcom-oss-sample-apps:do_package_write_ipk \
   "
 
