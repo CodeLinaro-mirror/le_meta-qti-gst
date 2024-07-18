@@ -9,6 +9,7 @@ LIC_FILES_CHKSUM = "file://${COREBASE}/meta-qti-bsp/files/common-licenses/${LICE
 # Dependencies.
 DEPENDS := "gstreamer1.0"
 DEPENDS += "gstreamer1.0-plugins-base"
+DEPENDS += "gstreamer1.0-plugins-qti-oss-base"
 DEPENDS += "codec2"
 DEPENDS:append:kalama += "media"
 DEPENDS:append:kalama += "media-external"
@@ -55,5 +56,5 @@ FILES_SOLIBSDEV = ""
 TOOLCHAIN = "sdllvm"
 
 placeholder := "${TARGET_SYS}"
-TARGET_SYS = "${@bb.utils.contains('BASEMACHINE', 'kalama', bb.utils.contains('PRODUCT', 'ubuntu', '${TARGET_ARCH}-linux-gnu', '${placeholder}', d), '${placeholder}', d)}"
-TARGET_CFLAGS += "${@bb.utils.contains('BASEMACHINE', 'kalama', bb.utils.contains('PRODUCT', 'ubuntu', '-I${STAGING_INCDIR}/c++', '', d), '', d)}"
+TARGET_SYS = "${@bb.utils.contains('BASEMACHINE', 'kalama', bb.utils.contains('PRODUCT', 'ubuntu', bb.utils.contains('DISTRO_FEATURES', 'qimsdk-layers', '${TARGET_ARCH}-linux-gnu', '${placeholder}', d), '${placeholder}', d), '${placeholder}', d)}"
+TARGET_CFLAGS += "${@bb.utils.contains('BASEMACHINE', 'kalama', bb.utils.contains('PRODUCT', 'ubuntu', bb.utils.contains('DISTRO_FEATURES', 'qimsdk-layers', '-I${STAGING_INCDIR}/c++', '', d), '', d), '', d)}"

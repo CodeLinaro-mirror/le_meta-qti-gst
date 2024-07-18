@@ -1,7 +1,6 @@
 inherit cmake pkgconfig
 
-SUMMARY = "QTI open-source GStreamer Plug-in for socket fd transfer"
-HOMEPAGE = "https://git.codelinaro.org"
+SUMMARY = "QTI open-source GStreamer Plug-in for ML image super resolution"
 SECTION = "multimedia"
 
 LICENSE = "BSD-3-Clause-Clear"
@@ -14,17 +13,19 @@ DEPENDS += "gstreamer1.0-plugins-qti-oss-base"
 
 FILESPATH =+ "${WORKSPACE}/vendor/qcom/opensource/gst-plugins-qti-oss/:"
 
-SRC_URI = "file://gst-plugin-socket/"
-S = "${WORKDIR}/gst-plugin-socket"
+SRC_URI = "file://gst-plugin-mlvsuperresolution/"
+S = "${WORKDIR}/gst-plugin-mlvsuperresolution"
 
-# Install directries.
+# Install directories.
+INSTALL_INCDIR := "${includedir}"
 INSTALL_BINDIR := "${bindir}"
 INSTALL_LIBDIR := "${libdir}"
 
 EXTRA_OECMAKE += "-DGST_VERSION_REQUIRED=1.14.4"
-EXTRA_OECMAKE += "-DSYSROOT_INCDIR=${STAGING_INCDIR}"
-EXTRA_OECMAKE += "-DSYSROOT_LIBDIR=${STAGING_LIBDIR}"
+EXTRA_OECMAKE += "-DSYSROOT_INCDIR=${STAGING_INCDIR}"
+EXTRA_OECMAKE += "-DSYSROOT_LIBDIR=${STAGING_LIBDIR}"
 EXTRA_OECMAKE += "-DKERNEL_BUILDDIR=${STAGING_KERNEL_BUILDDIR}"
+EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_INSTALL_INCDIR=${INSTALL_INCDIR}"
 EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_INSTALL_BINDIR=${INSTALL_BINDIR}"
 EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_INSTALL_LIBDIR=${INSTALL_LIBDIR}"
 
@@ -32,13 +33,13 @@ EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_LICENSE=BSD"
 EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_VERSION=${PV}"
 EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_PACKAGE=${PN}"
 EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_SUMMARY="${SUMMARY}""
-EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_ORIGIN=${HOMEPAGE}"
+EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_ORIGIN="Unknown package origin""
 
 FILES:${PN} += "${INSTALL_BINDIR}"
 FILES:${PN} += "${INSTALL_LIBDIR}"
 
 FILES:${PN}-dbg += "${INSTALL_LIBDIR}/gstreamer-1.0/.debug"
+FILES:${PN}-dbg += "${INSTALL_LIBDIR}/gstreamer-1.0/ml/modules/.debug"
 
 SOLIBS = ".so*"
 FILES_SOLIBSDEV = ""
-
