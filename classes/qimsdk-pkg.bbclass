@@ -47,11 +47,74 @@ GST_PLUGINS = " \
     qcom-gstreamer1.0-plugins-oss-voverlay:do_package_write_ipk \
     qcom-gstreamer1.0-plugins-oss-vsplit:do_package_write_ipk \
     qcom-gstreamer1.0-plugins-oss-vtransform:do_package_write_ipk \
-    gstreamer1.0-qcom-oss-sample-apps:do_package_write_ipk \
   "
 
 GST_PLUGINS:remove:qcs9100 = " \
     qcom-gstreamer1.0-plugins-oss-qmmfsrc:do_package_write_ipk \
+  "
+
+GST_SAMPLE_APPS = " \
+    qcom-gst-sample-apps-utils:do_package_write_ipk \
+    qcom-gst-activate-deactivate-streams-runtime:do_package_write_ipk \
+    qcom-gst-add-remove-streams-runtime:do_package_write_ipk \
+    qcom-gst-add-streams-as-bundle-example:do_package_write_ipk \
+    qcom-gst-ai-classification:do_package_write_ipk \
+    qcom-gst-ai-daisychain-detection-classification:do_package_write_ipk \
+    qcom-gst-ai-daisychain-detection-pose:do_package_write_ipk \
+    qcom-gst-ai-monodepth:do_package_write_ipk \
+    qcom-gst-ai-multi-input-output-object-detection:do_package_write_ipk \
+    qcom-gst-ai-multistream-inference:do_package_write_ipk \
+    qcom-gst-ai-object-detection:do_package_write_ipk \
+    qcom-gst-ai-parallel-inference:do_package_write_ipk \
+    qcom-gst-ai-pose-detection:do_package_write_ipk \
+    qcom-gst-ai-segmentation:do_package_write_ipk \
+    qcom-gst-ai-superresolution:do_package_write_ipk \
+    qcom-gst-appsink-example:do_package_write_ipk \
+    qcom-gst-audio-decode-example:do_package_write_ipk \
+    qcom-gst-audio-encode-example:do_package_write_ipk \
+    qcom-gst-audio-video-encode:do_package_write_ipk \
+    qcom-gst-audio-video-playback:do_package_write_ipk \
+    qcom-gst-camera-burst-capture-example:do_package_write_ipk \
+    qcom-gst-camera-metadata-example:do_package_write_ipk \
+    qcom-gst-camera-shdr-ldc-eis-example:do_package_write_ipk \
+    qcom-gst-camera-single-stream-example:do_package_write_ipk \
+    qcom-gst-camera-switch-example:do_package_write_ipk \
+    qcom-gst-concurrent-videoplay-composition:do_package_write_ipk \
+    qcom-gst-multi-camera-example:do_package_write_ipk \
+    qcom-gst-multi-stream-example:do_package_write_ipk \
+    qcom-gst-smartcodec-example:do_package_write_ipk \
+    qcom-gst-snapshot-stream-example:do_package_write_ipk \
+    qcom-gst-transform-example:do_package_write_ipk \
+    qcom-gst-usb-single-camera-app:do_package_write_ipk \
+    qcom-gst-videocodec-concurrent-playback:do_package_write_ipk \
+    qcom-gst-video-playback-example:do_package_write_ipk \
+    qcom-gst-video-transcode-example:do_package_write_ipk \
+    qcom-gst-webrtc-sendrecv-example:do_package_write_ipk \
+    qcom-gst-weston-composition-example:do_package_write_ipk \
+  "
+
+GST_SAMPLE_APPS:remove:qcs9100 = " \
+    qcom-gst-activate-deactivate-streams-runtime:do_package_write_ipk \
+    qcom-gst-add-remove-streams-runtime:do_package_write_ipk \
+    qcom-gst-add-streams-as-bundle-example:do_package_write_ipk \
+    qcom-gst-appsink-example:do_package_write_ipk \
+    qcom-gst-audio-decode-example:do_package_write_ipk \
+    qcom-gst-audio-encode-example:do_package_write_ipk \
+    qcom-gst-audio-video-encode:do_package_write_ipk \
+    qcom-gst-audio-video-playback:do_package_write_ipk \
+    qcom-gst-camera-burst-capture-example:do_package_write_ipk \
+    qcom-gst-camera-metadata-example:do_package_write_ipk \
+    qcom-gst-camera-shdr-ldc-eis-example:do_package_write_ipk \
+    qcom-gst-camera-single-stream-example:do_package_write_ipk \
+    qcom-gst-camera-switch-example:do_package_write_ipk \
+    qcom-gst-multi-camera-example:do_package_write_ipk \
+    qcom-gst-multi-stream-example:do_package_write_ipk \
+    qcom-gst-smartcodec-example:do_package_write_ipk \
+    qcom-gst-snapshot-stream-example:do_package_write_ipk \
+    qcom-gst-usb-single-camera-app:do_package_write_ipk \
+    qcom-gst-video-playback-example:do_package_write_ipk \
+    qcom-gst-webrtc-sendrecv-example:do_package_write_ipk \
+    qcom-gst-weston-composition-example:do_package_write_ipk \
   "
 
 addtask do_generate_qim_sdk_setscene
@@ -84,6 +147,7 @@ do_generate_qim_sdk[depends] = " \
     taglib:do_package_write_ipk \
     mosquitto:do_package_write_ipk \
     ${GST_PLUGINS} \
+    ${GST_SAMPLE_APPS} \
   "
 
 
@@ -146,7 +210,7 @@ def get_pkgs_list(d):
     for _, pkgdirs, _ in os.walk(os.path.join(deploydir, pkgtype)):
         for pkgdir in pkgdirs:
             for f in os.listdir(os.path.join(deploydir, pkgtype, pkgdir)):
-                if "gstreamer" in os.path.basename(f) or "libgst" in os.path.basename(f) or "gstd" in os.path.basename(f) :
+                if "gstreamer" in os.path.basename(f) or "libgst" in os.path.basename(f) or "gstd" in os.path.basename(f) or "gst" in os.path.basename(f):
                     pkgslist.append(os.path.join(deploydir, pkgtype, pkgdir, f))
                 else:
                     for dep in dep_list:

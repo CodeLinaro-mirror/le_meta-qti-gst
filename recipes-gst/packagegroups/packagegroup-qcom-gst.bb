@@ -39,6 +39,7 @@ RDEPENDS:${PN}-dependencies = " \
 RDEPENDS:${PN}:qcom-custom-bsp = " \
     ${PN}-dependencies \
     ${PN}-basic \
+    ${PN}-sample-apps \
     gstd \
     qcom-gstreamer1.0-plugins-oss-base \
     qcom-gstreamer1.0-plugins-oss-tools \
@@ -65,7 +66,6 @@ RDEPENDS:${PN}:qcom-custom-bsp = " \
     qcom-gstreamer1.0-plugins-oss-voverlay \
     qcom-gstreamer1.0-plugins-oss-vsplit \
     qcom-gstreamer1.0-plugins-oss-vtransform \
-    gstreamer1.0-qcom-oss-sample-apps \
    "
 
 RDEPENDS:${PN}:remove:qcs9100 = " \

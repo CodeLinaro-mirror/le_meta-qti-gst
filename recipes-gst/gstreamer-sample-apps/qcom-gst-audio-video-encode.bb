@@ -12,42 +12,24 @@ DEPENDS += "gstreamer1.0-plugins-base"
 DEPENDS += "gstreamer1.0-plugins-bad"
 DEPENDS += "json-glib"
 DEPENDS += "libsoup-2.4"
-DEPENDS:append:qcm6490 += "qcom-camera-server"
+DEPENDS += "qcom-gst-sample-apps-utils"
+DEPENDS:append:qcm6490 = " qcom-camera-server"
 
-FILESPATH =+ "${WORKSPACE}/gst-plugins-qti-oss/:"
-SRC_URI = "file://gst-sample-apps"
-S = "${WORKDIR}/gst-sample-apps"
+FILESPATH =+ "${WORKSPACE}/gst-plugins-qti-oss/gst-sample-apps:"
+SRC_URI = "file://gst-audio-video-encode"
+S = "${WORKDIR}/gst-audio-video-encode"
 
 # Install directries.
 INSTALL_BINDIR := "${bindir}"
 INSTALL_LIBDIR := "${libdir}"
 
-# Default platform definitions.
-ENABLE_CAMERA := "FALSE"
-ENABLE_AUDIO  := "FALSE"
+# Camera-related variables
+ENABLE_CAMERA          := "FALSE"
+CAMERA_SERVICE         := "QMMF"
 
 # Camera-related variables
 ENABLE_CAMERA:qcm6490  := "TRUE"
-CAMERA_SERVICE         := "QMMF"
 CAMERA_SERVICE:qcm6490 := "LECAM"
-
-# Encode-related variables
-ENABLE_VIDEO_ENCODE := "TRUE"
-
-# Decode-related variables
-ENABLE_VIDEO_DECODE := "TRUE"
-
-# Display-related variables
-ENABLE_DISPLAY := "TRUE"
-
-# ML-related variables
-ENABLE_ML := "TRUE"
-
-# Audio-related variables
-ENABLE_AUDIO:qcm6490 := "TRUE"
-
-# WebRTC enable
-ENABLE_WEBRTC := "TRUE"
 
 EXTRA_OECMAKE += "-DGST_VERSION_REQUIRED=1.20.7"
 EXTRA_OECMAKE += "-DSYSROOT_INCDIR=${STAGING_INCDIR}"
@@ -55,13 +37,7 @@ EXTRA_OECMAKE += "-DSYSROOT_LIBDIR=${STAGING_LIBDIR}"
 EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_INSTALL_BINDIR=${INSTALL_BINDIR}"
 EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_INSTALL_LIBDIR=${INSTALL_LIBDIR}"
 EXTRA_OECMAKE += "-DENABLE_CAMERA=${ENABLE_CAMERA}"
-EXTRA_OECMAKE += "-DENABLE_VIDEO_ENCODE=${ENABLE_VIDEO_ENCODE}"
-EXTRA_OECMAKE += "-DENABLE_VIDEO_DECODE=${ENABLE_VIDEO_DECODE}"
-EXTRA_OECMAKE += "-DENABLE_DISPLAY=${ENABLE_DISPLAY}"
-EXTRA_OECMAKE += "-DENABLE_ML=${ENABLE_ML}"
-EXTRA_OECMAKE += "-DENABLE_AUDIO=${ENABLE_AUDIO}"
 EXTRA_OECMAKE += "-DCAMERA_SERVICE=${CAMERA_SERVICE}"
-EXTRA_OECMAKE += "-DENABLE_WEBRTC=${ENABLE_WEBRTC}"
 
 FILES:${PN} += "${INSTALL_BINDIR}"
 FILES:${PN} += "${INSTALL_LIBDIR}"
