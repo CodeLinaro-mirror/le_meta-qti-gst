@@ -1,6 +1,6 @@
 inherit cmake pkgconfig
 
-SUMMARY = "Qualcomm open-source GStreamer Plug-in for Machine Learning using QNN"
+SUMMARY = "Qualcomm open-source GStreamer Plug-in for video stream demuxing"
 SECTION = "multimedia"
 
 LICENSE = "BSD-3-Clause-Clear"
@@ -9,20 +9,19 @@ LIC_FILES_CHKSUM = "file://${COMMON_LICENSE_DIR}/${LICENSE};md5=7a434440b651f4a4
 # Dependencies.
 DEPENDS := "gstreamer1.0"
 DEPENDS += "gstreamer1.0-plugins-base"
-DEPENDS += "gstreamer1.0-plugins-qcom-oss-base"
-DEPENDS += "qnn"
+DEPENDS += "qcom-gstreamer1.0-plugins-oss-base"
 
 FILESPATH =+ "${WORKSPACE}/gst-plugins-qti-oss/:"
-SRC_URI = "file://gst-plugin-mlqnn"
-S = "${WORKDIR}/gst-plugin-mlqnn"
+SRC_URI = "file://gst-plugin-vsplit"
+S = "${WORKDIR}/gst-plugin-vsplit"
 
 # Install directories.
 INSTALL_BINDIR := "${bindir}"
 INSTALL_LIBDIR := "${libdir}"
 
 EXTRA_OECMAKE += "-DGST_VERSION_REQUIRED=1.20.7"
-EXTRA_OECMAKE += "-DSYSROOT_INCDIR=${STAGING_INCDIR}"
-EXTRA_OECMAKE += "-DSYSROOT_LIBDIR=${STAGING_LIBDIR}"
+EXTRA_OECMAKE += "-DSYSROOT_INCDIR=${STAGING_INCDIR}"
+EXTRA_OECMAKE += "-DSYSROOT_LIBDIR=${STAGING_LIBDIR}"
 EXTRA_OECMAKE += "-DKERNEL_BUILDDIR=${STAGING_KERNEL_BUILDDIR}"
 EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_INSTALL_BINDIR=${INSTALL_BINDIR}"
 EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_INSTALL_LIBDIR=${INSTALL_LIBDIR}"

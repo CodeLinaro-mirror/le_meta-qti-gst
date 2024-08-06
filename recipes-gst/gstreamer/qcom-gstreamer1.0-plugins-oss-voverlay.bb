@@ -1,6 +1,6 @@
 inherit cmake pkgconfig
 
-SUMMARY = "Qualcomm open-source GStreamer Plug-in for jpeg encoding"
+SUMMARY = "Qualcomm open-source GStreamer Plug-in for image overlays"
 SECTION = "multimedia"
 
 LICENSE = "BSD-3-Clause-Clear"
@@ -9,20 +9,20 @@ LIC_FILES_CHKSUM = "file://${COMMON_LICENSE_DIR}/${LICENSE};md5=7a434440b651f4a4
 # Dependencies.
 DEPENDS := "gstreamer1.0"
 DEPENDS += "gstreamer1.0-plugins-base"
-DEPENDS += "gstreamer1.0-plugins-qcom-oss-base"
-DEPENDS += "qmmf-sdk"
+DEPENDS += "qcom-gstreamer1.0-plugins-oss-base"
+DEPENDS += "cairo"
 
 FILESPATH =+ "${WORKSPACE}/gst-plugins-qti-oss/:"
-SRC_URI = "file://gst-plugin-jpegenc"
-S = "${WORKDIR}/gst-plugin-jpegenc"
+SRC_URI = "file://gst-plugin-voverlay"
+S = "${WORKDIR}/gst-plugin-voverlay"
 
 # Install directries.
 INSTALL_BINDIR := "${bindir}"
 INSTALL_LIBDIR := "${libdir}"
 
 EXTRA_OECMAKE += "-DGST_VERSION_REQUIRED=1.20.7"
-EXTRA_OECMAKE += "-DSYSROOT_INCDIR=${STAGING_INCDIR}"
-EXTRA_OECMAKE += "-DSYSROOT_LIBDIR=${STAGING_LIBDIR}"
+EXTRA_OECMAKE += "-DSYSROOT_INCDIR=${STAGING_INCDIR}"
+EXTRA_OECMAKE += "-DSYSROOT_LIBDIR=${STAGING_LIBDIR}"
 EXTRA_OECMAKE += "-DKERNEL_BUILDDIR=${STAGING_KERNEL_BUILDDIR}"
 EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_INSTALL_BINDIR=${INSTALL_BINDIR}"
 EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_INSTALL_LIBDIR=${INSTALL_LIBDIR}"
@@ -33,10 +33,10 @@ EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_PACKAGE=${PN}"
 EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_SUMMARY="${SUMMARY}""
 EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_ORIGIN="Unknown package origin""
 
-EXTRA_OECMAKE += "-DCAMERA_METADATA_VERSION=${CAMERA_METADATA_VERSION}"
-
 FILES:${PN} += "${INSTALL_BINDIR}"
 FILES:${PN} += "${INSTALL_LIBDIR}"
+
+FILES:${PN}-dbg += "${INSTALL_LIBDIR}/gstreamer-1.0/.debug"
 
 SOLIBS = ".so*"
 FILES_SOLIBSDEV = ""

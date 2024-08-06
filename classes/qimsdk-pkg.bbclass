@@ -22,30 +22,36 @@ GST_PLUGINS = " \
     gstreamer1.0-plugins-good:do_package_write_ipk \
     gstreamer1.0-plugins-bad:do_package_write_ipk \
     gstreamer1.0-rtsp-server:do_package_write_ipk \
-    gstreamer1.0-plugins-qcom-oss-base:do_package_write_ipk \
-    gstreamer1.0-plugins-qcom-oss-tools:do_package_write_ipk \
-    gstreamer1.0-plugins-qcom-oss-batch:do_package_write_ipk \
-    gstreamer1.0-plugins-qcom-oss-metamux:do_package_write_ipk \
-    gstreamer1.0-plugins-qcom-oss-mldemux:do_package_write_ipk \
-    gstreamer1.0-plugins-qcom-oss-mlmeta:do_package_write_ipk \
-    gstreamer1.0-plugins-qcom-oss-mlvconverter:do_package_write_ipk \
-    gstreamer1.0-plugins-qcom-oss-mlvclassification:do_package_write_ipk \
-    gstreamer1.0-plugins-qcom-oss-mlvsuperresolution:do_package_write_ipk \
-    gstreamer1.0-plugins-qcom-oss-mlvdetection:do_package_write_ipk \
-    gstreamer1.0-plugins-qcom-oss-mlvpose:do_package_write_ipk \
-    gstreamer1.0-plugins-qcom-oss-mlvsegmentation:do_package_write_ipk \
-    gstreamer1.0-plugins-qcom-oss-overlay:do_package_write_ipk \
-    gstreamer1.0-plugins-qcom-oss-qmmfsrc:do_package_write_ipk \
-    gstreamer1.0-plugins-qcom-oss-socket:do_package_write_ipk \
-    gstreamer1.0-plugins-qcom-oss-vcomposer:do_package_write_ipk \
-    gstreamer1.0-plugins-qcom-oss-vsplit:do_package_write_ipk \
-    gstreamer1.0-plugins-qcom-oss-vtransform:do_package_write_ipk \
+    qcom-gstreamer1.0-plugins-oss-base:do_package_write_ipk \
+    qcom-gstreamer1.0-plugins-oss-tools:do_package_write_ipk \
+    qcom-gstreamer1.0-plugins-oss-batch:do_package_write_ipk \
+    qcom-gstreamer1.0-plugins-oss-metamux:do_package_write_ipk \
+    qcom-gstreamer1.0-plugins-oss-metatransform:do_package_write_ipk \
+    qcom-gstreamer1.0-plugins-oss-mldemux:do_package_write_ipk \
+    qcom-gstreamer1.0-plugins-oss-mlmeta:do_package_write_ipk \
+    qcom-gstreamer1.0-plugins-oss-mlmetaparser:do_package_write_ipk \
+    qcom-gstreamer1.0-plugins-oss-mlvconverter:do_package_write_ipk \
+    qcom-gstreamer1.0-plugins-oss-mlvclassification:do_package_write_ipk \
+    qcom-gstreamer1.0-plugins-oss-mlvsuperresolution:do_package_write_ipk \
+    qcom-gstreamer1.0-plugins-oss-mlvdetection:do_package_write_ipk \
+    qcom-gstreamer1.0-plugins-oss-mlvpose:do_package_write_ipk \
+    qcom-gstreamer1.0-plugins-oss-mlvsegmentation:do_package_write_ipk \
+    qcom-gstreamer1.0-plugins-oss-msgbroker:do_package_write_ipk \
+    qcom-gstreamer1.0-plugins-oss-overlay:do_package_write_ipk \
+    qcom-gstreamer1.0-plugins-oss-qmmfsrc:do_package_write_ipk \
+    qcom-gstreamer1.0-plugins-oss-redissink:do_package_write_ipk \
+    qcom-gstreamer1.0-plugins-oss-rtspbin:do_package_write_ipk \
+    qcom-gstreamer1.0-plugins-oss-smartvencbin:do_package_write_ipk \
+    qcom-gstreamer1.0-plugins-oss-socket:do_package_write_ipk \
+    qcom-gstreamer1.0-plugins-oss-vcomposer:do_package_write_ipk \
+    qcom-gstreamer1.0-plugins-oss-voverlay:do_package_write_ipk \
+    qcom-gstreamer1.0-plugins-oss-vsplit:do_package_write_ipk \
+    qcom-gstreamer1.0-plugins-oss-vtransform:do_package_write_ipk \
     gstreamer1.0-qcom-oss-sample-apps:do_package_write_ipk \
-    gstreamer1.0-plugins-qcom-oss-msgbroker:do_package_write_ipk \
   "
 
 GST_PLUGINS:remove:qcs9100 = " \
-    gstreamer1.0-plugins-qcom-oss-qmmfsrc:do_package_write_ipk \
+    qcom-gstreamer1.0-plugins-oss-qmmfsrc:do_package_write_ipk \
   "
 
 addtask do_generate_qim_sdk_setscene
@@ -55,8 +61,10 @@ do_generate_qim_sdk[dirs] = "${SSTATE_IN_DIR} ${SSTATE_OUT_DIR}"
 do_generate_qim_sdk[cleandirs] = "${SSTATE_IN_DIR} ${SSTATE_OUT_DIR}"
 do_generate_qim_sdk[stamp-extra-info] = "${MACHINE_ARCH}"
 do_generate_qim_sdk[depends] = " \
-    qim-sdk:do_patch \
+    qcom-qim-sdk:do_patch \
     gdk-pixbuf:do_package_write_ipk \
+    hiredis:do_package_write_ipk \
+    json-glib:do_package_write_ipk \
     liba52:do_package_write_ipk \
     libdaemon:do_package_write_ipk \
     libgudev:do_package_write_ipk \
@@ -130,7 +138,7 @@ def get_pkgs_list(d):
                 "libpsl5", "librsvg-2-2", "libsoup-2.4_",
                 "libtheora_", "libwebp_", "mpg123_",
                 "liborc-0", "libsbc1", "libspeex1", "libtag1", "libjson-glib-1.0-0",
-                "libmosquitto1"]
+                "libmosquitto1", "libhiredis1.0.0"]
     for _, pkgdirs, _ in os.walk(os.path.join(deploydir, pkgtype)):
         for pkgdir in pkgdirs:
             for f in os.listdir(os.path.join(deploydir, pkgtype, pkgdir)):

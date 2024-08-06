@@ -1,6 +1,6 @@
 inherit cmake pkgconfig
 
-SUMMARY = "Qualcomm open-source GStreamer Plug-in for ML image super resolution"
+SUMMARY = "Qualcomm open-source GStreamer Plug-in for ML image categorization"
 SECTION = "multimedia"
 
 LICENSE = "BSD-3-Clause-Clear"
@@ -9,11 +9,12 @@ LIC_FILES_CHKSUM = "file://${COMMON_LICENSE_DIR}/${LICENSE};md5=7a434440b651f4a4
 # Dependencies.
 DEPENDS := "gstreamer1.0"
 DEPENDS += "gstreamer1.0-plugins-base"
-DEPENDS += "gstreamer1.0-plugins-qcom-oss-base"
+DEPENDS += "qcom-gstreamer1.0-plugins-oss-base"
+DEPENDS += "cairo"
 
 FILESPATH =+ "${WORKSPACE}/gst-plugins-qti-oss/:"
-SRC_URI = "file://gst-plugin-mlvsuperresolution"
-S = "${WORKDIR}/gst-plugin-mlvsuperresolution"
+SRC_URI = "file://gst-plugin-mlvclassification"
+S = "${WORKDIR}/gst-plugin-mlvclassification"
 
 # Install directories.
 INSTALL_INCDIR := "${includedir}"

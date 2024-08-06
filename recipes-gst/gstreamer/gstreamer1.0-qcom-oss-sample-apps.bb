@@ -12,7 +12,7 @@ DEPENDS += "gstreamer1.0-plugins-base"
 DEPENDS += "gstreamer1.0-plugins-bad"
 DEPENDS += "json-glib"
 DEPENDS += "libsoup-2.4"
-DEPENDS:append:qcm6490 += "camera-server"
+DEPENDS:append:qcm6490 += "qcom-camera-server"
 
 FILESPATH =+ "${WORKSPACE}/gst-plugins-qti-oss/:"
 SRC_URI = "file://gst-sample-apps"

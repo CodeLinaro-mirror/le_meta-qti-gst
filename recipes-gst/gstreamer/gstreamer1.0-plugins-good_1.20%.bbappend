@@ -1,8 +1,7 @@
-DEPENDS:append:qcom = " qemu-native"
-FILESEXTRAPATHS:prepend:qcom := "${THISDIR}/gstreamer1.0-plugins-good/1.20:"
+DEPENDS:append:qcom-custom-bsp = " qemu-native"
+FILESEXTRAPATHS:prepend:qcom-custom-bsp := "${THISDIR}/gstreamer1.0-plugins-good/1.20:"
 
-SRC_URI:append:qcom = "\
-     ${@bb.utils.contains("DISTRO_FEATURES", "pulseaudio", "file://0001-Add-pulsedirectsink-plugin.patch", "", d)} \
+SRC_URI:append:qcom-custom-bsp = "\
      file://0002-v4l2-Add-support-for-fd-memory-import.patch \
      file://0003-gstreamer1.0-plugins-good-modify-caps.patch \
      file://0004-v4l2-Add-support-for-dma-memory-allocation.patch \
@@ -12,5 +11,3 @@ SRC_URI:append:qcom = "\
      file://0008-gstreamer1.0-plugins-good-Add-meson-option-to-build-.patch \
      file://0009-v4l2-Add-support-for-AV1-decoder.patch \
     "
-SRC_URI:remove:qcm6490 = "file://0001-Add-pulsedirectsink-plugin.patch"
-SRC_URI:remove:qcs9100 = "file://0001-Add-pulsedirectsink-plugin.patch"

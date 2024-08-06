@@ -10,8 +10,8 @@ LIC_FILES_CHKSUM = "file://${COMMON_LICENSE_DIR}/${LICENSE};md5=7a434440b651f4a4
 # Dependencies.
 DEPENDS := "gstreamer1.0"
 DEPENDS += "gstreamer1.0-plugins-base"
-DEPENDS += "gstreamer1.0-plugins-qcom-oss-base"
-DEPENDS += "camera-server"
+DEPENDS += "qcom-gstreamer1.0-plugins-oss-base"
+DEPENDS += "qcom-camera-server"
 
 FILESPATH =+ "${WORKSPACE}/gst-plugins-qti-oss/:"
 SRC_URI = "file://gst-plugin-qmmfsrc"

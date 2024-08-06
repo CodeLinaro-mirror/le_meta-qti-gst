@@ -1,6 +1,6 @@
 inherit cmake pkgconfig
 
-SUMMARY = "Qualcomm open-source GStreamer Plug-in for image overlays"
+SUMMARY = "Qualcomm open-source GStreamer Plug-in for Machine Learning using SNPE"
 SECTION = "multimedia"
 
 LICENSE = "BSD-3-Clause-Clear"
@@ -9,20 +9,22 @@ LIC_FILES_CHKSUM = "file://${COMMON_LICENSE_DIR}/${LICENSE};md5=7a434440b651f4a4
 # Dependencies.
 DEPENDS := "gstreamer1.0"
 DEPENDS += "gstreamer1.0-plugins-base"
-DEPENDS += "gstreamer1.0-plugins-qcom-oss-base"
-DEPENDS += "cairo"
+DEPENDS += "qcom-gstreamer1.0-plugins-oss-base"
+DEPENDS += "qcom-snpe-sdk"
+
+do_configure[depends] += "${@bb.utils.contains('PACKAGE_CLASSES', 'package_ipk', 'qcom-snpe-sdk:do_package_write_ipk', 'qcom-snpe-sdk:do_package_write_deb', d)}"
 
 FILESPATH =+ "${WORKSPACE}/gst-plugins-qti-oss/:"
-SRC_URI = "file://gst-plugin-voverlay"
-S = "${WORKDIR}/gst-plugin-voverlay"
+SRC_URI = "file://gst-plugin-mlsnpe"
+S = "${WORKDIR}/gst-plugin-mlsnpe"
 
-# Install directries.
+# Install directories.
 INSTALL_BINDIR := "${bindir}"
 INSTALL_LIBDIR := "${libdir}"
 
 EXTRA_OECMAKE += "-DGST_VERSION_REQUIRED=1.20.7"
-EXTRA_OECMAKE += "-DSYSROOT_INCDIR=${STAGING_INCDIR}"
-EXTRA_OECMAKE += "-DSYSROOT_LIBDIR=${STAGING_LIBDIR}"
+EXTRA_OECMAKE += "-DSYSROOT_INCDIR=${STAGING_INCDIR}"
+EXTRA_OECMAKE += "-DSYSROOT_LIBDIR=${STAGING_LIBDIR}"
 EXTRA_OECMAKE += "-DKERNEL_BUILDDIR=${STAGING_KERNEL_BUILDDIR}"
 EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_INSTALL_BINDIR=${INSTALL_BINDIR}"
 EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_INSTALL_LIBDIR=${INSTALL_LIBDIR}"
