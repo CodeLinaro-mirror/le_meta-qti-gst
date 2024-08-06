@@ -16,6 +16,7 @@ python __anonymous () {
 }
 
 GST_PLUGINS = " \
+    gstd:do_package_write_ipk \
     gstreamer1.0:do_package_write_ipk \
     gstreamer1.0-plugins-base:do_package_write_ipk \
     gstreamer1.0-plugins-good:do_package_write_ipk \
@@ -131,7 +132,7 @@ def get_pkgs_list(d):
     for _, pkgdirs, _ in os.walk(os.path.join(deploydir, pkgtype)):
         for pkgdir in pkgdirs:
             for f in os.listdir(os.path.join(deploydir, pkgtype, pkgdir)):
-                if "gstreamer" in os.path.basename(f) or "libgst" in os.path.basename(f) :
+                if "gstreamer" in os.path.basename(f) or "libgst" in os.path.basename(f) or "gstd" in os.path.basename(f) :
                     pkgslist.append(os.path.join(deploydir, pkgtype, pkgdir, f))
                 else:
                     for dep in dep_list:
