@@ -128,7 +128,7 @@ def get_pkgs_list(d):
                 "libdaemon0", "libgudev-1.0-0", "lame_", "libmp3lame0",
                 "libpsl5", "librsvg-2-2", "libsoup-2.4_",
                 "libtheora_", "libwebp_", "mpg123_",
-                "liborc-0", "libsbc1", "libspeex1", "libtag1"]
+                "liborc-0", "libsbc1", "libspeex1", "libtag1", "libjson-glib-1.0-0"]
     for _, pkgdirs, _ in os.walk(os.path.join(deploydir, pkgtype)):
         for pkgdir in pkgdirs:
             for f in os.listdir(os.path.join(deploydir, pkgtype, pkgdir)):
