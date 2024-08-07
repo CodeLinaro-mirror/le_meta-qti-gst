@@ -57,5 +57,4 @@ RDEPENDS:${PN} = " \
 
 RDEPENDS:${PN}:remove:qcs9100 = " \
     gstreamer1.0-plugins-qcom-oss-qmmfsrc \
-    gstreamer1.0-qcom-oss-sample-apps \
   "
