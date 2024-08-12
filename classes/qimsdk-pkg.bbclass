@@ -18,6 +18,7 @@ python __anonymous () {
 GST_PLUGINS = " \
     gstd:do_package_write_ipk \
     gstreamer1.0:do_package_write_ipk \
+    gstreamer1.0-python:do_package_write_ipk \
     gstreamer1.0-plugins-base:do_package_write_ipk \
     gstreamer1.0-plugins-good:do_package_write_ipk \
     gstreamer1.0-plugins-bad:do_package_write_ipk \
