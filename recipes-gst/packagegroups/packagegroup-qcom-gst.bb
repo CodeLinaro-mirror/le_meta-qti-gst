@@ -67,6 +67,7 @@ RDEPENDS:${PN}:qcom-custom-bsp = " \
     qcom-gstreamer1.0-plugins-oss-rtspbin \
     qcom-gstreamer1.0-plugins-oss-smartvencbin \
     qcom-gstreamer1.0-plugins-oss-socket \
+    qcom-gstreamer1.0-plugins-oss-test-framework \
     qcom-gstreamer1.0-plugins-oss-vcomposer \
     qcom-gstreamer1.0-plugins-oss-voverlay \
     qcom-gstreamer1.0-plugins-oss-vsplit \

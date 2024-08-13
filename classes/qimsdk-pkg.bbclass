@@ -47,6 +47,7 @@ GST_PLUGINS = " \
     qcom-gstreamer1.0-plugins-oss-rtspbin:do_package_write_ipk \
     qcom-gstreamer1.0-plugins-oss-smartvencbin:do_package_write_ipk \
     qcom-gstreamer1.0-plugins-oss-socket:do_package_write_ipk \
+    qcom-gstreamer1.0-plugins-oss-test-framework:do_package_write_ipk \
     qcom-gstreamer1.0-plugins-oss-vcomposer:do_package_write_ipk \
     qcom-gstreamer1.0-plugins-oss-voverlay:do_package_write_ipk \
     qcom-gstreamer1.0-plugins-oss-vsplit:do_package_write_ipk \
