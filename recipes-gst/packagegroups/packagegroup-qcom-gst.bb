@@ -54,6 +54,7 @@ RDEPENDS:${PN} = " \
     gstreamer1.0-plugins-qcom-oss-vtransform \
     gstreamer1.0-plugins-qcom-oss-rtspbin \
     gstreamer1.0-plugins-qcom-oss-redissink \
+    gstreamer1.0-plugins-qcom-oss-mlmetaparser \
     gstreamer1.0-qcom-oss-sample-apps \
    "
 
