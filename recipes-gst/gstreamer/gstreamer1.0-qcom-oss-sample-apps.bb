@@ -9,10 +9,10 @@ LIC_FILES_CHKSUM = "file://${QCOM_COMMON_LICENSE_DIR}${LICENSE};md5=3771d4920bd6
 # Dependencies.
 DEPENDS := "gstreamer1.0"
 DEPENDS += "gstreamer1.0-plugins-base"
-DEPENDS += "camera-server"
 DEPENDS += "gstreamer1.0-plugins-bad"
 DEPENDS += "json-glib"
 DEPENDS += "libsoup-2.4"
+DEPENDS:append:qcm6490 += "camera-server"
 
 FILESPATH =+ "${WORKSPACE}/gst-plugins-qti-oss/:"
 SRC_URI = "file://gst-sample-apps"
@@ -22,8 +22,12 @@ S = "${WORKDIR}/gst-sample-apps"
 INSTALL_BINDIR := "${bindir}"
 INSTALL_LIBDIR := "${libdir}"
 
+# Default platform definitions.
+ENABLE_CAMERA := "FALSE"
+ENABLE_AUDIO  := "FALSE"
+
 # Camera-related variables
-ENABLE_CAMERA          := "TRUE"
+ENABLE_CAMERA:qcm6490  := "TRUE"
 CAMERA_SERVICE         := "QMMF"
 CAMERA_SERVICE:qcm6490 := "LECAM"
 
@@ -39,8 +43,8 @@ ENABLE_DISPLAY := "TRUE"
 # ML-related variables
 ENABLE_ML := "TRUE"
 
-# Camera-related variables
-ENABLE_AUDIO := "TRUE"
+# Audio-related variables
+ENABLE_AUDIO:qcm6490 := "TRUE"
 
 # WebRTC enable
 ENABLE_WEBRTC := "TRUE"
