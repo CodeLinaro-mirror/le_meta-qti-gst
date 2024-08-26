@@ -11,9 +11,7 @@ LIC_FILES_CHKSUM = "file://${COMMON_LICENSE_DIR}/${LICENSE};md5=7a434440b651f4a4
 DEPENDS := "gstreamer1.0"
 DEPENDS += "gstreamer1.0-plugins-base"
 DEPENDS += "gstreamer1.0-plugins-qcom-oss-base"
-DEPENDS += "gstreamer1.0-plugins-qcom-oss-mlmeta"
 DEPENDS += "hiredis"
-DEPENDS += "json-glib"
 
 FILESPATH =+ "${WORKSPACE}/gst-plugins-qti-oss/:"
 
