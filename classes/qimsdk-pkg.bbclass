@@ -46,7 +46,6 @@ GST_PLUGINS = " \
 
 GST_PLUGINS:remove:qcs9100 = " \
     gstreamer1.0-plugins-qcom-oss-qmmfsrc:do_package_write_ipk \
-    gstreamer1.0-qcom-oss-sample-apps:do_package_write_ipk \
   "
 
 addtask do_generate_qim_sdk_setscene
