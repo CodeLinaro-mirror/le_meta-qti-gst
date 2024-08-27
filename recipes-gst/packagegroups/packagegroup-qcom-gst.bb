@@ -39,6 +39,7 @@ RDEPENDS:${PN} = " \
     gstreamer1.0-plugins-qcom-oss-tools \
     gstreamer1.0-plugins-qcom-oss-batch \
     gstreamer1.0-plugins-qcom-oss-metamux \
+    gstreamer1.0-plugins-qcom-oss-metatransform \
     gstreamer1.0-plugins-qcom-oss-mldemux \
     gstreamer1.0-plugins-qcom-oss-mlmeta \
     gstreamer1.0-plugins-qcom-oss-mlvconverter \
