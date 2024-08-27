@@ -58,6 +58,7 @@ RDEPENDS:${PN} = " \
     gstreamer1.0-plugins-qcom-oss-voverlay \
     gstreamer1.0-plugins-qcom-oss-rtspbin \
     gstreamer1.0-plugins-qcom-oss-redissink \
+    gstreamer1.0-plugins-qcom-oss-mlmetaparser \
     gstreamer1.0-qcom-oss-sample-apps \
     gstreamer1.0-plugins-qcom-oss-msgbroker \
    "
