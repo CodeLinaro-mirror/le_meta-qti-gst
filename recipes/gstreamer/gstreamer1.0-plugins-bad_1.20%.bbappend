@@ -1,3 +1,6 @@
+require ${@bb.utils.contains('BASEMACHINE', 'kalama', bb.utils.contains('PRODUCT', 'ubuntu', 'gstreamer-common.inc', '', d), '', d)}
+require ${@bb.utils.contains('BASEMACHINE', 'kalama', bb.utils.contains('PRODUCT', 'ubuntu', 'update-alternatives/gstreamer1.0-plugins-bad.inc', '', d), '', d)}
+
 FILESEXTRAPATHS:prepend := "${THISDIR}/gstreamer1.0-plugins-bad/1.20.4:"
 
 SRC_URI:append = "\
