@@ -69,15 +69,18 @@ do_generate_qim_sdk[depends] = " \
     libdaemon:do_package_write_ipk \
     libgudev:do_package_write_ipk \
     lame:do_package_write_ipk \
+    libnice:do_package_write_ipk \
     libpsl:do_package_write_ipk \
     librsvg:do_package_write_ipk \
     libsoup-2.4:do_package_write_ipk \
+    libsrtp:do_package_write_ipk \
     libtheora:do_package_write_ipk \
     libwebp:do_package_write_ipk \
     mpg123:do_package_write_ipk \
     orc:do_package_write_ipk \
     sbc:do_package_write_ipk \
     speex:do_package_write_ipk \
+    srt:do_package_write_ipk \
     taglib:do_package_write_ipk \
     mosquitto:do_package_write_ipk \
     ${GST_PLUGINS} \
@@ -138,7 +141,8 @@ def get_pkgs_list(d):
                 "libpsl5", "librsvg-2-2", "libsoup-2.4_",
                 "libtheora_", "libwebp_", "mpg123_",
                 "liborc-0", "libsbc1", "libspeex1", "libtag1", "libjson-glib-1.0-0",
-                "libmosquitto1", "libhiredis1.0.0"]
+                "libmosquitto1", "libhiredis1.0.0", "libnice_0.1.18", "libsrtp2-1_2.4.2",
+                "libsrt1.4_1.4.4"]
     for _, pkgdirs, _ in os.walk(os.path.join(deploydir, pkgtype)):
         for pkgdir in pkgdirs:
             for f in os.listdir(os.path.join(deploydir, pkgtype, pkgdir)):

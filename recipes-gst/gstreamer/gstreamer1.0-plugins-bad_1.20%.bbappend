@@ -13,7 +13,7 @@ SRC_URI:append:qcom-custom-bsp = "\
 "
 
 PACKAGECONFIG:append:qcom-custom-bsp = " webrtc sctp srt srtp"
-DEPENDS:append:qcom:qcom-custom-bsp = " weston libnice libsrtp"
+DEPENDS:append:qcom:qcom-custom-bsp = " weston libnice libsrtp srt"
 
 do_configure:prepend:qcom-custom-bsp() {
   install -d ${STAGING_DIR_HOST}${datadir}/wayland-protocols/stable/gbm-buffer-backend/

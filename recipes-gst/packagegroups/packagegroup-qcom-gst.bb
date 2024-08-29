@@ -14,20 +14,24 @@ PACKAGES = " \
 
 RDEPENDS:${PN}-dependencies = " \
     gdk-pixbuf \
+    hiredis \
     json-glib \
     liba52 \
     libdaemon \
     libgudev \
     lame \
+    libnice \
     libpsl \
     librsvg \
     libsoup-2.4 \
+    libsrtp \
     libtheora \
     libwebp \
     mpg123 \
     orc \
     sbc \
     speex \
+    srt \
     taglib \
     mosquitto \
     "
