@@ -110,7 +110,6 @@ GST_SAMPLE_APPS:remove:qcs9100 = " \
     qcom-gst-camera-switch-example:do_package_write_ipk \
     qcom-gst-multi-camera-example:do_package_write_ipk \
     qcom-gst-multi-stream-example:do_package_write_ipk \
-    qcom-gst-smartcodec-example:do_package_write_ipk \
     qcom-gst-snapshot-stream-example:do_package_write_ipk \
     qcom-gst-usb-single-camera-app:do_package_write_ipk \
     qcom-gst-video-playback-example:do_package_write_ipk \
