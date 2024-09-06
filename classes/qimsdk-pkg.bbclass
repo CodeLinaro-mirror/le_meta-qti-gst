@@ -92,6 +92,7 @@ GST_SAMPLE_APPS = " \
     qcom-gst-video-transcode-example:do_package_write_ipk \
     qcom-gst-webrtc-sendrecv-example:do_package_write_ipk \
     qcom-gst-weston-composition-example:do_package_write_ipk \
+    qcom-gst-ai-multistream-batch-inference:do_package_write_ipk \
   "
 
 GST_SAMPLE_APPS:remove:qcs9100 = " \
