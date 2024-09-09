@@ -11,6 +11,7 @@ SRC_URI:append = " \
        file://0002-waylandsink-support-gbm-buffer-backend-protocol.patch \
        file://0003-waylandsink-Forcibly-release-pending-buffers-on-PAUS.patch \
        file://0004-waylandsink-fix-for-video-playback-crash-after-HPD-o.patch \
+       file://0004-waylandsink-support-gap-buffers.patch \
        file://0005-waylandsink-Release-buffer-on-GST_QUERY_DRAIN.patch \
 "
 
