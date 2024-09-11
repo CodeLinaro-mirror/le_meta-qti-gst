@@ -42,8 +42,6 @@ RDEPENDS_packagegroup-qti-gst = " \
       ${@bb.utils.contains("DISTRO_FEATURES", "qti-snpe", "gstreamer1.0-plugins-qti-oss-mlsnpe", "", d)} \
       ${@bb.utils.contains("DISTRO_FEATURES", "qti-qnn", "gstreamer1.0-plugins-qti-oss-mlqnn", "", d)} \
       ${@bb.utils.contains("COMBINED_FEATURES", "qti-uvc", "gstreamer1.0-plugins-qti-oss-umd-daemon", "", d)} \
-      ${@bb.utils.contains_any("COMBINED_FEATURES", "qti-video qti-audio", "gstreamer1.0-omx", "", d)} \
-      ${@bb.utils.contains_any("COMBINED_FEATURES", "qti-video qti-audio", "gstreamer1.0-libav", "", d)} \
       ${@bb.utils.contains("DISTRO_FEATURES", "qti-qmmf", "gstreamer1.0-plugins-qti-oss-qmmfsrc", "", d)} \
       ${@bb.utils.contains("DISTRO_FEATURES", "qti-dfs", "gstreamer1.0-plugins-qti-oss-dfs", "", d)} \
       ${@bb.utils.contains("MACHINE_FEATURES", "qti-cvp", "gstreamer1.0-plugins-qti-oss-cv-optclflow", "", d)} \
