@@ -1,0 +1,44 @@
+From 7c5fd25119a495009ea62f79e5daec34cc464628 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Zbigniew=20J=C4=99drzejewski-Szmek?= <zbyszek@in.waw.pl>
+Date: Mon, 12 Apr 2021 14:03:32 +0200
+Subject: [PATCH] meson: do not fail if rsync is not installed with meson
+ 0.57.2
+
+https://github.com/mesonbuild/meson/issues/8641
+
+Our CI started to fail. Even if the change is reverted in meson,
+we need a quick workaround here.
+
+Signed-off-by: Shyam Komakula <quic_skomakul@quicinc.com>
+---
+ man/meson.build | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/man/meson.build b/man/meson.build
+index 8021adedec..d57c806e58 100644
+--- a/man/meson.build
++++ b/man/meson.build
+@@ -7,6 +7,7 @@ want_man = get_option('man')
+ want_html = get_option('html')
+ xsltproc = find_program('xsltproc',
+                         required : want_man == 'true' or want_html == 'true')
++rsync = find_program('rsync', required : false)
+ want_man = want_man != 'false' and xsltproc.found()
+ want_html = want_html != 'false' and xsltproc.found()
+ 
+@@ -179,6 +180,7 @@ html = custom_target(
+         depends : html_pages,
+         command : ['echo'])
+ 
++if rsync.found()
+ run_target(
+         'doc-sync',
+         depends : man_pages + html_pages,
+@@ -190,6 +192,7 @@ run_target(
+                    '--omit-dir-times',
+                    meson.current_build_dir(),
+                    get_option('www-target')])
++endif
+ 
+ ############################################################
+ 
