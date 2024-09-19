@@ -60,6 +60,7 @@ RDEPENDS:${PN}:qcom-custom-bsp = " \
     qcom-gstreamer1.0-plugins-oss-overlay \
     qcom-gstreamer1.0-plugins-oss-qmmfsrc \
     qcom-gstreamer1.0-plugins-oss-redissink \
+    qcom-gstreamer1.0-plugins-oss-restricted-zone \
     qcom-gstreamer1.0-plugins-oss-rtspbin \
     qcom-gstreamer1.0-plugins-oss-smartvencbin \
     qcom-gstreamer1.0-plugins-oss-socket \
