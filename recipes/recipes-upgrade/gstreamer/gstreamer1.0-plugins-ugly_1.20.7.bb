@@ -6,6 +6,8 @@ HOMEPAGE = "https://gstreamer.freedesktop.org/"
 BUGTRACKER = "https://gitlab.freedesktop.org/gstreamer/gst-plugins-ugly/-/issues"
 
 LIC_FILES_CHKSUM = "file://COPYING;md5=a6f89e2100d9b6cdffcea4f398e37343 \
+                    file://${COREBASE}/meta-qti-gst/files/common-licenses/LGPL-2.1-or-later;md5=2a4f4fd2128ea2f65047ee63fbca9f68 \
+                    file://${COREBASE}/meta-qti-gst/files/common-licenses/GPL-2.0-or-later;md5=fed54355545ffd980b814dab4a3b312c \
                     file://tests/check/elements/xingmux.c;beginline=1;endline=21;md5=4c771b8af188724855cb99cadd390068"
 
 LICENSE = "LGPL-2.1-or-later & GPL-2.0-or-later"

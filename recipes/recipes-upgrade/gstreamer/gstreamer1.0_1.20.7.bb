@@ -11,6 +11,7 @@ DEPENDS = "glib-2.0 glib-2.0-native libxml2 bison-native flex-native"
 inherit meson pkgconfig gettext upstream-version-is-even gobject-introspection ptest-gnome
 
 LIC_FILES_CHKSUM = "file://COPYING;md5=69333daa044cb77e486cc36129f7a770 \
+                    file://${COREBASE}/meta-qti-gst/files/common-licenses/${LICENSE};md5=2a4f4fd2128ea2f65047ee63fbca9f68 \
                     file://gst/gst.h;beginline=1;endline=21;md5=e059138481205ee2c6fc1c079c016d0d"
 
 S = "${WORKDIR}/gstreamer-${PV}"

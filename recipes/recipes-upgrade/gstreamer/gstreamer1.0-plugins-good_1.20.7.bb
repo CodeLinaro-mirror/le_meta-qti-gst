@@ -14,6 +14,7 @@ S = "${WORKDIR}/gst-plugins-good-${PV}"
 
 LICENSE = "LGPL-2.1-or-later"
 LIC_FILES_CHKSUM = "file://COPYING;md5=a6f89e2100d9b6cdffcea4f398e37343 \
+                    file://${COREBASE}/meta-qti-gst/files/common-licenses/${LICENSE};md5=2a4f4fd2128ea2f65047ee63fbca9f68 \
                     file://gst/replaygain/rganalysis.c;beginline=1;endline=23;md5=b60ebefd5b2f5a8e0cab6bfee391a5fe"
 
 DEPENDS += "gstreamer1.0-plugins-base libcap zlib"

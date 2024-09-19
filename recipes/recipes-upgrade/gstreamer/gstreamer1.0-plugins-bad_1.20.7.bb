@@ -28,7 +28,8 @@ SRC_URI[patch8.sha256sum] = "91887abb798ec3a301495ce9174e15b39a5975836f20aeda86b
 S = "${WORKDIR}/gst-plugins-bad-${PV}"
 
 LICENSE = "LGPL-2.1-or-later & GPL-2.0-or-later"
-LIC_FILES_CHKSUM = "file://COPYING;md5=4fbd65380cdd255951079008b364516c"
+LIC_FILES_CHKSUM = "file://COPYING;md5=4fbd65380cdd255951079008b364516c \
+                    file://${COREBASE}/meta-qti-gst/files/common-licenses/LGPL-2.1-or-later;md5=2a4f4fd2128ea2f65047ee63fbca9f68"
 
 DEPENDS += "gstreamer1.0-plugins-base"
 
