@@ -41,6 +41,7 @@ RDEPENDS:${PN}:qcom-custom-bsp = " \
     ${PN}-basic \
     ${PN}-sample-apps \
     gstd \
+    gstreamer1.0-python \
     qcom-gstreamer1.0-plugins-oss-base \
     qcom-gstreamer1.0-plugins-oss-tools \
     qcom-gstreamer1.0-plugins-oss-batch \
