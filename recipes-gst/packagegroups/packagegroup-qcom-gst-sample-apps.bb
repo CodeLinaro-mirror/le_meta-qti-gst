@@ -48,6 +48,7 @@ RDEPENDS:${PN}:qcom-custom-bsp = " \
     qcom-gst-webrtc-sendrecv-example \
     qcom-gst-weston-composition-example \
     qcom-gst-ai-multistream-batch-inference \
+    qcom-gst-python-examples \
    "
 
 RDEPENDS:${PN}:remove:qcs9100 = " \
