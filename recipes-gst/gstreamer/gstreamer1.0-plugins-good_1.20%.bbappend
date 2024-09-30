@@ -10,4 +10,5 @@ SRC_URI:append:qcom-custom-bsp = "\
      file://0007-v4l2-Handle-srccaps-and-GAP-buffer.patch \
      file://0008-gstreamer1.0-plugins-good-Add-meson-option-to-build-.patch \
      file://0009-v4l2-Add-support-for-AV1-decoder.patch \
+     file://0010-v4l2-Fix-incorrect-allocator-creation.patch \
     "
