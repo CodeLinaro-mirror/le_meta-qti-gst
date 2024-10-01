@@ -26,6 +26,7 @@ GST_PLUGINS = " \
     qcom-gstreamer1.0-plugins-oss-base:do_package_write_ipk \
     qcom-gstreamer1.0-plugins-oss-tools:do_package_write_ipk \
     qcom-gstreamer1.0-plugins-oss-batch:do_package_write_ipk \
+    qcom-gstreamer1.0-plugins-oss-dfs:do_package_write_ipk \
     qcom-gstreamer1.0-plugins-oss-metamux:do_package_write_ipk \
     qcom-gstreamer1.0-plugins-oss-metatransform:do_package_write_ipk \
     qcom-gstreamer1.0-plugins-oss-mldemux:do_package_write_ipk \
@@ -148,6 +149,7 @@ do_generate_qim_sdk[depends] = " \
     srt:do_package_write_ipk \
     taglib:do_package_write_ipk \
     mosquitto:do_package_write_ipk \
+    qcom-rvsdk:do_package_write_ipk \
     ${GST_PLUGINS} \
     ${GST_SAMPLE_APPS} \
   "
@@ -208,7 +210,7 @@ def get_pkgs_list(d):
                 "libtheora_", "libwebp_", "mpg123_",
                 "liborc-0", "libsbc1", "libspeex1", "libtag1", "libjson-glib-1.0-0",
                 "libmosquitto1", "libhiredis1.0.0", "libnice_0.1.18", "libsrtp2-1_2.4.2",
-                "libsrt1.4_1.4.4"]
+                "libsrt1.4_1.4.4", "qcom-rvsdk_1.0"]
     for _, pkgdirs, _ in os.walk(os.path.join(deploydir, pkgtype)):
         for pkgdir in pkgdirs:
             for f in os.listdir(os.path.join(deploydir, pkgtype, pkgdir)):

@@ -34,6 +34,7 @@ RDEPENDS:${PN}-dependencies = " \
     srt \
     taglib \
     mosquitto \
+    qcom-rvsdk \
     "
 
 RDEPENDS:${PN}:qcom-custom-bsp = " \
@@ -45,6 +46,7 @@ RDEPENDS:${PN}:qcom-custom-bsp = " \
     qcom-gstreamer1.0-plugins-oss-base \
     qcom-gstreamer1.0-plugins-oss-tools \
     qcom-gstreamer1.0-plugins-oss-batch \
+    qcom-gstreamer1.0-plugins-oss-dfs \
     qcom-gstreamer1.0-plugins-oss-metamux \
     qcom-gstreamer1.0-plugins-oss-metatransform \
     qcom-gstreamer1.0-plugins-oss-mldemux \
