@@ -70,7 +70,6 @@ RDEPENDS:${PN}:qcom-custom-bsp = " \
     qcom-gstreamer1.0-plugins-oss-voverlay \
     qcom-gstreamer1.0-plugins-oss-vsplit \
     qcom-gstreamer1.0-plugins-oss-vtransform \
-    gstreamer1.0-qcom-oss-python-examples \
    "
 
 RDEPENDS:${PN}:remove:qcs9100 = " \
