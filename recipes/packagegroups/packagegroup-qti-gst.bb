@@ -27,6 +27,7 @@ RDEPENDS_packagegroup-qti-gst = " \
       gstreamer1.0-plugins-qti-oss-vtransform \
       gstreamer1.0-plugins-qti-oss-vsplit \
       gstreamer1.0-plugins-qti-oss-vcomposer \
+      gstreamer1.0-plugins-qti-oss-voverlay \
       gstreamer1.0-plugins-qti-oss-batch \
       gstreamer1.0-plugins-qti-oss-metamux \
       gstreamer1.0-plugins-qti-oss-mlvconverter \
