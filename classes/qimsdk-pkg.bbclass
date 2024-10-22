@@ -102,6 +102,7 @@ GST_SAMPLE_APPS = " \
     qcom-gst-weston-composition-example:do_package_write_ipk \
     qcom-gst-ai-multistream-batch-inference:do_package_write_ipk \
     qcom-gst-python-examples:do_package_write_ipk \
+    qcom-gst-ai-face-recognition:do_package_write_ipk \
   "
 
 GST_SAMPLE_APPS:remove:qcs9100 = " \
