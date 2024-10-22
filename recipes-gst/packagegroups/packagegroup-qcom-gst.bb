@@ -75,3 +75,7 @@ RDEPENDS:${PN}:qcom-custom-bsp = " \
 RDEPENDS:${PN}:remove:qcs9100 = " \
     qcom-gstreamer1.0-plugins-oss-qmmfsrc \
   "
+
+RDEPENDS:${PN}:remove:qcs8300 = " \
+    qcom-gstreamer1.0-plugins-oss-qmmfsrc \
+  "
