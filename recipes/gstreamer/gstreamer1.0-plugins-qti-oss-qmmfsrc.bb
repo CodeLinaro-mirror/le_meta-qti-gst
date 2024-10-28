@@ -61,6 +61,20 @@ IMAGE_NV12_FORMAT_ENABLE:kalama        := "TRUE"
 FEATURE_LOGICAL_CAMERA_SUPPORT:kalama                := "TRUE"
 FEATURE_LOGICAL_CAMERA_SENSOR_SWITCH:kalama          := "TRUE"
 
+# Overwrite the default platform definitions for pineapple.
+IMAGE_MAX_WIDTH:pineapple                 := "9248"
+IMAGE_MAX_HEIGHT:pineapple                := "6944"
+VIDEO_MAX_WIDTH:pineapple                 := "9248"
+VIDEO_MAX_HEIGHT:pineapple                := "6944"
+VIDEO_MAX_FPS:pineapple                   := "480/1"
+CAMERA_METADATA_VERSION:pineapple         := "1.0ns"
+VIDEO_TYPE_SUPPORT:pineapple              := "TRUE"
+VIDEO_P010_10LE_FORMAT_ENABLE:pineapple   := "TRUE"
+VIDEO_NV12_10LE32_FORMAT_ENABLE:pineapple := "TRUE"
+IMAGE_NV12_FORMAT_ENABLE:pineapple        := "TRUE"
+FEATURE_LOGICAL_CAMERA_SUPPORT:pineapple                := "TRUE"
+FEATURE_LOGICAL_CAMERA_SENSOR_SWITCH:pineapple          := "TRUE"
+
 # Overwrite the default platform definitions for qcs6490.
 VIDEO_MAX_FPS:qcs6490            := "240/1"
 CAMERA_METADATA_VERSION:qcs6490  := "1.1"
