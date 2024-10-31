@@ -49,6 +49,7 @@ RDEPENDS:${PN}:qcom-custom-bsp = " \
     qcom-gstreamer1.0-plugins-oss-dfs \
     qcom-gstreamer1.0-plugins-oss-metamux \
     qcom-gstreamer1.0-plugins-oss-metatransform \
+    qcom-gstreamer1.0-plugins-oss-mlaconverter \
     qcom-gstreamer1.0-plugins-oss-mldemux \
     qcom-gstreamer1.0-plugins-oss-mlmeta \
     qcom-gstreamer1.0-plugins-oss-mlmetaparser \
