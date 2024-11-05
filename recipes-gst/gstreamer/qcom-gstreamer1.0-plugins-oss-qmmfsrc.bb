@@ -51,7 +51,6 @@ VHDR_MODES_ENABLE:qcm6490  := "TRUE"
 
 # Overwrite the default platform definitions for qcs9100
 VIDEO_TYPE_SUPPORT:qcs9100 := "TRUE"
-CAMERA_SERVICE:qcs9100     := "LECAM"
 IMAGE_MAX_WIDTH:qcs9100    := "5184"
 IMAGE_MAX_HEIGHT:qcs9100   := "3880"
 VIDEO_MAX_WIDTH:qcs9100    := "5184"
