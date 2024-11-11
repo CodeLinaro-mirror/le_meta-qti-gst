@@ -14,4 +14,5 @@ SRC_URI:append:qcom-custom-bsp = "\
      file://0009-v4l2-Add-support-for-AV1-decoder.patch \
      file://0010-v4l2-Fix-incorrect-allocator-creation.patch \
      file://0011-v4l2-Add-KEEP_MAPPED-flag-to-the-pool.patch \
+     file://0012-v4l2-Add-support-for-UBWC-format-on-CAPTURE-plane.patch \
     "
