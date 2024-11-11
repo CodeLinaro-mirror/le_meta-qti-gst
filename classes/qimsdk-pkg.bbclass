@@ -77,6 +77,7 @@ GST_SAMPLE_APPS = " \
     qcom-gst-ai-pose-detection:do_package_write_ipk \
     qcom-gst-ai-segmentation:do_package_write_ipk \
     qcom-gst-ai-superresolution:do_package_write_ipk \
+    qcom-gst-ai-smartcodec-example:do_package_write_ipk \
     qcom-gst-appsink-example:do_package_write_ipk \
     qcom-gst-audio-decode-example:do_package_write_ipk \
     qcom-gst-audio-encode-example:do_package_write_ipk \

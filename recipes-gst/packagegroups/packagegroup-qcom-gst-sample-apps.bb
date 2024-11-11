@@ -25,6 +25,7 @@ RDEPENDS:${PN}:qcom-custom-bsp = " \
     qcom-gst-ai-pose-detection \
     qcom-gst-ai-segmentation \
     qcom-gst-ai-superresolution \
+    qcom-gst-ai-smartcodec-example \
     qcom-gst-appsink-example \
     qcom-gst-audio-decode-example \
     qcom-gst-audio-encode-example \
