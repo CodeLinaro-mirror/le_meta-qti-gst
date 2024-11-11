@@ -1,6 +1,6 @@
 inherit cmake pkgconfig
 
-SUMMARY = "QTI open-source GStreamer Plug-in for offline camera"
+SUMMARY = "QTI open-source GStreamer Plug-in for reprocessing via camera module"
 SECTION = "multimedia"
 
 LICENSE = "BSD-3-Clause-Clear"
@@ -15,8 +15,8 @@ DEPENDS += "qmmf-sdk"
 
 FILESPATH =+ "${WORKSPACE}/vendor/qcom/opensource/gst-plugins-qti-oss/:"
 
-SRC_URI = "file://gst-plugin-offlinecamera/"
-S = "${WORKDIR}/gst-plugin-offlinecamera"
+SRC_URI = "file://gst-plugin-camreproc/"
+S = "${WORKDIR}/gst-plugin-camreproc"
 
 # Install directries.
 INSTALL_BINDIR := "${bindir}"
@@ -24,7 +24,6 @@ INSTALL_LIBDIR := "${libdir}"
 
 # Default platform definations.
 CAMERA_METADATA_VERSION := "1.0"
-CAMERA_SERVICE          := "QMMF"
 
 # Overwrite the default platform definitions for qrb5165.
 CAMERA_METADATA_VERSION:qrb5165  := "1.1"
@@ -34,7 +33,6 @@ CAMERA_METADATA_VERSION:kalama   := "1.0ns"
 
 # Overwrite the default platform definitions for qcs6490.
 CAMERA_METADATA_VERSION:qcs6490  := "1.1"
-CAMERA_SERVICE:qcm6490     := "LECAM"
 
 EXTRA_OECMAKE += "-DGST_VERSION_REQUIRED=1.14.4"
 EXTRA_OECMAKE += "-DSYSROOT_INCDIR=${STAGING_INCDIR}"
