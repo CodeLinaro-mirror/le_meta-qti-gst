@@ -29,6 +29,7 @@ GST_PLUGINS = " \
     qcom-gstreamer1.0-plugins-oss-dfs:do_package_write_ipk \
     qcom-gstreamer1.0-plugins-oss-metamux:do_package_write_ipk \
     qcom-gstreamer1.0-plugins-oss-metatransform:do_package_write_ipk \
+    qcom-gstreamer1.0-plugins-oss-mlaclassification:do_package_write_ipk \
     qcom-gstreamer1.0-plugins-oss-mlaconverter:do_package_write_ipk \
     qcom-gstreamer1.0-plugins-oss-mldemux:do_package_write_ipk \
     qcom-gstreamer1.0-plugins-oss-mlmeta:do_package_write_ipk \
