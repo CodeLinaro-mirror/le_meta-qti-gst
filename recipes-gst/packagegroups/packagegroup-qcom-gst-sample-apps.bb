@@ -70,7 +70,6 @@ RDEPENDS:${PN}:remove:qcs9100 = " \
     qcom-gst-snapshot-stream-example \
     qcom-gst-usb-single-camera-app \
     qcom-gst-video-playback-example \
-    qcom-gst-webrtc-sendrecv-example \
     qcom-gst-weston-composition-example \
   "
 
@@ -93,6 +92,5 @@ RDEPENDS:${PN}:remove:qcs8300 = " \
     qcom-gst-snapshot-stream-example \
     qcom-gst-usb-single-camera-app \
     qcom-gst-video-playback-example \
-    qcom-gst-webrtc-sendrecv-example \
     qcom-gst-weston-composition-example \
   "
