@@ -16,13 +16,12 @@ DEPENDS += "qcom-gst-sample-apps-utils"
 DEPENDS:append:qcm6490 = " qcom-camera-server"
 
 FILESPATH =+ "${WORKSPACE}/gst-plugins-qti-oss/gst-sample-apps:"
-SRC_URI = "file://gst-ai-pose-detection"
-S = "${WORKDIR}/gst-ai-pose-detection"
+SRC_URI = "file://gst-ai-face-recognition"
+S = "${WORKDIR}/gst-ai-face-recognition"
 
 # Install directries.
 INSTALL_BINDIR := "${bindir}"
 INSTALL_LIBDIR := "${libdir}"
-INSTALL_CONFIG := "/opt/"
 
 # Camera-related variables
 ENABLE_CAMERA          := "FALSE"
@@ -42,7 +41,6 @@ EXTRA_OECMAKE += "-DCAMERA_SERVICE=${CAMERA_SERVICE}"
 
 FILES:${PN} += "${INSTALL_BINDIR}"
 FILES:${PN} += "${INSTALL_LIBDIR}"
-FILES:${PN} += "${INSTALL_CONFIG}"
 
 SOLIBS = ".so*"
 FILES_SOLIBSDEV = ""

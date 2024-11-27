@@ -34,6 +34,7 @@ RDEPENDS:${PN}-dependencies = " \
     srt \
     taglib \
     mosquitto \
+    qcom-rvsdk \
     "
 
 RDEPENDS:${PN}:qcom-custom-bsp = " \
@@ -45,6 +46,7 @@ RDEPENDS:${PN}:qcom-custom-bsp = " \
     qcom-gstreamer1.0-plugins-oss-base \
     qcom-gstreamer1.0-plugins-oss-tools \
     qcom-gstreamer1.0-plugins-oss-batch \
+    qcom-gstreamer1.0-plugins-oss-dfs \
     qcom-gstreamer1.0-plugins-oss-metamux \
     qcom-gstreamer1.0-plugins-oss-metatransform \
     qcom-gstreamer1.0-plugins-oss-mldemux \
@@ -65,13 +67,13 @@ RDEPENDS:${PN}:qcom-custom-bsp = " \
     qcom-gstreamer1.0-plugins-oss-rtspbin \
     qcom-gstreamer1.0-plugins-oss-smartvencbin \
     qcom-gstreamer1.0-plugins-oss-socket \
+    qcom-gstreamer1.0-plugins-oss-test-framework \
     qcom-gstreamer1.0-plugins-oss-vcomposer \
     qcom-gstreamer1.0-plugins-oss-voverlay \
     qcom-gstreamer1.0-plugins-oss-vsplit \
     qcom-gstreamer1.0-plugins-oss-vtransform \
-    gstreamer1.0-qcom-oss-python-examples \
    "
 
-RDEPENDS:${PN}:remove:qcs9100 = " \
+RDEPENDS:${PN}:remove:qcs8300 = " \
     qcom-gstreamer1.0-plugins-oss-qmmfsrc \
   "

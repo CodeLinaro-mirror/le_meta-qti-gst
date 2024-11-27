@@ -22,6 +22,7 @@ S = "${WORKDIR}/gst-ai-object-detection"
 # Install directries.
 INSTALL_BINDIR := "${bindir}"
 INSTALL_LIBDIR := "${libdir}"
+INSTALL_CONFIG := "/opt/"
 
 # Camera-related variables
 ENABLE_CAMERA          := "FALSE"
@@ -41,6 +42,7 @@ EXTRA_OECMAKE += "-DCAMERA_SERVICE=${CAMERA_SERVICE}"
 
 FILES:${PN} += "${INSTALL_BINDIR}"
 FILES:${PN} += "${INSTALL_LIBDIR}"
+FILES:${PN} += "${INSTALL_CONFIG}"
 
 SOLIBS = ".so*"
 FILES_SOLIBSDEV = ""

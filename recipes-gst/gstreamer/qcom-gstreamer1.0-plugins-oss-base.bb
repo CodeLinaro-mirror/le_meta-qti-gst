@@ -13,6 +13,8 @@ DEPENDS += "gbm"
 DEPENDS += "adreno"
 DEPENDS += "qcom-fastcv-binaries"
 DEPENDS += "qcom-ib2c"
+DEPENDS:append:qcs9100 = " qcom-displaydlkm"
+DEPENDS:append:qcs8300 = " qcom-displaydlkm"
 
 FILESPATH =+ "${WORKSPACE}/gst-plugins-qti-oss/:"
 SRC_URI = "file://gst-plugin-base"
