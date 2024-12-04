@@ -12,17 +12,21 @@ DEPENDS := "gstreamer1.0"
 DEPENDS += "gstreamer1.0-plugins-base"
 DEPENDS += "gbm"
 DEPENDS += "adreno"
+DEPENDS:remove:pineapple = "adreno"
 
 # Dependency on FastCV library used in FCV Video Converter.
 DEPENDS += "fastcv-noship"
 DEPENDS:remove:qcm6490 = "fastcv-noship"
 DEPENDS:append:qcm6490 = " fastcv-binaries"
+DEPENDS:remove:pineapple = "fastcv-noship"
 
 # Dependency on IB2C library used in GLES Video Converter.
 DEPENDS += "qti-ib2c"
 RDEPENDS:${PN} += "qti-ib2c"
 DEPENDS:remove:qcs6490 = "qti-ib2c"
 RDEPENDS:${PN}:remove:qcs6490 = "qti-ib2c"
+DEPENDS:remove:pineapple = "qti-ib2c"
+RDEPENDS:${PN}:remove:pineapple = "qti-ib2c"
 
 FILESPATH =+ "${WORKSPACE}/vendor/qcom/opensource/gst-plugins-qti-oss/:"
 
