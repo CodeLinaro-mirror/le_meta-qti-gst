@@ -24,7 +24,7 @@ SRC_URI = "https://gstreamer.freedesktop.org/src/gstreamer/gstreamer-${PV}.tar.x
            https://raw.githubusercontent.com/yoctoproject/poky/refs/heads/kirkstone/meta/recipes-multimedia/gstreamer/gstreamer1.0/run-ptest;name=ptest \
            "
 SRC_URI[gstreamer.sha256sum] = "1757184a07b9703219e8b1961f81cb1dd64320d147fc045ac8eb499efbea79be"
-SRC_URI[ptest.sha256sum] = "d7935642d2d4e879fccd04b5330c427aa3cbad0367a84cbfec6741bf7b831ed1"
+SRC_URI[ptest.sha256sum] = "b442ec57116b0c3accc74286a7e24d6153e43874dd80c8a859762c71cffb5dd3"
 SRC_URI[patch1.sha256sum] = "ac35e9b66d7ab9ff6460b33b065bd231c40b03dd60ef658513d6053a2ffcc051"
 SRC_URI[patch2.sha256sum] = "25fa5e1cc3ba3535c2f4658f51142822e4f7db16856f3dfcfc2b617c8d90e88a"
 SRC_URI[patch3.sha256sum] = "90dccf7e8cd5bfa7f32e7adcda92aaddc38cc5e1ca5a18f07565f5d81b4e05ff"
