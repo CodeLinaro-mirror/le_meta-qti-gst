@@ -20,6 +20,8 @@ DEPENDS += "liblog"
 DEPENDS:remove:qcm6490 = "liblog"
 DEPENDS:append:qcm6490 = " property-vault syslog-plumber"
 DEPENDS:remove:qcs6490 = "graphicsdlkm"
+DEPENDS:remove:pineapple = "adreno"
+DEPENDS:remove:pineapple = "graphicsdlkm"
 
 RDEPENDS:${PN}:append:qcm6490 = " property-vault"
 
