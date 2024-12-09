@@ -30,6 +30,7 @@ CODEC2_CONFIG_VERSION := "1.0"
 CODEC2_CONFIG_VERSION:kalama := "2.0"
 
 ENABLE_LINEAR_DMABUF:qrb5165 := "TRUE"
+ENABLE_LINEAR_DMABUF:kalama := "TRUE"
 ENABLE_AUDIO_PLUGINS:kalama := "TRUE"
 
 EXTRA_OECMAKE += "-DGST_VERSION_REQUIRED=1.14.4"
@@ -56,5 +57,5 @@ FILES_SOLIBSDEV = ""
 TOOLCHAIN = "sdllvm"
 
 placeholder := "${TARGET_SYS}"
-TARGET_SYS = "${@bb.utils.contains('BASEMACHINE', 'kalama', bb.utils.contains('PRODUCT', 'ubuntu', '${TARGET_ARCH}-linux-gnu', '${placeholder}', d), '${placeholder}', d)}"
-TARGET_CFLAGS += "${@bb.utils.contains('BASEMACHINE', 'kalama', bb.utils.contains('PRODUCT', 'ubuntu', '-I${STAGING_INCDIR}/c++', '', d), '', d)}"
+TARGET_SYS = "${@bb.utils.contains('BASEMACHINE', 'kalama', bb.utils.contains('PRODUCT', 'ubuntu', bb.utils.contains('DISTRO_FEATURES', 'qimsdk-layers', '${TARGET_ARCH}-linux-gnu', '${placeholder}', d), '${placeholder}', d), '${placeholder}', d)}"
+TARGET_CFLAGS += "${@bb.utils.contains('BASEMACHINE', 'kalama', bb.utils.contains('PRODUCT', 'ubuntu', bb.utils.contains('DISTRO_FEATURES', 'qimsdk-layers', '-I${STAGING_INCDIR}/c++', '', d), '', d), '', d)}"
