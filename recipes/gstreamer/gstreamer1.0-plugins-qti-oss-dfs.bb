@@ -14,6 +14,7 @@ DEPENDS += "gstreamer1.0-plugins-qti-oss-base"
 DEPENDS += "vslam"
 DEPENDS:remove:qcs6490 += "vslam"
 DEPENDS:remove:kalama += "vslam"
+DEPENDS:remove:pineapple += "vslam"
 DEPENDS:append:qcs6490 += "rv"
 
 FILESPATH =+ "${WORKSPACE}/vendor/qcom/opensource/gst-plugins-qti-oss/:"
@@ -36,6 +37,9 @@ RVSDK_API_VERSION:qcs6490 := "0x202403"
 
 #Overwrite the default RVSDK version definitions for kalama
 RVSDK_API_VERSION:kalama := "0x202404"
+
+#Overwrite the default RVSDK version definitions for pineapple
+RVSDK_API_VERSION:pineapple := "0x202404"
 
 EXTRA_OECMAKE += "-DGST_VERSION_REQUIRED=1.14.4"
 EXTRA_OECMAKE += "-DSYSROOT_INCDIR=${STAGING_INCDIR}"
