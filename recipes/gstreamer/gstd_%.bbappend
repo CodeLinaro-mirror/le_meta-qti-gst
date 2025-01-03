@@ -1,4 +1,4 @@
-FILESEXTRAPATHS_prepend := "${THISDIR}/${BPN}:"
+FILESEXTRAPATHS:prepend := "${THISDIR}/${BPN}:"
 
 SRCREV = "d924fcbc2123dcfcb35242ecf5dc2fc3049004b3"
 
@@ -7,12 +7,12 @@ SRC_URI += "\
            file://0001-Unblock-GSTD-pipeline-if-a-plugin-refuses-to-change-.patch \
            "
 
-SRC_URI_remove = "\
+SRC_URI:remove = "\
            file://0001-gstd-yocto-compatibility.patch \
            file://0001-Look-for-gtk-doc.make-in-builddir.patch \
            "
 
-SRC_URI_append_qti-distro-perf = "\
+SRC_URI:append_qti-distro-perf = "\
            file://0001-Disable-logging-on-perf-builds.patch \
            "
 
@@ -24,11 +24,11 @@ EXTRA_OECONF = "--with-gstd-runstatedir=/run \
                 --with-gstd-logstatedir=${localstatedir}/log/ \
                 "
 
-do_configure_prepend() {
+do_configure:prepend() {
         echo -n "" > ${WORKDIR}/git/libgstc/python/Makefile.am
 }
 
-do_install_append() {
+do_install:append() {
         install -d ${D}${sysconfdir}/default
         echo "OPTARGS=\"-a 0.0.0.0\"" >> ${D}${sysconfdir}/default/gstd
         echo "XDG_RUNTIME_DIR=/dev/socket/weston" >> ${D}${sysconfdir}/default/gstd
