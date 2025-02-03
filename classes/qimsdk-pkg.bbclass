@@ -107,6 +107,7 @@ GST_SAMPLE_APPS = " \
     qcom-gst-python-examples:do_package_write_ipk \
     qcom-gst-ai-face-recognition:do_package_write_ipk \
     qcom-gst-ai-face-detection:do_package_write_ipk \
+    qcom-gst-ai-metadata-parser-example:do_package_write_ipk \
   "
 
 GST_SAMPLE_APPS:remove:qcs9100 = " \
