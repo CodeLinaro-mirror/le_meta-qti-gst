@@ -12,11 +12,13 @@ DEPENDS += "gstreamer1.0-plugins-base"
 DEPENDS += "qcom-gstreamer1.0-plugins-oss-base"
 DEPENDS += "qcom-snpe-sdk"
 
-do_configure[depends] += "${@bb.utils.contains('PACKAGE_CLASSES', 'package_ipk', 'qcom-snpe-sdk:do_package_write_ipk', 'qcom-snpe-sdk:do_package_write_deb', d)}"
+do_configure[depends] += "${@bb.utils.contains('PACKAGE_CLASSES', 'package_ipk', 'qcom-snpe-sdk:do_package_write_ipk', \
+                            bb.utils.contains('PACKAGE_CLASSES', 'package_rpm', 'qcom-snpe-sdk:do_package_write_rpm', \
+                            'qcom-snpe-sdk:do_package_write_deb', d), d)}"
 
-FILESPATH =+ "${WORKSPACE}/gst-plugins-qti-oss/:"
-SRC_URI = "file://gst-plugin-mlsnpe"
-S = "${WORKDIR}/gst-plugin-mlsnpe"
+FILESPATH =+ "${WORKSPACE}/:"
+SRC_URI = "file://gst-plugins-qti-oss/gst-plugin-mlsnpe"
+S = "${WORKDIR}/gst-plugins-qti-oss/gst-plugin-mlsnpe"
 
 # Install directories.
 INSTALL_BINDIR := "${bindir}"
