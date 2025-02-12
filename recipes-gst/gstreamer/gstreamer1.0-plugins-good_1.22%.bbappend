@@ -6,4 +6,5 @@ SRC_URI:append:qcom-custom-bsp = "\
     file://0003-v4l2-Set-pixel-format-to-HEVC-for-H265-MIME-type.patch \
     file://0004-v4l2-Add-support-for-fd-memory-import.patch \
     file://0005-v4l2-Add-support-for-AV1-format.patch \
+    file://0006-v4l2-decoder-Prefer-colorimetry-from-acquired-caps-f.patch \
 "
