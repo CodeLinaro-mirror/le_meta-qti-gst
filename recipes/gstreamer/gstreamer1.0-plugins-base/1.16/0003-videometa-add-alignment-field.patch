@@ -1,0 +1,357 @@
+From a3dfb24633daafa4768db8b851d5aa58beecdfd3 Mon Sep 17 00:00:00 2001
+From: Guillaume Desmottes <guillaume.desmottes@collabora.com>
+Date: Tue, 9 Jul 2019 12:17:44 +0200
+Subject: [PATCH] videometa: add alignment field
+
+By adding this field, buffer producers can now explicitly set the exact
+geometry of planes, allowing users to easily know the padded size and
+height of each plane.
+
+GstVideoMeta is always heap allocated by GStreamer itself so we can
+safely extend it.
+---
+ gst-libs/gst/video/gstvideometa.c | 135 ++++++++++++++++++++++++++++++
+ gst-libs/gst/video/gstvideometa.h |  15 ++++
+ tests/check/libs/video.c          | 122 +++++++++++++++++++++++++++
+ 3 files changed, 272 insertions(+)
+
+diff --git a/gst-libs/gst/video/gstvideometa.c b/gst-libs/gst/video/gstvideometa.c
+index 4061192..1236c03 100644
+--- a/gst-libs/gst/video/gstvideometa.c
++++ b/gst-libs/gst/video/gstvideometa.c
+@@ -64,6 +64,7 @@ gst_video_meta_init (GstMeta * meta, gpointer params, GstBuffer * buffer)
+   emeta->width = emeta->height = emeta->n_planes = 0;
+   memset (emeta->offset, 0, sizeof (emeta->offset));
+   memset (emeta->stride, 0, sizeof (emeta->stride));
++  gst_video_alignment_reset (&emeta->alignment);
+   emeta->map = NULL;
+   emeta->unmap = NULL;
+ 
+@@ -104,6 +105,7 @@ gst_video_meta_transform (GstBuffer * dest, GstMeta * meta,
+       for (i = 0; i < dmeta->n_planes; i++) {
+         dmeta->offset[i] = smeta->offset[i];
+         dmeta->stride[i] = smeta->stride[i];
++        dmeta->alignment = smeta->alignment;
+       }
+       dmeta->map = smeta->map;
+       dmeta->unmap = smeta->unmap;
+@@ -392,6 +394,139 @@ gst_video_meta_unmap (GstVideoMeta * meta, guint plane, GstMapInfo * info)
+   return meta->unmap (meta, plane, info);
+ }
+ 
++static gboolean
++gst_video_meta_validate_alignment (GstVideoMeta * meta,
++    gsize plane_size[GST_VIDEO_MAX_PLANES])
++{
++  GstVideoInfo info;
++  guint i;
++
++  gst_video_info_init (&info);
++  gst_video_info_set_format (&info, meta->format, meta->width, meta->height);
++
++  if (!gst_video_info_align_full (&info, &meta->alignment, plane_size)) {
++    GST_WARNING ("Failed to align meta with its alignment");
++    return FALSE;
++  }
++
++  for (i = 0; i < GST_VIDEO_INFO_N_PLANES (&info); i++) {
++    if (GST_VIDEO_INFO_PLANE_STRIDE (&info, i) != meta->stride[i]) {
++      GST_WARNING
++          ("Stride of plane %d defined in meta (%d) is different from the one computed from the alignment (%d)",
++          i, meta->stride[i], GST_VIDEO_INFO_PLANE_STRIDE (&info, i));
++      return FALSE;
++    }
++  }
++
++  return TRUE;
++}
++
++/**
++ * gst_video_meta_set_alignment:
++ * @meta: a #GstVideoMeta
++ * @alignment: a #GstVideoAlignment
++ *
++ * Set the alignment of @meta to @alignment. This function checks that
++ * the paddings defined in @alignment are compatible with the strides
++ * defined in @meta and will fail to update if they are not.
++ *
++ * Returns: %TRUE if @alignment's meta has been updated, %FALSE if not
++ *
++ * Since: 1.18
++ */
++gboolean
++gst_video_meta_set_alignment (GstVideoMeta * meta, GstVideoAlignment alignment)
++{
++  GstVideoAlignment old;
++
++  g_return_val_if_fail (meta, FALSE);
++
++  old = meta->alignment;
++  meta->alignment = alignment;
++
++  if (!gst_video_meta_validate_alignment (meta, NULL)) {
++    /* Invalid alignment, restore the previous one */
++    meta->alignment = old;
++    return FALSE;
++  }
++
++  GST_LOG ("Set alignment on meta: padding %u-%ux%u-%u", alignment.padding_top,
++      alignment.padding_left, alignment.padding_right,
++      alignment.padding_bottom);
++
++  return TRUE;
++}
++
++/**
++ * gst_video_meta_get_plane_size:
++ * @meta: a #GstVideoMeta
++ * @plane_size: (out): array used to store the plane sizes
++ *
++ * Compute the size, in bytes, of each video plane described in @meta including
++ * any padding and alignment constraint defined in @meta->alignment.
++ *
++ * Returns: %TRUE if @meta's alignment is valid and @plane_size has been
++ * updated, %FALSE otherwise
++ *
++ * Since: 1.18
++ */
++gboolean
++gst_video_meta_get_plane_size (GstVideoMeta * meta,
++    gsize plane_size[GST_VIDEO_MAX_PLANES])
++{
++  g_return_val_if_fail (meta, FALSE);
++  g_return_val_if_fail (plane_size, FALSE);
++
++  return gst_video_meta_validate_alignment (meta, plane_size);
++}
++
++/**
++ * gst_video_meta_get_plane_height:
++ * @meta: a #GstVideoMeta
++ * @plane_height: (out): array used to store the plane height
++ *
++ * Compute the padded height of each plane from @meta (padded size
++ * divided by stride).
++ *
++ * It is not valid to call this function with a meta associated to a
++ * TILED video format.
++ *
++ * Returns: %TRUE if @meta's alignment is valid and @plane_height has been
++ * updated, %FALSE otherwise
++ *
++ * Since: 1.18
++ */
++gboolean
++gst_video_meta_get_plane_height (GstVideoMeta * meta,
++    guint plane_height[GST_VIDEO_MAX_PLANES])
++{
++  gsize plane_size[GST_VIDEO_MAX_PLANES];
++  guint i;
++  GstVideoInfo info;
++
++  g_return_val_if_fail (meta, FALSE);
++  g_return_val_if_fail (plane_height, FALSE);
++
++  gst_video_info_init (&info);
++  gst_video_info_set_format (&info, meta->format, meta->width, meta->height);
++  g_return_val_if_fail (!GST_VIDEO_FORMAT_INFO_IS_TILED (&info), FALSE);
++
++  if (!gst_video_meta_get_plane_size (meta, plane_size))
++    return FALSE;
++
++  for (i = 0; i < meta->n_planes; i++) {
++    if (!meta->stride[i])
++      plane_height[i] = 0;
++    else
++      plane_height[i] = plane_size[i] / meta->stride[i];
++  }
++
++  for (; i < GST_VIDEO_MAX_PLANES; i++)
++    plane_height[i] = 0;
++
++  return TRUE;
++}
++
+ static gboolean
+ gst_video_crop_meta_transform (GstBuffer * dest, GstMeta * meta,
+     GstBuffer * buffer, GQuark type, gpointer data)
+diff --git a/gst-libs/gst/video/gstvideometa.h b/gst-libs/gst/video/gstvideometa.h
+index 1a7643f..3519a54 100644
+--- a/gst-libs/gst/video/gstvideometa.h
++++ b/gst-libs/gst/video/gstvideometa.h
+@@ -53,6 +53,10 @@ typedef struct _GstVideoCropMeta GstVideoCropMeta;
+  *          valid, it is used by the default implementation of @map.
+  * @map: map the memory of a plane
+  * @unmap: unmap the memory of a plane
++ * @alignment: the paddings and alignment constraints of the video buffer.
++ * It is up to the caller of `gst_buffer_add_video_meta_full()` to set it
++ * using gst_video_meta_set_alignment(), if they did not it defaults
++ * to no padding and no alignment. Since: 1.18
+  *
+  * Extra buffer metadata describing image properties
+  */
+@@ -74,6 +78,8 @@ struct _GstVideoMeta {
+   gboolean (*map)    (GstVideoMeta *meta, guint plane, GstMapInfo *info,
+                       gpointer *data, gint * stride, GstMapFlags flags);
+   gboolean (*unmap)  (GstVideoMeta *meta, guint plane, GstMapInfo *info);
++
++  GstVideoAlignment  alignment;
+ };
+ 
+ GST_VIDEO_API
+@@ -105,6 +111,15 @@ gboolean       gst_video_meta_map        (GstVideoMeta *meta, guint plane, GstMa
+ GST_VIDEO_API
+ gboolean       gst_video_meta_unmap      (GstVideoMeta *meta, guint plane, GstMapInfo *info);
+ 
++GST_VIDEO_API
++gboolean       gst_video_meta_set_alignment (GstVideoMeta * meta, GstVideoAlignment alignment);
++
++GST_VIDEO_API
++gboolean       gst_video_meta_get_plane_size (GstVideoMeta * meta, gsize plane_size[GST_VIDEO_MAX_PLANES]);
++
++GST_VIDEO_API
++gboolean       gst_video_meta_get_plane_height (GstVideoMeta * meta, guint plane_height[GST_VIDEO_MAX_PLANES]);
++
+ /**
+  * GstVideoCropMeta:
+  * @meta: parent #GstMeta
+diff --git a/tests/check/libs/video.c b/tests/check/libs/video.c
+index e1fd93e..bf9957e 100644
+--- a/tests/check/libs/video.c
++++ b/tests/check/libs/video.c
+@@ -3499,6 +3499,127 @@ GST_START_TEST (test_video_info_align)
+ 
+ GST_END_TEST;
+ 
++GST_START_TEST (test_video_meta_align)
++{
++  GstBuffer *buf;
++  GstVideoInfo info;
++  GstVideoMeta *meta;
++  gsize plane_size[GST_VIDEO_MAX_PLANES];
++  guint plane_height[GST_VIDEO_MAX_PLANES];
++  GstVideoAlignment alig;
++
++  buf = gst_buffer_new ();
++
++  /* NV12 no alignment */
++  gst_video_info_init (&info);
++  gst_video_info_set_format (&info, GST_VIDEO_FORMAT_NV12, 1920, 1080);
++
++  meta = gst_buffer_add_video_meta_full (buf, GST_VIDEO_FRAME_FLAG_NONE,
++      GST_VIDEO_INFO_FORMAT (&info), GST_VIDEO_INFO_WIDTH (&info),
++      GST_VIDEO_INFO_HEIGHT (&info), GST_VIDEO_INFO_N_PLANES (&info),
++      info.offset, info.stride);
++
++  g_assert_cmpuint (meta->alignment.padding_top, ==, 0);
++  g_assert_cmpuint (meta->alignment.padding_bottom, ==, 0);
++  g_assert_cmpuint (meta->alignment.padding_left, ==, 0);
++  g_assert_cmpuint (meta->alignment.padding_right, ==, 0);
++
++  g_assert (gst_video_meta_get_plane_size (meta, plane_size));
++  g_assert_cmpuint (plane_size[0], ==, 1920 * 1080);
++  g_assert_cmpuint (plane_size[1], ==, 1920 * 1080 * 0.5);
++  g_assert_cmpuint (plane_size[2], ==, 0);
++  g_assert_cmpuint (plane_size[3], ==, 0);
++
++  g_assert (gst_video_meta_get_plane_height (meta, plane_height));
++  g_assert_cmpuint (plane_height[0], ==, 1080);
++  g_assert_cmpuint (plane_height[1], ==, 540);
++  g_assert_cmpuint (plane_height[2], ==, 0);
++  g_assert_cmpuint (plane_height[3], ==, 0);
++
++  /* horizontal alignment */
++  gst_video_info_init (&info);
++  gst_video_info_set_format (&info, GST_VIDEO_FORMAT_NV12, 1920, 1080);
++
++  gst_video_alignment_reset (&alig);
++  alig.padding_left = 2;
++  alig.padding_right = 6;
++
++  g_assert (gst_video_info_align (&info, &alig));
++
++  meta = gst_buffer_add_video_meta_full (buf, GST_VIDEO_FRAME_FLAG_NONE,
++      GST_VIDEO_INFO_FORMAT (&info), GST_VIDEO_INFO_WIDTH (&info),
++      GST_VIDEO_INFO_HEIGHT (&info), GST_VIDEO_INFO_N_PLANES (&info),
++      info.offset, info.stride);
++  g_assert (gst_video_meta_set_alignment (meta, alig));
++
++  g_assert_cmpuint (meta->alignment.padding_top, ==, 0);
++  g_assert_cmpuint (meta->alignment.padding_bottom, ==, 0);
++  g_assert_cmpuint (meta->alignment.padding_left, ==, 2);
++  g_assert_cmpuint (meta->alignment.padding_right, ==, 6);
++
++  g_assert (gst_video_meta_get_plane_size (meta, plane_size));
++  g_assert_cmpuint (plane_size[0], ==, 1928 * 1080);
++  g_assert_cmpuint (plane_size[1], ==, 1928 * 1080 * 0.5);
++  g_assert_cmpuint (plane_size[2], ==, 0);
++  g_assert_cmpuint (plane_size[3], ==, 0);
++
++  g_assert (gst_video_meta_get_plane_height (meta, plane_height));
++  g_assert_cmpuint (plane_height[0], ==, 1080);
++  g_assert_cmpuint (plane_height[1], ==, 540);
++  g_assert_cmpuint (plane_height[2], ==, 0);
++  g_assert_cmpuint (plane_height[3], ==, 0);
++
++  /* vertical alignment */
++  gst_video_info_init (&info);
++  gst_video_info_set_format (&info, GST_VIDEO_FORMAT_NV12, 1920, 1080);
++
++  gst_video_alignment_reset (&alig);
++  alig.padding_top = 2;
++  alig.padding_bottom = 6;
++
++  g_assert (gst_video_info_align (&info, &alig));
++
++  meta = gst_buffer_add_video_meta_full (buf, GST_VIDEO_FRAME_FLAG_NONE,
++      GST_VIDEO_INFO_FORMAT (&info), GST_VIDEO_INFO_WIDTH (&info),
++      GST_VIDEO_INFO_HEIGHT (&info), GST_VIDEO_INFO_N_PLANES (&info),
++      info.offset, info.stride);
++  g_assert (gst_video_meta_set_alignment (meta, alig));
++
++  g_assert_cmpuint (meta->alignment.padding_top, ==, 2);
++  g_assert_cmpuint (meta->alignment.padding_bottom, ==, 6);
++  g_assert_cmpuint (meta->alignment.padding_left, ==, 0);
++  g_assert_cmpuint (meta->alignment.padding_right, ==, 0);
++
++  g_assert (gst_video_meta_get_plane_size (meta, plane_size));
++  g_assert_cmpuint (plane_size[0], ==, 1920 * 1088);
++  g_assert_cmpuint (plane_size[1], ==, 1920 * 1088 * 0.5);
++  g_assert_cmpuint (plane_size[2], ==, 0);
++  g_assert_cmpuint (plane_size[3], ==, 0);
++
++  g_assert (gst_video_meta_get_plane_height (meta, plane_height));
++  g_assert_cmpuint (plane_height[0], ==, 1088);
++  g_assert_cmpuint (plane_height[1], ==, 544);
++  g_assert_cmpuint (plane_height[2], ==, 0);
++  g_assert_cmpuint (plane_height[3], ==, 0);
++
++  /* incompatible alignment */
++  gst_video_info_init (&info);
++  gst_video_info_set_format (&info, GST_VIDEO_FORMAT_NV12, 1920, 1080);
++
++  gst_video_alignment_reset (&alig);
++  alig.padding_right = 2;
++
++  meta = gst_buffer_add_video_meta_full (buf, GST_VIDEO_FRAME_FLAG_NONE,
++      GST_VIDEO_INFO_FORMAT (&info), GST_VIDEO_INFO_WIDTH (&info),
++      GST_VIDEO_INFO_HEIGHT (&info), GST_VIDEO_INFO_N_PLANES (&info),
++      info.offset, info.stride);
++  g_assert (!gst_video_meta_set_alignment (meta, alig));
++
++  gst_buffer_unref (buf);
++}
++
++GST_END_TEST;
++
+ static Suite *
+ video_suite (void)
+ {
+@@ -3547,6 +3668,7 @@ video_suite (void)
+   tcase_add_test (tc_chain, test_video_flags);
+   tcase_add_test (tc_chain, test_video_format_info_plane_to_components);
+   tcase_add_test (tc_chain, test_video_info_align);
++  tcase_add_test (tc_chain, test_video_meta_align);
+ 
+   return s;
+ }
