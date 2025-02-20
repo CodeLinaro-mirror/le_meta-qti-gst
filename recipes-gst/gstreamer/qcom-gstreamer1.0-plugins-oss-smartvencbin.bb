@@ -9,12 +9,13 @@ LIC_FILES_CHKSUM = "file://${COMMON_LICENSE_DIR}/${LICENSE};md5=7a434440b651f4a4
 # Dependencies.
 DEPENDS := "gstreamer1.0"
 DEPENDS += "gstreamer1.0-plugins-base"
+DEPENDS += "qcom-gstreamer1.0-plugins-oss-base"
 DEPENDS += "qcom-video-ctrl"
 
-FILESPATH =+ "${WORKSPACE}/gst-plugins-qti-oss/:"
+FILESPATH =+ "${WORKSPACE}/:"
 
-SRC_URI = "file://gst-plugin-smartvencbin"
-S = "${WORKDIR}/gst-plugin-smartvencbin"
+SRC_URI = "file://gst-plugins-qti-oss/gst-plugin-smartvencbin"
+S = "${WORKDIR}/gst-plugins-qti-oss/gst-plugin-smartvencbin"
 
 # Install directories.
 INSTALL_BINDIR := "${bindir}"
