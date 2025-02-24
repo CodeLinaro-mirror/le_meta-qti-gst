@@ -1,6 +1,8 @@
 require ${@bb.utils.contains('BASEMACHINE', 'kalama', bb.utils.contains('PRODUCT', 'ubuntu', bb.utils.contains('DISTRO_FEATURES', 'qimsdk-layers', 'gstreamer-common.inc', '', d), '', d), '', d)}
 require ${@bb.utils.contains('BASEMACHINE', 'kalama', bb.utils.contains('PRODUCT', 'ubuntu', bb.utils.contains('DISTRO_FEATURES', 'qimsdk-layers', 'update-alternatives/gstreamer1.0-plugins-bad.inc', '', d), '', d), '', d)}
 
+DISTRO_FEATURES:remove:pineapple += "opengl"
+
 DEPENDS += "gbm"
 
 FILESEXTRAPATHS:prepend := "${THISDIR}/gstreamer1.0-plugins-bad/1.20.4:"
@@ -18,7 +20,7 @@ SRC_URI:append = "\
 
 do_configure:prepend() {
   install -d ${STAGING_DIR_HOST}${datadir}/wayland-protocols/stable/gbm-buffer-backend/
-  if [ ${BASEMACHINE} == "qrb5165" ]; then
+  if [ ${BASEMACHINE} == "qrb5165" ] || [ ${BASEMACHINE} == "qcm2290-mtp" ]; then
       cp ${WORKSPACE}/display/weston/protocol/gbm-buffer-backend.xml ${STAGING_DIR_HOST}${datadir}/wayland-protocols/stable/gbm-buffer-backend ||
       cp ${STAGING_DIR}/${MACHINE}/usr/share/libweston-8/protocols/gbm-buffer-backend.xml ${STAGING_DIR_HOST}${datadir}/wayland-protocols/stable/gbm-buffer-backend
 
