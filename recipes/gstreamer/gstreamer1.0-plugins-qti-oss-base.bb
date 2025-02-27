@@ -18,7 +18,6 @@ DEPENDS:remove:pineapple = "adreno"
 DEPENDS += "fastcv-noship"
 DEPENDS:remove:qcm6490 = "fastcv-noship"
 DEPENDS:append:qcm6490 = " fastcv-binaries"
-DEPENDS:remove:pineapple = "fastcv-noship"
 
 # Dependency on IB2C library used in GLES Video Converter.
 DEPENDS += "qti-ib2c"
