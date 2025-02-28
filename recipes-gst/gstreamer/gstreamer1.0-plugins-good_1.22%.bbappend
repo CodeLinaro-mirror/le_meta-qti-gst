@@ -8,4 +8,6 @@ SRC_URI:append:qcom-custom-bsp = "\
     file://0005-v4l2-Add-support-for-AV1-format.patch \
     file://0006-v4l2-decoder-Prefer-colorimetry-from-acquired-caps-f.patch \
     file://0007-v4l2-enc-Set-sink-format-before-src-format.patch \
+    file://0008-v4l2-Update-video-alignment-in-pool-config.patch \
+    file://0009-v4l2-Drop-empty-bytesused-0-buffers.patch \
 "
