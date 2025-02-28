@@ -1,5 +1,5 @@
 DEPENDS += "qemu-native"
-FILESEXTRAPATHS_prepend := "${THISDIR}/qti-patches:${THISDIR}/gstreamer1.0-plugins-good:${THISDIR}/gstreamer1.0-plugins-good/1.14.4:"
+FILESEXTRAPATHS:prepend := "${THISDIR}/qti-patches:${THISDIR}/gstreamer1.0-plugins-good:${THISDIR}/gstreamer1.0-plugins-good/1.14.4:"
 
 SRC_URI += "\
   file://0001-pulse-Expose-the-correct-max-rate-that-we-support.patch \

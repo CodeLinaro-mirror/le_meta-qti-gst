@@ -1,2 +1,2 @@
-PACKAGECONFIG_remove = "mpeg2dec"
+PACKAGECONFIG:remove = "mpeg2dec"
 

@@ -1,6 +1,6 @@
 #common project used in plugin bb.
 
-do_patch_append() {
+do_patch:append() {
     bb.build.exec_func('do_clone_gst_common', d)
 }
 
