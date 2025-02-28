@@ -1,6 +1,6 @@
-FILESEXTRAPATHS_prepend := "${THISDIR}/gstreamer1.0-omx:${THISDIR}/gstreamer1.0-omx/1.16.2:"
+FILESEXTRAPATHS:prepend := "${THISDIR}/gstreamer1.0-omx:${THISDIR}/gstreamer1.0-omx/1.16.2:"
 
-DEPENDS_remove = "virtual/libomxil"
+DEPENDS:remove = "virtual/libomxil"
 
 SRC_URI += "file://0001-omxaacenc-fix-samples-per-buffer-calculation.patch"
 SRC_URI += "file://0001-omxh264enc-Set-maximum-caps-resolution-range-to-MAX.patch"
@@ -12,11 +12,11 @@ SRC_URI += "file://0005-omxvideodec-Support-for-dynamic-resolution-change.patch"
 SRC_URI += "file://0006-omxvideo-enc-dec-call-shutdown-in-change_state.patch"
 
 DEPENDS += "media"
-RDEPENDS_${PN} = "media"
+RDEPENDS:${PN} = "media"
 
 # Including gbm and kernel dependency as we need libgbm and some kernel headers
 DEPENDS += "gbm linux-msm-headers"
-RDEPENDS_${PN} += "gbm"
+RDEPENDS:${PN} += "gbm"
 
 # Add path to the kernel headers.
 EXTRA_OEMESON += "-Dsanitized_headers=${STAGING_INCDIR}/linux-msm/usr/include"

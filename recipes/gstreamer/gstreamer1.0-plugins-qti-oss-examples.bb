@@ -9,7 +9,7 @@ LIC_FILES_CHKSUM = "file://${COREBASE}/meta-qti-bsp/files/common-licenses/${LICE
 # Dependencies.
 DEPENDS := "gstreamer1.0"
 DEPENDS += "gstreamer1.0-plugins-qti-oss-base"
-DEPENDS_append += "${@bb.utils.contains('DISTRO_FEATURES', 'qti-camera', 'qmmf-sdk', '', d)}"
+DEPENDS:append += "${@bb.utils.contains('DISTRO_FEATURES', 'qti-camera', 'qmmf-sdk', '', d)}"
 
 DEPENDS += "${@bb.utils.contains('COMBINED_FEATURES', 'qti-afr-algo', 'qti-auto-framing-stabilization gstreamer1.0-plugins-qti-oss-mlmeta', '', d)}"
 RDEPENDS:${PN} += "${@bb.utils.contains('COMBINED_FEATURES', 'qti-afr-algo', 'qti-auto-framing-stabilization', '', d)}"
@@ -53,8 +53,8 @@ EXTRA_OECMAKE += "-DENABLE_VIDEO_DECODE=${ENABLE_VIDEO_DECODE}"
 EXTRA_OECMAKE += "-DENABLE_DISPLAY=${ENABLE_DISPLAY}"
 EXTRA_OECMAKE += "-DENABLE_ML=${ENABLE_ML}"
 
-FILES_${PN} += "${INSTALL_BINDIR}"
-FILES_${PN} += "${INSTALL_LIBDIR}"
+FILES:${PN} += "${INSTALL_BINDIR}"
+FILES:${PN} += "${INSTALL_LIBDIR}"
 
 SOLIBS = ".so*"
 FILES_SOLIBSDEV = ""

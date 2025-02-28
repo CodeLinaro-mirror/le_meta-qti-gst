@@ -4,9 +4,9 @@ CPPFLAGS += " ${@bb.utils.contains('DISTRO_FEATURES', 'wayland', '-D__GBM__', ''
 
 PACKAGE_ARCH = "${MACHINE_ARCH}"
 
-FILESEXTRAPATHS_prepend := "${THISDIR}/gstreamer1.0-plugins-bad/1.16.2:"
+FILESEXTRAPATHS:prepend := "${THISDIR}/gstreamer1.0-plugins-bad/1.16.2:"
 
-SRC_URI_append = " \
+SRC_URI:append = " \
        file://0001-waylandsink-support-fullscreen-for-waylandsink-for-g.patch \
        file://0002-waylandsink-support-gbm-buffer-backend-protocol.patch \
        file://0003-waylandsink-release-pending-buffers-in-composer.patch \

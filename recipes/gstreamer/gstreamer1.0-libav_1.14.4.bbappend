@@ -1,12 +1,12 @@
 DEPENDS += "gobject-introspection gobject-introspection-native"
 
-FILESEXTRAPATHS_prepend := "${THISDIR}/gstreamer1.0-libav:"
+FILESEXTRAPATHS:prepend := "${THISDIR}/gstreamer1.0-libav:"
 
 SRC_URI += "\
             file://0001-Expose-support-for-DSD-and-IFF-for-1.14.4.patch \
             "
 
-LICENSE_FLAGS_WHITELIST = "commercial"
+LICENSE_FLAGS_ACCEPTED = "commercial"
 
 ###### GROUPS FOR LIBAV PLUGIN ######
 
@@ -38,4 +38,4 @@ CONFIGURE_PLUGINS_LIBAV = " ${DISABLE_ALL_LIBAV} \
                             ${AUDIO_DECODE_ENABLE_LIBAV} \
                             ${AUDIO_ENCODE_ENABLE_LIBAV}"
 
-LIBAV_EXTRA_CONFIGURE_COMMON_ARG_append = "${@bb.utils.contains("DISTRO_FEATURES", "audio-only-libav", " ${CONFIGURE_PLUGINS_LIBAV}", "",d)}"
+LIBAV_EXTRA_CONFIGURE_COMMON_ARG:append = "${@bb.utils.contains("DISTRO_FEATURES", "audio-only-libav", " ${CONFIGURE_PLUGINS_LIBAV}", "",d)}"

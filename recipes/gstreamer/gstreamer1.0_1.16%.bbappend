@@ -1,6 +1,6 @@
-FILESEXTRAPATHS_prepend := "${THISDIR}/${BPN}:"
+FILESEXTRAPATHS:prepend := "${THISDIR}/${BPN}:"
 
-SRC_URI_append = " \
+SRC_URI:append = " \
        file://0002-bufferpool-unblock-acquire-thread-discard-buffer.patch \
        file://0003-gstreamer-Don-t-return-more-data-in-baseparse.patch \
 "

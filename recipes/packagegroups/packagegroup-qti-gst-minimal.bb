@@ -10,7 +10,7 @@ PACKAGES = " \
       packagegroup-qti-gst-minimal \
     "
 
-RDEPENDS_packagegroup-qti-gst-minimal = " \
+RDEPENDS:packagegroup-qti-gst-minimal = " \
       gstreamer1.0 \
       gstreamer1.0-plugins-base \
       gstreamer1.0-plugins-good \
