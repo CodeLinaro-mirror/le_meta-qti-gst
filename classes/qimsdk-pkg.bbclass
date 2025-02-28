@@ -81,6 +81,7 @@ GST_SAMPLE_APPS = " \
     qcom-gst-ai-segmentation:do_package_write_ipk \
     qcom-gst-ai-superresolution:do_package_write_ipk \
     qcom-gst-ai-smartcodec-example:do_package_write_ipk \
+    qcom-gst-ai-usb-camera-app:do_package_write_ipk \
     qcom-gst-appsink-example:do_package_write_ipk \
     qcom-gst-audio-decode-example:do_package_write_ipk \
     qcom-gst-audio-encode-example:do_package_write_ipk \
@@ -97,7 +98,6 @@ GST_SAMPLE_APPS = " \
     qcom-gst-smartcodec-example:do_package_write_ipk \
     qcom-gst-snapshot-stream-example:do_package_write_ipk \
     qcom-gst-transform-example:do_package_write_ipk \
-    qcom-gst-usb-single-camera-app:do_package_write_ipk \
     qcom-gst-videocodec-concurrent-playback:do_package_write_ipk \
     qcom-gst-video-playback-example:do_package_write_ipk \
     qcom-gst-video-transcode-example:do_package_write_ipk \

@@ -26,6 +26,7 @@ RDEPENDS:${PN}:qcom-custom-bsp = " \
     qcom-gst-ai-segmentation \
     qcom-gst-ai-superresolution \
     qcom-gst-ai-smartcodec-example \
+    qcom-gst-ai-usb-camera-app \
     qcom-gst-appsink-example \
     qcom-gst-audio-decode-example \
     qcom-gst-audio-encode-example \
@@ -42,7 +43,6 @@ RDEPENDS:${PN}:qcom-custom-bsp = " \
     qcom-gst-smartcodec-example \
     qcom-gst-snapshot-stream-example \
     qcom-gst-transform-example \
-    qcom-gst-usb-single-camera-app \
     qcom-gst-videocodec-concurrent-playback \
     qcom-gst-video-playback-example \
     qcom-gst-video-transcode-example \
