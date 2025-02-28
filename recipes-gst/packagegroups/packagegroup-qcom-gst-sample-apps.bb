@@ -54,6 +54,7 @@ RDEPENDS:${PN}:qcom-custom-bsp = " \
     qcom-gst-ai-face-recognition \
     qcom-gst-ai-face-detection \
     qcom-gst-ai-metadata-parser-example \
+    qcom-gst-jpg-decode-example \
    "
 
 RDEPENDS:${PN}:remove:qcs9100 = " \
