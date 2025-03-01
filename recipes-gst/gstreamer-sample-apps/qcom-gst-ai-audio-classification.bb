@@ -14,8 +14,8 @@ DEPENDS += "qcom-gst-sample-apps-utils"
 DEPENDS += "qcom-camera-server"
 
 FILESPATH =+ "${WORKSPACE}/:"
-SRC_URI = "file://gst-plugins-qti-oss/gst-sample-apps/gst-ai-classification"
-S = "${WORKDIR}/gst-plugins-qti-oss/gst-sample-apps/gst-ai-classification"
+SRC_URI = "file://gst-plugins-qti-oss/gst-sample-apps/gst-ai-audio-classification"
+S = "${WORKDIR}/gst-plugins-qti-oss/gst-sample-apps/gst-ai-audio-classification"
 
 # Install directries.
 INSTALL_BINDIR := "${bindir}"
