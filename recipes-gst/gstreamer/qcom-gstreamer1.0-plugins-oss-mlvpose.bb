@@ -12,9 +12,9 @@ DEPENDS += "gstreamer1.0-plugins-base"
 DEPENDS += "qcom-gstreamer1.0-plugins-oss-base"
 DEPENDS += "cairo"
 
-FILESPATH =+ "${WORKSPACE}/gst-plugins-qti-oss/:"
-SRC_URI = "file://gst-plugin-mlvpose"
-S = "${WORKDIR}/gst-plugin-mlvpose"
+FILESPATH =+ "${WORKSPACE}/:"
+SRC_URI = "file://gst-plugins-qti-oss/gst-plugin-mlvpose"
+S = "${WORKDIR}/gst-plugins-qti-oss/gst-plugin-mlvpose"
 
 # Install directories.
 INSTALL_INCDIR := "${includedir}"

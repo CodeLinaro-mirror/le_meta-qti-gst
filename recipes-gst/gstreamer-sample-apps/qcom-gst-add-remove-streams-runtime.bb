@@ -15,9 +15,9 @@ DEPENDS += "libsoup-2.4"
 DEPENDS += "qcom-gst-sample-apps-utils"
 DEPENDS:append:qcm6490 = " qcom-camera-server"
 
-FILESPATH =+ "${WORKSPACE}/gst-plugins-qti-oss/gst-sample-apps:"
-SRC_URI = "file://gst-add-remove-streams-runtime"
-S = "${WORKDIR}/gst-add-remove-streams-runtime"
+FILESPATH =+ "${WORKSPACE}/:"
+SRC_URI = "file://gst-plugins-qti-oss/gst-sample-apps/gst-add-remove-streams-runtime"
+S = "${WORKDIR}/gst-plugins-qti-oss/gst-sample-apps/gst-add-remove-streams-runtime"
 
 # Install directries.
 INSTALL_BINDIR := "${bindir}"

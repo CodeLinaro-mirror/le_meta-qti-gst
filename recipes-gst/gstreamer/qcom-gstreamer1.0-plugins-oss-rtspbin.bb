@@ -1,6 +1,6 @@
 inherit cmake pkgconfig
 
-SUMMARY = "QTI open-source GStreamer Plug-in for rtsp streaming"
+SUMMARY = "Qualcomm open-source GStreamer Plug-in for rtsp streaming"
 HOMEPAGE = "https://git.codelinaro.org"
 SECTION = "multimedia"
 
@@ -12,9 +12,9 @@ DEPENDS := "gstreamer1.0"
 DEPENDS += "gstreamer1.0-plugins-base"
 DEPENDS += "gstreamer1.0-rtsp-server"
 
-FILESPATH =+ "${WORKSPACE}/gst-plugins-qti-oss/:"
-SRC_URI = "file://gst-plugin-rtspbin"
-S = "${WORKDIR}/gst-plugin-rtspbin"
+FILESPATH =+ "${WORKSPACE}/:"
+SRC_URI = "file://gst-plugins-qti-oss/gst-plugin-rtspbin"
+S = "${WORKDIR}/gst-plugins-qti-oss/gst-plugin-rtspbin"
 
 # Install directries.
 INSTALL_BINDIR := "${bindir}"

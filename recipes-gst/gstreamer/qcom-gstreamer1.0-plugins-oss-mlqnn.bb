@@ -12,9 +12,9 @@ DEPENDS += "gstreamer1.0-plugins-base"
 DEPENDS += "qcom-gstreamer1.0-plugins-oss-base"
 DEPENDS += "qcom-qnn-sdk"
 
-FILESPATH =+ "${WORKSPACE}/gst-plugins-qti-oss/:"
-SRC_URI = "file://gst-plugin-mlqnn"
-S = "${WORKDIR}/gst-plugin-mlqnn"
+FILESPATH =+ "${WORKSPACE}/:"
+SRC_URI = "file://gst-plugins-qti-oss/gst-plugin-mlqnn"
+S = "${WORKDIR}/gst-plugins-qti-oss/gst-plugin-mlqnn"
 
 # Install directories.
 INSTALL_BINDIR := "${bindir}"

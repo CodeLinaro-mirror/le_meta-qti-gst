@@ -11,9 +11,9 @@ DEPENDS := "gstreamer1.0"
 DEPENDS += "gstreamer1.0-plugins-base"
 DEPENDS += "qcom-gstreamer1.0-plugins-oss-base"
 
-FILESPATH =+ "${WORKSPACE}/gst-plugins-qti-oss/:"
-SRC_URI = "file://gst-test-framework"
-S = "${WORKDIR}/gst-test-framework"
+FILESPATH =+ "${WORKSPACE}/:"
+SRC_URI = "file://gst-plugins-qti-oss/gst-test-framework"
+S = "${WORKDIR}/gst-plugins-qti-oss/gst-test-framework"
 
 # Install directries.
 INSTALL_INCDIR := "${includedir}"

@@ -11,9 +11,9 @@ DEPENDS := "gstreamer1.0"
 DEPENDS += "gstreamer1.0-plugins-base"
 DEPENDS += "qcom-gstreamer1.0-plugins-oss-base"
 
-FILESPATH =+ "${WORKSPACE}/gst-plugins-qti-oss/:"
-SRC_URI = "file://gst-plugin-mldemux"
-S = "${WORKDIR}/gst-plugin-mldemux"
+FILESPATH =+ "${WORKSPACE}/:"
+SRC_URI = "file://gst-plugins-qti-oss/gst-plugin-mldemux"
+S = "${WORKDIR}/gst-plugins-qti-oss/gst-plugin-mldemux"
 
 # Install directries.
 INSTALL_BINDIR := "${bindir}"

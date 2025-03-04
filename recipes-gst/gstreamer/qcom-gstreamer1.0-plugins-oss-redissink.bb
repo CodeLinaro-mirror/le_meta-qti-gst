@@ -1,6 +1,6 @@
 inherit cmake pkgconfig
 
-SUMMARY = "QTI open-source GStreamer Plug-in for redis sink"
+SUMMARY = "Qualcomm open-source GStreamer Plug-in for redis sink"
 HOMEPAGE = "https://git.codelinaro.org"
 SECTION = "multimedia"
 
@@ -13,10 +13,10 @@ DEPENDS += "gstreamer1.0-plugins-base"
 DEPENDS += "qcom-gstreamer1.0-plugins-oss-base"
 DEPENDS += "hiredis"
 
-FILESPATH =+ "${WORKSPACE}/gst-plugins-qti-oss/:"
+FILESPATH =+ "${WORKSPACE}/:"
 
-SRC_URI = "file://gst-plugin-redissink/"
-S = "${WORKDIR}/gst-plugin-redissink"
+SRC_URI = "file://gst-plugins-qti-oss/gst-plugin-redissink/"
+S = "${WORKDIR}/gst-plugins-qti-oss/gst-plugin-redissink"
 
 # Install directries.
 INSTALL_BINDIR := "${bindir}"

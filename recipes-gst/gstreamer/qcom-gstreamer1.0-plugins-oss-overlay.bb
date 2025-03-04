@@ -18,9 +18,9 @@ DEPENDS += "property-vault syslog-plumber"
 
 RDEPENDS:${PN}:append = " property-vault"
 
-FILESPATH =+ "${WORKSPACE}/gst-plugins-qti-oss/:"
-SRC_URI = "file://gst-plugin-overlay"
-S = "${WORKDIR}/gst-plugin-overlay"
+FILESPATH =+ "${WORKSPACE}/:"
+SRC_URI = "file://gst-plugins-qti-oss/gst-plugin-overlay"
+S = "${WORKDIR}/gst-plugins-qti-oss/gst-plugin-overlay"
 
 # Install directries.
 INSTALL_BINDIR := "${bindir}"
