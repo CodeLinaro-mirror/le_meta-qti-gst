@@ -4,6 +4,7 @@ SRC_URI:append:qcom-custom-bsp = "\
   file://0001-wayland-Add-support-for-NV12_Q08C-compressed-8-bit-f.patch \
   file://0002-Hack-wayland-Add-NV12_Q08C-to-shm-formats.patch \
   file://0003-waylandsink-release-pending-buffers-in-composer.patch \
+  file://0004-waylandsink-support-gap-buffers.patch \
 "
 
 PACKAGECONFIG:append:qcom-custom-bsp = " webrtc sctp srt srtp"
