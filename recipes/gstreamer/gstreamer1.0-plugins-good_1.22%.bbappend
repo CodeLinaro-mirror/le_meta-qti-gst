@@ -12,4 +12,5 @@ SRC_URI:append:qcom-custom-bsp = "\
     file://0009-v4l2-Drop-empty-bytesused-0-buffers.patch \
     file://0010-v4l2-Add-KEEP_MAPPED-flag-to-the-allocated-buffers.patch \
     file://0011-v4l2-Handle-GAP-buffer-in-encoder.patch \
+    file://0012-v4l2-Set-extra-controls-if-pixelformat-is-updated.patch \
 "
