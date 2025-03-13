@@ -29,7 +29,7 @@ index e18b805..c00167d 100644
  
    gst_query_add_allocation_pool (query, pool, size, min, max);
  
-+  params = gst_structure_new_empty ("video-align-meta");
++  params = gst_structure_new_empty ("video-meta");
 +  gst_buffer_pool_config_set_video_alignment (params, &obj->align);
    /* we also support various metadata */
 -  gst_query_add_allocation_meta (query, GST_VIDEO_META_API_TYPE, NULL);
