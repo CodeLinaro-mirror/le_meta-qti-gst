@@ -1,7 +1,6 @@
 inherit cmake pkgconfig
 
-SUMMARY = "QTI open-source GStreamer Plug-in for overlay"
-HOMEPAGE = "https://git.codelinaro.org"
+SUMMARY = "QTI open-source GStreamer Plug-in for reprocessing via camera module"
 SECTION = "multimedia"
 
 LICENSE = "BSD-3-Clause-Clear"
@@ -11,42 +10,47 @@ LIC_FILES_CHKSUM:qcm6490 = "file://${COMMON_LICENSE_DIR}/${LICENSE};md5=7a434440
 # Dependencies.
 DEPENDS := "gstreamer1.0"
 DEPENDS += "gstreamer1.0-plugins-base"
-DEPENDS += "gstreamer1.0-plugins-qti-oss-mlmeta"
 DEPENDS += "gstreamer1.0-plugins-qti-oss-base"
-DEPENDS += "adreno"
-DEPENDS += "graphicsdlkm"
-DEPENDS += "cairo"
-DEPENDS += "liblog"
-DEPENDS:remove:qcm6490 = "liblog"
-DEPENDS:append:qcm6490 = " property-vault syslog-plumber"
-DEPENDS:remove:qcs6490 = "graphicsdlkm"
-DEPENDS:remove:pineapple = "adreno"
-DEPENDS:remove:pineapple = "graphicsdlkm"
-
-RDEPENDS:${PN}:append:qcm6490 = " property-vault"
+DEPENDS += "qmmf-sdk"
 
 FILESPATH =+ "${WORKSPACE}/vendor/qcom/opensource/gst-plugins-qti-oss/:"
 
-SRC_URI = "file://gst-plugin-overlay/"
-S = "${WORKDIR}/gst-plugin-overlay"
+SRC_URI = "file://gst-plugin-camreproc/"
+S = "${WORKDIR}/gst-plugin-camreproc"
 
 # Install directries.
 INSTALL_BINDIR := "${bindir}"
 INSTALL_LIBDIR := "${libdir}"
 
+# Default platform definations.
+CAMERA_METADATA_VERSION := "1.0"
+
+# Overwrite the default platform definitions for qrb5165.
+CAMERA_METADATA_VERSION:qrb5165  := "1.1"
+
+# Overwrite the default platform definitions for qcm2290-mtp.
+CAMERA_METADATA_VERSION:qcm2290-mtp  := "1.1"
+
+# Overwrite the default platform definitions for kalama.
+CAMERA_METADATA_VERSION:kalama   := "1.0ns"
+
+# Overwrite the default platform definitions for qcs6490.
+CAMERA_METADATA_VERSION:qcs6490  := "1.1"
+
 EXTRA_OECMAKE += "-DGST_VERSION_REQUIRED=1.14.4"
 EXTRA_OECMAKE += "-DSYSROOT_INCDIR=${STAGING_INCDIR}"
 EXTRA_OECMAKE += "-DSYSROOT_LIBDIR=${STAGING_LIBDIR}"
-EXTRA_OECMAKE += "-DKERNEL_BUILDDIR=${STAGING_INCDIR}/linux-msm"
+EXTRA_OECMAKE += "-DKERNEL_BUILDDIR=${STAGING_KERNEL_BUILDDIR}"
 EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_INSTALL_BINDIR=${INSTALL_BINDIR}"
 EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_INSTALL_LIBDIR=${INSTALL_LIBDIR}"
+
+EXTRA_OECMAKE += "-DCAMERA_METADATA_VERSION=${CAMERA_METADATA_VERSION}"
 
 EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_LICENSE=BSD"
 EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_VERSION=${PV}"
 EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_PACKAGE=${PN}"
 EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_SUMMARY="${SUMMARY}""
-EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_ORIGIN=${HOMEPAGE}"
-EXTRA_OECMAKE += "-DPKG_CONFIG_SYSROOT_DIR=${PKG_CONFIG_SYSROOT_DIR}"
+EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_ORIGIN="Unknown package origin""
 
 FILES:${PN} += "${INSTALL_BINDIR}"
 FILES:${PN} += "${INSTALL_LIBDIR}"
