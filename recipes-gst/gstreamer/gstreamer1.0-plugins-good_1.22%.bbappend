@@ -1,3 +1,7 @@
+DEPENDS:append:qcom-custom-bsp = " gtk+3"
+
+PACKAGECONFIG:append:qcom-custom-bsp = " gtk"
+
 FILESEXTRAPATHS:prepend:qcom-custom-bsp := "${THISDIR}/gstreamer1.0-plugins-good/1.22:"
 
 SRC_URI:append:qcom-custom-bsp = "\
