@@ -15,4 +15,5 @@ SRC_URI:append:qcom-custom-bsp = "\
     file://0008-v4l2-Update-video-alignment-in-pool-config.patch \
     file://0009-v4l2-Drop-empty-bytesused-0-buffers.patch \
     file://0010-v4l2-Add-KEEP_MAPPED-flag-to-the-allocated-buffers.patch \
+    file://0011-v4l2-Handle-GAP-buffer-in-encoder.patch \
 "
