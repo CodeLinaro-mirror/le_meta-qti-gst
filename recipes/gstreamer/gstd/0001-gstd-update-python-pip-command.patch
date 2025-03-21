@@ -1,0 +1,22 @@
+From d0dcb88400e8d7513ccbebcccb5b89144dac94cf Mon Sep 17 00:00:00 2001
+From: Sanjay Chitroda <ckantibh@qti.qualcomm.com>
+Date: Wed, 26 Mar 2025 14:37:06 +0530
+Subject: [PATCH] gstd: update python pip command
+
+Upstream-Status: Inappropriate [Qualcomm specific]
+
+Signed-off-by: Sanjay Chitroda <ckantibh@qti.qualcomm.com>
+---
+ libgstc/python/meson.build | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/libgstc/python/meson.build b/libgstc/python/meson.build
+index 057114b..f0c4556 100644
+--- a/libgstc/python/meson.build
++++ b/libgstc/python/meson.build
+@@ -1 +1 @@
+-run_command('pip3', 'install', '.')
++run_command('python3', '-m', 'pip', 'install', '')
+-- 
+2.34.1
+
