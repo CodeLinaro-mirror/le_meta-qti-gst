@@ -10,4 +10,5 @@ SRC_URI:append:qcom-custom-bsp = "\
     file://0007-v4l2-enc-Set-sink-format-before-src-format.patch \
     file://0008-gstreamer1.0-plugins-good-Add-meson-option-to-build-.patch \
     file://0009--v4l2-Use-internal-DMA-buffer-pool-even-without-video.patch \
+    file://0010-v4l2-fix-runtime-change-between-system-and-DMA-buffe.patch \
 "
