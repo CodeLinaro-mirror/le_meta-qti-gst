@@ -15,4 +15,5 @@ SRC_URI:append:qcom-custom-bsp = "\
     file://0012-v4l2-Set-extra-controls-if-pixelformat-is-updated.patch \
     file://0013-v4l2-Fix-segmentation-fault.patch \
     file://0014-v4l2-Use-internal-DMA-buffer-pool-even-without-video.patch \
+    file://0015-v4l2-fix-runtime-change-between-system-and-DMA-buffe.patch \
 "
