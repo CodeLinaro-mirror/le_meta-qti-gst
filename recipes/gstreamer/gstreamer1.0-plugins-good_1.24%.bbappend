@@ -9,4 +9,5 @@ SRC_URI:append:qcom-custom-bsp = "\
     file://0006-v4l2-decoder-Prefer-colorimetry-from-acquired-caps-f.patch \
     file://0007-v4l2-enc-Set-sink-format-before-src-format.patch \
     file://0008-gstreamer1.0-plugins-good-Add-meson-option-to-build-.patch \
+    file://0009--v4l2-Use-internal-DMA-buffer-pool-even-without-video.patch \
 "
