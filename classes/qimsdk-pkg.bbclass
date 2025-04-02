@@ -92,6 +92,7 @@ GST_SAMPLE_APPS = " \
     qcom-gst-camera-shdr-ldc-eis-example:do_package_write_ipk \
     qcom-gst-camera-single-stream-example:do_package_write_ipk \
     qcom-gst-camera-switch-example:do_package_write_ipk \
+    qcom-gst-camera-per-port-example:do_package_write_ipk \
     qcom-gst-concurrent-videoplay-composition:do_package_write_ipk \
     qcom-gst-multi-camera-example:do_package_write_ipk \
     qcom-gst-multi-stream-example:do_package_write_ipk \
@@ -136,6 +137,10 @@ GST_SAMPLE_APPS:remove:qcs8300 = " \
     qcom-gst-multi-camera-example:do_package_write_ipk \
     qcom-gst-snapshot-stream-example:do_package_write_ipk \
     qcom-gst-video-playback-example:do_package_write_ipk \
+  "
+
+GST_SAMPLE_APPS:remove:qcm6490 = " \
+    qcom-gst-camera-per-port-example:do_package_write_ipk \
   "
 
 addtask do_generate_qim_sdk_setscene
