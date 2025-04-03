@@ -11,9 +11,9 @@ LIC_FILES_CHKSUM = "file://${COMMON_LICENSE_DIR}/${LICENSE};md5=7a434440b651f4a4
 DEPENDS := "gstreamer1.0"
 DEPENDS += "gstreamer1.0-plugins-base"
 
-FILESPATH =+ "${WORKSPACE}/gst-plugins-qti-oss/:"
-SRC_URI = "file://gst-ml-metadata"
-S = "${WORKDIR}/gst-ml-metadata"
+FILESPATH =+ "${WORKSPACE}/:"
+SRC_URI = "file://gst-plugins-qti-oss/gst-ml-metadata"
+S = "${WORKDIR}/gst-plugins-qti-oss/gst-ml-metadata"
 
 # Install directries.
 INSTALL_BINDIR := "${bindir}"

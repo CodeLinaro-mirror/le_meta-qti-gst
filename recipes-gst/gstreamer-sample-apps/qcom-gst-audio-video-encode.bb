@@ -15,9 +15,9 @@ DEPENDS += "libsoup-2.4"
 DEPENDS += "qcom-gst-sample-apps-utils"
 DEPENDS:append:qcm6490 = " qcom-camera-server"
 
-FILESPATH =+ "${WORKSPACE}/gst-plugins-qti-oss/gst-sample-apps:"
-SRC_URI = "file://gst-audio-video-encode"
-S = "${WORKDIR}/gst-audio-video-encode"
+FILESPATH =+ "${WORKSPACE}/:"
+SRC_URI = "file://gst-plugins-qti-oss/gst-sample-apps/gst-audio-video-encode"
+S = "${WORKDIR}/gst-plugins-qti-oss/gst-sample-apps/gst-audio-video-encode"
 
 # Install directries.
 INSTALL_BINDIR := "${bindir}"

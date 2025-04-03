@@ -14,9 +14,9 @@ DEPENDS += "json-glib"
 DEPENDS += "libsoup-2.4"
 DEPENDS += "qcom-gst-sample-apps-utils"
 
-FILESPATH =+ "${WORKSPACE}/gst-plugins-qti-oss/gst-sample-apps:"
-SRC_URI = "file://gst-concurrent-videoplay-composition"
-S = "${WORKDIR}/gst-concurrent-videoplay-composition"
+FILESPATH =+ "${WORKSPACE}/:"
+SRC_URI = "file://gst-plugins-qti-oss/gst-sample-apps/gst-concurrent-videoplay-composition"
+S = "${WORKDIR}/gst-plugins-qti-oss/gst-sample-apps/gst-concurrent-videoplay-composition"
 
 # Install directries.
 INSTALL_BINDIR := "${bindir}"

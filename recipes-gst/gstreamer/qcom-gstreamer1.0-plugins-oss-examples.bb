@@ -19,9 +19,9 @@ DEPENDS += "gstreamer1.0-plugins-bad"
 DEPENDS += "json-glib"
 DEPENDS += "libsoup-2.4"
 
-FILESPATH =+ "${WORKSPACE}/gst-plugins-qti-oss/:"
-SRC_URI = "file://gst-plugin-examples"
-S = "${WORKDIR}/gst-plugin-examples"
+FILESPATH =+ "${WORKSPACE}/:"
+SRC_URI = "file://gst-plugins-qti-oss/gst-plugin-examples"
+S = "${WORKDIR}/gst-plugins-qti-oss/gst-plugin-examples"
 
 # Install directries.
 INSTALL_BINDIR := "${bindir}"

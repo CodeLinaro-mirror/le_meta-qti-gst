@@ -13,9 +13,9 @@ DEPENDS += "qcom-gstreamer1.0-plugins-oss-base"
 DEPENDS += "securemsm"
 DEPENDS += "media-headers"
 
-FILESPATH =+ "${WORKSPACE}/gst-plugins-qti-oss/:"
-SRC_URI = "file://gst-plugin-drmdecryptor"
-S = "${WORKDIR}/gst-plugin-drmdecryptor"
+FILESPATH =+ "${WORKSPACE}/:"
+SRC_URI = "file://gst-plugins-qti-oss/gst-plugin-drmdecryptor"
+S = "${WORKDIR}/gst-plugins-qti-oss/gst-plugin-drmdecryptor"
 
 # Install directries.
 INSTALL_BINDIR := "${bindir}"

@@ -1,6 +1,6 @@
 inherit cmake pkgconfig
 
-SUMMARY = "QTI Message Broker Clients"
+SUMMARY = "Qualcomm Message Broker Clients"
 HOMEPAGE = "https://git.codelinaro.org"
 SECTION = "multimedia"
 
@@ -11,9 +11,9 @@ LIC_FILES_CHKSUM = "file://${COMMON_LICENSE_DIR}/${LICENSE};md5=7a434440b651f4a4
 DEPENDS := "gstreamer1.0"
 DEPENDS += "mosquitto"
 
-FILESPATH =+ "${WORKSPACE}/gst-plugins-qti-oss/:"
-SRC_URI = "file://gst-plugin-msgbroker/"
-S = "${WORKDIR}/gst-plugin-msgbroker/"
+FILESPATH =+ "${WORKSPACE}/:"
+SRC_URI = "file://gst-plugins-qti-oss/gst-plugin-msgbroker/"
+S = "${WORKDIR}/gst-plugins-qti-oss/gst-plugin-msgbroker"
 
 # Install directries.
 INSTALL_BINDIR := "${bindir}"

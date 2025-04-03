@@ -12,9 +12,9 @@ DEPENDS += "gstreamer1.0-plugins-base"
 DEPENDS += "qcom-gstreamer1.0-plugins-oss-base"
 DEPENDS += "opencv"
 
-FILESPATH =+ "${WORKSPACE}/gst-plugins-qti-oss/:"
-SRC_URI = "file://gst-plugin-restricted-zone"
-S = "${WORKDIR}/gst-plugin-restricted-zone"
+FILESPATH =+ "${WORKSPACE}/:"
+SRC_URI = "file://gst-plugins-qti-oss/gst-plugin-restricted-zone"
+S = "${WORKDIR}/gst-plugins-qti-oss/gst-plugin-restricted-zone"
 
 # Install directories.
 INSTALL_BINDIR := "${bindir}"

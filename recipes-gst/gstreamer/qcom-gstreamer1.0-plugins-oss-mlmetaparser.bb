@@ -13,9 +13,9 @@ DEPENDS += "qcom-gstreamer1.0-plugins-oss-base"
 DEPENDS += "qcom-gstreamer1.0-plugins-oss-mlmeta"
 DEPENDS += "json-glib"
 
-FILESPATH =+ "${WORKSPACE}/gst-plugins-qti-oss/:"
-SRC_URI = "file://gst-plugin-mlmetaparser"
-S = "${WORKDIR}/gst-plugin-mlmetaparser"
+FILESPATH =+ "${WORKSPACE}/:"
+SRC_URI = "file://gst-plugins-qti-oss/gst-plugin-mlmetaparser"
+S = "${WORKDIR}/gst-plugins-qti-oss/gst-plugin-mlmetaparser"
 
 # Install directories.
 INSTALL_BINDIR := "${bindir}"
