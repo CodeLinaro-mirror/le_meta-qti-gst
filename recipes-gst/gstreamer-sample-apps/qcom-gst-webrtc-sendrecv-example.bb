@@ -11,7 +11,7 @@ DEPENDS := "gstreamer1.0"
 DEPENDS += "gstreamer1.0-plugins-base"
 DEPENDS += "gstreamer1.0-plugins-bad"
 DEPENDS += "json-glib"
-DEPENDS += "libsoup-2.4"
+DEPENDS += "libsoup"
 DEPENDS += "qcom-gst-sample-apps-utils"
 DEPENDS:append:qcm6490 = " qcom-camera-server"
 
