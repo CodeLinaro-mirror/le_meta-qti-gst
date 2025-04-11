@@ -75,15 +75,15 @@ IMAGE_NV12_FORMAT_ENABLE:pineapple        := "TRUE"
 FEATURE_LOGICAL_CAMERA_SUPPORT:pineapple                := "TRUE"
 FEATURE_LOGICAL_CAMERA_SENSOR_SWITCH:pineapple          := "TRUE"
 
-# Overwrite the default platform definitions for qcm2290-mtp.
-IMAGE_MAX_WIDTH:qcm2290-mtp          := "9248"
-IMAGE_MAX_HEIGHT:qcm2290-mtp         := "6944"
-VIDEO_MAX_WIDTH:qcm2290-mtp          := "9248"
-VIDEO_MAX_HEIGHT:qcm2290-mtp         := "6944"
-VIDEO_MAX_FPS:qcm2290-mtp            := "480/1"
-CAMERA_METADATA_VERSION:qcm2290-mtp  := "1.1"
-VIDEO_UYVY_FORMAT_ENABLE:qcm2290-mtp := "TRUE"
-IMAGE_NV12_FORMAT_ENABLE:qcm2290-mtp := "TRUE"
+# Overwrite the default platform definitions for qcm2290-mtp and qcm4325-mtp.
+IMAGE_MAX_WIDTH:bengal          := "9248"
+IMAGE_MAX_HEIGHT:bengal         := "6944"
+VIDEO_MAX_WIDTH:bengal          := "9248"
+VIDEO_MAX_HEIGHT:bengal         := "6944"
+VIDEO_MAX_FPS:bengal            := "480/1"
+CAMERA_METADATA_VERSION:bengal  := "1.1"
+VIDEO_UYVY_FORMAT_ENABLE:bengal := "TRUE"
+IMAGE_NV12_FORMAT_ENABLE:bengal := "TRUE"
 
 # Overwrite the default platform definitions for qcs6490.
 VIDEO_MAX_FPS:qcs6490            := "240/1"
