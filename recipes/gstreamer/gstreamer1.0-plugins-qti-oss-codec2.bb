@@ -1,4 +1,4 @@
-inherit cmake
+inherit cmake pkgconfig
 
 SUMMARY = "QTI open-source GStreamer Plug-in for video encoding decoding with Codec 2.0"
 SECTION = "multimedia"
