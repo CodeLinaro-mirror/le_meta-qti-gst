@@ -1,4 +1,4 @@
-From 6a08ed07b8d45df1bf2291e9916664c53247ab0c Mon Sep 17 00:00:00 2001
+From 2ef5a5328ac627bf386d9ec9d5003741b1071679 Mon Sep 17 00:00:00 2001
 From: Mustafa Ali <quic_mustali@quicinc.com>
 Date: Thu, 6 Mar 2025 11:16:44 +0200
 Subject: [PATCH] gstreamer1.0-plugins-bad: Add meson option to build all
@@ -249,7 +249,7 @@ index 6207f33..c280852 100644
 +  subdir('wayland')
 +endif
 diff --git a/meson.build b/meson.build
-index 9ae3b41..93628a7 100644
+index d6588c5..76dda3d 100644
 --- a/meson.build
 +++ b/meson.build
 @@ -566,13 +566,18 @@ pkgconfig.generate(
@@ -267,8 +267,8 @@ index 9ae3b41..93628a7 100644
 -subdir('tools')
 +
 +if build_all_plugins
++  subdir('gst')
 +  subdir('sys')
-+  subdir('ext')
 +  subdir('tests')
 +  subdir('data')
 +  subdir('tools')
