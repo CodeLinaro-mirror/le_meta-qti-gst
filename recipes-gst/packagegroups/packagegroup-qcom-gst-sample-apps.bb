@@ -37,6 +37,7 @@ RDEPENDS:${PN}:qcom-custom-bsp = " \
     qcom-gst-camera-shdr-ldc-eis-example \
     qcom-gst-camera-single-stream-example \
     qcom-gst-camera-switch-example \
+    qcom-gst-camera-per-port-example \
     qcom-gst-concurrent-videoplay-composition \
     qcom-gst-multi-camera-example \
     qcom-gst-multi-stream-example \
@@ -81,4 +82,8 @@ RDEPENDS:${PN}:remove:qcs8300 = " \
     qcom-gst-multi-camera-example \
     qcom-gst-snapshot-stream-example \
     qcom-gst-video-playback-example \
+  "
+
+RDEPENDS:${PN}:remove:qcm6490 = " \
+    qcom-gst-camera-per-port-example \
   "
