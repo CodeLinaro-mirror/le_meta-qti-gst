@@ -236,8 +236,8 @@ def get_pkgs_list(d):
                 "libpsl5", "librsvg-2-2", "libsoup-2.4_",
                 "libtheora_", "libwebp_", "mpg123_",
                 "liborc-0", "libsbc1", "libspeex1", "libtag1", "libjson-glib-1.0-0",
-                "libmosquitto1", "libhiredis1.0.0", "libnice_0.1.18", "libsrtp2-1_2.4.2",
-                "libsrt1.4_1.4.4", "qcom-rvsdk_1.0", "gobject-introspection_",
+                "libmosquitto1", "libhiredis1.0.0", "libnice_", "libsrtp2-1_",
+                "libsrt1.4_", "qcom-rvsdk_1.0", "gobject-introspection_",
                 "python3-pycairo_", "python3-pygobject_"]
     for _, pkgdirs, _ in os.walk(os.path.join(deploydir, pkgtype)):
         for pkgdir in pkgdirs:
