@@ -8,11 +8,11 @@ Subject: [PATCH] Add pulsedirectsink plugin
  ext/pulse/meson.build           |    1 +
  ext/pulse/plugin.c              |    1 +
  ext/pulse/pulsedeviceprovider.c |    1 +
- ext/pulse/pulsedirectsink.c     | 1410 +++++++++++++++++++++++++++++++
+ ext/pulse/pulsedirectsink.c     | 1428 +++++++++++++++++++++++++++++++
  ext/pulse/pulsedirectsink.h     |   72 ++
  ext/pulse/pulseutil.c           |   61 ++
  ext/pulse/pulseutil.h           |    2 +
- 8 files changed, 1565 insertions(+)
+ 8 files changed, 1567 insertions(+)
  create mode 100644 ext/pulse/pulsedirectsink.c
  create mode 100644 ext/pulse/pulsedirectsink.h
 
@@ -69,7 +69,7 @@ new file mode 100644
 index 0000000..c7207d0
 --- /dev/null
 +++ b/ext/pulse/pulsedirectsink.c
-@@ -0,0 +1,1410 @@
+@@ -0,0 +1,1428 @@
 +/*
 + * GStreamer
 + * Copyright (C) 2019, 2021 Linux Foundation. All rights reserved.
@@ -1400,8 +1400,13 @@ index 0000000..c7207d0
 +
 +      gst_pulsedirectsink_set_corked (psink, FALSE);
 +
-+      o = pa_stream_trigger (psink->stream,
-+          gst_pulsedirectsink_stream_success_cb, psink);
++      if (!(o = pa_stream_trigger (psink->stream,
++          gst_pulsedirectsink_stream_success_cb, psink))) {
++        GST_ERROR_OBJECT (psink, "pa_stream_trigger(): %s",
++            pa_strerror (pa_context_errno (psink->context)));
++
++        goto unexpected;
++      }
 +
 +      while (pa_operation_get_state (o) == PA_OPERATION_RUNNING) {
 +        pa_threaded_mainloop_wait (psink->mainloop);
@@ -1426,8 +1431,13 @@ index 0000000..c7207d0
 +
 +      pa_threaded_mainloop_lock (psink->mainloop);
 +
-+      o = pa_stream_drain (psink->stream, gst_pulsedirectsink_stream_success_cb,
-+          psink);
++      if (!(o = pa_stream_drain (psink->stream,
++          gst_pulsedirectsink_stream_success_cb, psink))) {
++        GST_ERROR_OBJECT (psink, "pa_stream_drain(): %s",
++            pa_strerror (pa_context_errno (psink->context)));
++
++        goto unexpected;
++      }
 +
 +      while (pa_operation_get_state (o) == PA_OPERATION_RUNNING) {
 +        pa_threaded_mainloop_wait (psink->mainloop);
@@ -1452,6 +1462,14 @@ index 0000000..c7207d0
 +  }
 +
 +  return ret;
++
++unexpected:
++  if (o)
++    pa_operation_unref (o);
++
++  pa_threaded_mainloop_unlock (psink->mainloop);
++
++  return GST_FLOW_OK;
 +}
 +
 +static void
