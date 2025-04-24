@@ -17,4 +17,5 @@ SRC_URI:append:qcom-custom-bsp = "\
     file://0014-v4l2-Handle-GAP-buffer-in-encoder.patch \
     file://0015-v4l2-Set-extra-controls-if-pixelformat-is-updated.patch \
     file://0016-v4l2-Fix-segmentation-fault.patch \
+    file://0017-v4l2-consider-Q08C-as-contiguous-planes.patch \
 "
