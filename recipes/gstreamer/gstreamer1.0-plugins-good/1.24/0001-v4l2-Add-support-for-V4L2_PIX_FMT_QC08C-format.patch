@@ -1,4 +1,4 @@
-From 38d42ed4e49ae0939591e679ce69b8c1ca0e33be Mon Sep 17 00:00:00 2001
+From bb21a98f1ae482d6c15bb81f828546abf989e16c Mon Sep 17 00:00:00 2001
 From: Arindam Biswas <quic_arinbisw@quicinc.com>
 Date: Fri, 14 Feb 2025 17:30:19 +0530
 Subject: [PATCH] v4l2: Add support for V4L2_PIX_FMT_QC08C format
@@ -24,17 +24,17 @@ index 2ceb1ca..e3b4ab3 100644
  /* 10bit raw packed, 32 bytes for every 25 pixels, last LSB 6 bits unused */
  #define V4L2_PIX_FMT_IPU3_SBGGR10	v4l2_fourcc('i', 'p', '3', 'b') /* IPU3 packed 10-bit BGGR bayer */
 diff --git a/sys/v4l2/gstv4l2object.c b/sys/v4l2/gstv4l2object.c
-index 472a24e..b4a51e9 100644
+index ef9c0fc..6d922cc 100644
 --- a/sys/v4l2/gstv4l2object.c
 +++ b/sys/v4l2/gstv4l2object.c
-@@ -172,6 +172,7 @@ static const GstV4L2FormatDesc gst_v4l2_formats[] = {
-   {MAP_FMT (NV24, NV24),                        GST_V4L2_RAW},
-   {MAP_FMT (NV42, UNKNOWN),                     GST_V4L2_RAW},
-   {MAP_FMT (MM21, NV12_16L32S),                 GST_V4L2_RAW},
-+  {MAP_FMT (QC08C, NV12_Q08C),                  GST_V4L2_RAW},
+@@ -156,6 +156,7 @@ static const GstV4L2FormatDesc gst_v4l2_formats[] = {
+   {MAP_FMT (M420, UNKNOWN),   GST_V4L2_RAW},
  
-   /* Bayer formats - see http://www.siliconimaging.com/RGB%20Bayer.htm */
-   {MAP_FMT (SBGGR8, ENCODED),   GST_V4L2_BAYER},
+   /* two planes -- one Y,         one Cr + Cb interleaved  */
++  {MAP_FMT (QC08C, NV12_Q08C),                  GST_V4L2_RAW},
+   {MAP_FMT (NV12M, NV12),                       GST_V4L2_RAW},
+   {MAP_FMT (NV12, NV12),                        GST_V4L2_RAW},
+   {MAP_FMT (NV12MT, NV12_64Z32),                GST_V4L2_RAW},
 -- 
 2.34.1
 
