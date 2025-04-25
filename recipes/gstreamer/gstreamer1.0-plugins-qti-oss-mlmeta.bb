@@ -1,4 +1,4 @@
-inherit cmake
+inherit cmake pkgconfig
 
 SUMMARY = "QTI open-source GStreamer machine learning metadata"
 HOMEPAGE = "https://git.codelinaro.org"
