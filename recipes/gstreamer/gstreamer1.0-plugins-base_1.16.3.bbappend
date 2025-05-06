@@ -1,4 +1,4 @@
-FILESEXTRAPATHS:prepend := "${THISDIR}/gstreamer1.0-plugins-base/1.16:"
+FILESEXTRAPATHS:prepend := "${THISDIR}/${PN}/1.16:"
 
 SRC_URI += "\
   file://0001-video-format-add-gst_video_format_info_component.patch \
