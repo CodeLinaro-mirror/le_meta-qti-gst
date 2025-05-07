@@ -14,4 +14,5 @@ SRC_URI:append:qcom-custom-bsp = "\
     file://0011-v4l2-Handle-GAP-buffer-in-encoder.patch \
     file://0012-v4l2-Set-extra-controls-if-pixelformat-is-updated.patch \
     file://0013-v4l2-Fix-segmentation-fault.patch \
+    file://0014-v4l2-Use-internal-DMA-buffer-pool-even-without-video.patch \
 "
