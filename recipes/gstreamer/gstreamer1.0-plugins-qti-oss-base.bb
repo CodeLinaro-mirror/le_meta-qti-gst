@@ -1,4 +1,4 @@
-inherit cmake
+inherit cmake pkgconfig
 
 SUMMARY = "QTI open-source GStreamer base"
 SECTION = "multimedia"
@@ -40,3 +40,5 @@ FILES_${PN} += "${INSTALL_LIBDIR}"
 
 SOLIBS = ".so*"
 FILES_SOLIBSDEV = ""
+
+INSANE_SKIP:${PN} = "dev-so"
