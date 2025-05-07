@@ -1,43 +1,40 @@
-From 4d0998e630c6f742723d7ca4d39c7bc77d3280f3 Mon Sep 17 00:00:00 2001
+From f4390da5479acfb4a43f22be90fe69ca08225d88 Mon Sep 17 00:00:00 2001
 From: Raja Ganapathi Busam <quic_rbusam@quicinc.com>
 Date: Mon, 17 Feb 2025 19:11:50 +0530
-Subject: [PATCH] v4l2: Update video alignment in pool config
+Subject: [PATCH] v4l2: Send video alignment in allocation query
 
-- Update video alignment in pool config, so that upstream plugin can
+- Send video alignment in allocation query, so that upstream plugin can
   consume this information when allocation query is returned
 
 Upstream-Status: Inappropriate [Qualcomm specific]
 
 Signed-off-by: Raja Ganapathi Busam <quic_rbusam@quicinc.com>
 ---
- sys/v4l2/gstv4l2object.c | 10 ++++++++--
- 1 file changed, 8 insertions(+), 2 deletions(-)
+ sys/v4l2/gstv4l2object.c | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
 
 diff --git a/sys/v4l2/gstv4l2object.c b/sys/v4l2/gstv4l2object.c
-index e18b805..dd1ebc8 100644
+index e18b805..c00167d 100644
 --- a/sys/v4l2/gstv4l2object.c
 +++ b/sys/v4l2/gstv4l2object.c
-@@ -5402,15 +5402,21 @@ gst_v4l2_object_propose_allocation (GstV4l2Object * obj, GstQuery * query)
-     /* we had a pool, check caps */
-     config = gst_buffer_pool_get_config (pool);
-     gst_buffer_pool_config_get_params (config, &pcaps, NULL, NULL, NULL);
-+    gst_buffer_pool_config_add_option (config,
-+        GST_BUFFER_POOL_OPTION_VIDEO_ALIGNMENT);
-+    gst_buffer_pool_config_set_video_alignment (config, &obj->align);
-+    GST_DEBUG_OBJECT (obj->dbg_obj,
-+      "pool config %" GST_PTR_FORMAT, config);
-+    if (!gst_buffer_pool_set_config (pool, config))
-+      GST_WARNING_OBJECT (obj->dbg_obj, "failed to add video alignment option "
-+          "to pool config");
+@@ -5367,6 +5367,7 @@ gst_v4l2_object_propose_allocation (GstV4l2Object * obj, GstQuery * query)
+   guint size, min, max;
+   GstCaps *caps;
+   gboolean need_pool;
++  GstStructure *params = NULL;
  
-     GST_DEBUG_OBJECT (obj->dbg_obj,
-         "we had a pool with caps %" GST_PTR_FORMAT, pcaps);
-     if (!gst_caps_is_equal (caps, pcaps)) {
--      gst_structure_free (config);
-       gst_object_unref (pool);
-       goto different_caps;
-     }
--    gst_structure_free (config);
-   }
-   gst_v4l2_get_driver_min_buffers (obj);
+   /* Set defaults allocation parameters */
+   size = obj->info.size;
+@@ -5418,8 +5419,11 @@ gst_v4l2_object_propose_allocation (GstV4l2Object * obj, GstQuery * query)
  
+   gst_query_add_allocation_pool (query, pool, size, min, max);
+ 
++  params = gst_structure_new_empty ("video-align-meta");
++  gst_buffer_pool_config_set_video_alignment (params, &obj->align);
+   /* we also support various metadata */
+-  gst_query_add_allocation_meta (query, GST_VIDEO_META_API_TYPE, NULL);
++  gst_query_add_allocation_meta (query, GST_VIDEO_META_API_TYPE, params);
++  gst_structure_free (params);
+ 
+   if (pool)
+     gst_object_unref (pool);

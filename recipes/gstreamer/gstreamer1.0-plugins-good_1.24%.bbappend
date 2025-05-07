@@ -1,4 +1,4 @@
-FILESEXTRAPATHS:prepend:qcom-custom-bsp := "${THISDIR}/gstreamer1.0-plugins-good/1.22:"
+FILESEXTRAPATHS:prepend:qcom-custom-bsp := "${THISDIR}/gstreamer1.0-plugins-good/1.24:"
 
 SRC_URI:append:qcom-custom-bsp = "\
     file://0001-v4l2-Add-support-for-V4L2_PIX_FMT_QC08C-format.patch \
@@ -8,9 +8,5 @@ SRC_URI:append:qcom-custom-bsp = "\
     file://0005-v4l2-Add-support-for-AV1-format.patch \
     file://0006-v4l2-decoder-Prefer-colorimetry-from-acquired-caps-f.patch \
     file://0007-v4l2-enc-Set-sink-format-before-src-format.patch \
-    file://0008-v4l2-Update-video-alignment-in-pool-config.patch \
-    file://0009-v4l2-Drop-empty-bytesused-0-buffers.patch \
-    file://0010-v4l2-Add-KEEP_MAPPED-flag-to-the-allocated-buffers.patch \
-    file://0011-v4l2-Handle-GAP-buffer-in-encoder.patch \
-    file://0012-v4l2-Set-extra-controls-if-pixelformat-is-updated.patch \
+    file://0008-gstreamer1.0-plugins-good-Add-meson-option-to-build-.patch \
 "
