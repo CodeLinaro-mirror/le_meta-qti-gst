@@ -1,4 +1,4 @@
-inherit cmake
+inherit cmake pkgconfig
 
 SUMMARY = "QTI open-source GStreamer Plug-in for CVP image pyramid"
 HOMEPAGE = "https://git.codelinaro.org"
