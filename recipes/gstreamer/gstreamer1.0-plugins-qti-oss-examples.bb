@@ -1,15 +1,20 @@
+inherit cmake sdllvm
 inherit cmake pkgconfig
 
 SUMMARY = "Generic examples for GStreamer pipelines."
 SECTION = "multimedia"
 
-LICENSE = "BSD"
-LIC_FILES_CHKSUM = "file://${COMMON_LICENSE_DIR}/${LICENSE};md5=3775480a712fc46a69647678acb234cb"
+
+LICENSE = "BSD-3-Clause-Clear"
+LIC_FILES_CHKSUM = "file://${COREBASE}/meta-qti-bsp/files/common-licenses/${LICENSE};md5=3771d4920bd6cdb8cbdf1e8344489ee0"
 
 # Dependencies.
 DEPENDS := "gstreamer1.0"
-DEPENDS += "gstreamer1.0-plugins-qti-oss-mlmeta"
+DEPENDS += "gstreamer1.0-plugins-qti-oss-base"
 DEPENDS += "binder"
+DEPENDS += "securemsm"
+DEPENDS += "cecdm"
+DEPENDS += "media-headers"
 
 DEPENDS:append_sdmsteppe += "${@bb.utils.contains('DISTRO_FEATURES', 'qti-camera', bb.utils.contains('DISTRO_FEATURES', 'qti-camera-metadata', 'camera-metadata', 'libcamera-client', d), '', d)}"
 DEPENDS:append_qrb5165 += "${@bb.utils.contains('DISTRO_FEATURES', 'qti-camera', 'libhardware', '', d)}"
@@ -45,7 +50,7 @@ CODEC2_ENCODE_qrbx210 := "TRUE"
 TARGET_SUPPORTS_S2D := "FALSE"
 TARGET_SUPPORTS_S2D_sdmsteppe := "${@bb.utils.contains('MACHINE_FEATURES', 'hibernate', 'TRUE', 'FALSE', d)}"
 
-EXTRA_OECMAKE += "-DGST_VERSION_REQUIRED=1.14.4"
+EXTRA_OECMAKE += "-DGST_VERSION_REQUIRED=1.20.7"
 EXTRA_OECMAKE += "-DSYSROOT_INCDIR=${STAGING_INCDIR}"
 EXTRA_OECMAKE += "-DSYSROOT_LIBDIR=${STAGING_LIBDIR}"
 EXTRA_OECMAKE += "-DKERNEL_BUILDDIR=${STAGING_KERNEL_BUILDDIR}"
@@ -55,8 +60,13 @@ EXTRA_OECMAKE += "-DCAMERA_CLIENT_DISABLED=${CAMERA_CLIENT_DISABLED}"
 EXTRA_OECMAKE += "-DCODEC2_ENCODE=${CODEC2_ENCODE}"
 EXTRA_OECMAKE += "-DTARGET_SUPPORTS_S2D=${TARGET_SUPPORTS_S2D}"
 
-FILES_${PN} += "${INSTALL_BINDIR}"
-FILES_${PN} += "${INSTALL_LIBDIR}"
+
+FILES:${PN} += "${INSTALL_BINDIR}  \
+               ${INSTALL_LIBDIR} "
+
+
+PACKAGE_ARCH = "${TUNE_ARCH}"
 
 SOLIBS = ".so*"
 FILES_SOLIBSDEV = ""
+TOOLCHAIN = "sdllvm"
