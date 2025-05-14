@@ -23,4 +23,6 @@ RDEPENDS:packagegroup-qti-gst = " \
       gstreamer1.0-omx \
       ${@bb.utils.contains("MACHINE", "sxrneo-ar-sg1", "gstreamer1.0-plugins-qti-oss-codec2", "", d)} \
       ${@bb.utils.contains("MACHINE", "ar-sg1", "gstreamer1.0-plugins-qti-oss-codec2", "", d)} \
+      ${@bb.utils.contains("MACHINE", "ar-sg1", "gstreamer1.0-plugins-qti-oss-base", "", d)} \
+      ${@bb.utils.contains("MACHINE", "ar-sg1", "gstreamer1.0-plugins-qti-oss-drmdecryptor", "", d)} \
     "
