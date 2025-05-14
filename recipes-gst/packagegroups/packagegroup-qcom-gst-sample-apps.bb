@@ -59,29 +59,15 @@ RDEPENDS:${PN}:qcom-custom-bsp = " \
    "
 
 RDEPENDS:${PN}:remove:qcs9100 = " \
-    qcom-gst-activate-deactivate-streams-runtime \
-    qcom-gst-add-remove-streams-runtime \
-    qcom-gst-add-streams-as-bundle-example \
     qcom-gst-camera-burst-capture-example \
-    qcom-gst-camera-metadata-example \
     qcom-gst-camera-shdr-ldc-eis-example \
-    qcom-gst-camera-switch-example \
-    qcom-gst-multi-camera-example \
     qcom-gst-snapshot-stream-example \
-    qcom-gst-video-playback-example \
   "
 
 RDEPENDS:${PN}:remove:qcs8300 = " \
-    qcom-gst-activate-deactivate-streams-runtime \
-    qcom-gst-add-remove-streams-runtime \
-    qcom-gst-add-streams-as-bundle-example \
     qcom-gst-camera-burst-capture-example \
-    qcom-gst-camera-metadata-example \
     qcom-gst-camera-shdr-ldc-eis-example \
-    qcom-gst-camera-switch-example \
-    qcom-gst-multi-camera-example \
     qcom-gst-snapshot-stream-example \
-    qcom-gst-video-playback-example \
   "
 
 RDEPENDS:${PN}:remove:qcm6490 = " \
