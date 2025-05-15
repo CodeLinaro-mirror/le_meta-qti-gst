@@ -12,9 +12,9 @@ DEPENDS := "gstreamer1.0"
 DEPENDS += "gstreamer1.0-plugins-base"
 DEPENDS += "qcom-gstreamer1.0-plugins-oss-mlmeta"
 DEPENDS += "qcom-gstreamer1.0-plugins-oss-base"
-DEPENDS += "adreno"
 DEPENDS += "cairo"
 DEPENDS += "property-vault syslog-plumber"
+DEPENDS += "${@'adrenocl' if d.getVar('GL_PROVIDER') == 'qcom-adreno' else 'opencl-headers'}"
 
 RDEPENDS:${PN}:append = " property-vault"
 
