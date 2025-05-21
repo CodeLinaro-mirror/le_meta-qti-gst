@@ -1,0 +1,205 @@
+From eececce0c2fd8702b355723e03f9b6985bd46a53 Mon Sep 17 00:00:00 2001
+From: Kevil Patel <kevipate@qti.qualcomm.com>
+Date: Mon, 19 May 2025 17:52:11 +0530
+Subject: [PATCH] waylandsink: support fullscreen for waylandsink for gstreamer
+
+Add fullscreen property that makes the sink displayed all across the output
+
+Upstream-Status: Inappropriate [Qualcomm specific]
+
+Signed-off-by: Kevil Patel <kevipate@qti.qualcomm.com>
+
+---
+ ext/wayland/gstwaylandsink.c       | 68 +++++++++++++++++++++++++++++-
+ ext/wayland/gstwaylandsink.h       |  1 +
+ gst-libs/gst/wayland/gstwlwindow.c | 16 +++----
+ gst-libs/gst/wayland/gstwlwindow.h |  3 +-
+ 4 files changed, 76 insertions(+), 12 deletions(-)
+
+diff --git a/ext/wayland/gstwaylandsink.c b/ext/wayland/gstwaylandsink.c
+index 2f116bf..35e6cf7 100644
+--- a/ext/wayland/gstwaylandsink.c
++++ b/ext/wayland/gstwaylandsink.c
+@@ -61,7 +61,11 @@ enum
+   PROP_DISPLAY,
+   PROP_FULLSCREEN,
+   PROP_ROTATE_METHOD,
+-  PROP_LAST
++  PROP_LAST,
++  PROP_X,
++  PROP_Y,
++  PROP_DST_WIDTH,
++  PROP_DST_HEIGHT
+ };
+ 
+ GST_DEBUG_CATEGORY (gstwayland_debug);
+@@ -186,6 +190,25 @@ gst_wayland_sink_class_init (GstWaylandSinkClass * klass)
+   * Since: 1.22
+   */
+   gst_video_overlay_install_properties (gobject_class, PROP_LAST);
++
++  g_object_class_install_property (gobject_class, PROP_X,
++      g_param_spec_uint ("x", "X Position", "X postion for the content",
++           0, 1920, 0, G_PARAM_READWRITE | G_PARAM_CONSTRUCT));
++
++  g_object_class_install_property (gobject_class, PROP_Y,
++      g_param_spec_uint ("y", "Y Position", "Y postion for the content",
++           0, 1080, 0, G_PARAM_READWRITE | G_PARAM_CONSTRUCT));
++
++  g_object_class_install_property (gobject_class, PROP_DST_WIDTH,
++      g_param_spec_uint ("width", "Destination Width", "Destination Width "
++          "for the content", 0, 1920, 640,
++          G_PARAM_READWRITE | G_PARAM_CONSTRUCT));
++
++  g_object_class_install_property (gobject_class, PROP_DST_HEIGHT,
++      g_param_spec_uint ("height", "Destination Height", "Destination Height "
++          "for the content", 0, 1080, 480,
++          G_PARAM_READWRITE | G_PARAM_CONSTRUCT));
++
+ }
+ 
+ static void
+@@ -266,6 +289,26 @@ gst_wayland_sink_get_property (GObject * object,
+       g_value_set_enum (value, self->current_rotate_method);
+       GST_OBJECT_UNLOCK (self);
+       break;
++    case PROP_X:
++      GST_OBJECT_LOCK (self);
++      g_value_set_uint (value, self->video_rectangle.x);
++      GST_OBJECT_UNLOCK (self);
++      break;
++    case PROP_Y:
++      GST_OBJECT_LOCK (self);
++      g_value_set_uint (value, self->video_rectangle.y);
++      GST_OBJECT_UNLOCK (self);
++      break;
++    case PROP_DST_WIDTH:
++      GST_OBJECT_LOCK (self);
++      g_value_set_uint (value, self->video_rectangle.w);
++      GST_OBJECT_UNLOCK (self);
++      break;
++    case PROP_DST_HEIGHT:
++      GST_OBJECT_LOCK (self);
++      g_value_set_uint (value, self->video_rectangle.h);
++      GST_OBJECT_UNLOCK (self);
++      break;
+     default:
+       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+       break;
+@@ -293,6 +336,26 @@ gst_wayland_sink_set_property (GObject * object,
+       gst_wayland_sink_set_rotate_method (self, g_value_get_enum (value),
+           FALSE);
+       break;
++    case PROP_X:
++      GST_OBJECT_LOCK (self);
++      self->video_rectangle.x = g_value_get_uint (value);
++      GST_OBJECT_UNLOCK (self);
++      break;
++    case PROP_Y:
++      GST_OBJECT_LOCK (self);
++      self->video_rectangle.y = g_value_get_uint (value);
++      GST_OBJECT_UNLOCK (self);
++      break;
++    case PROP_DST_WIDTH:
++      GST_OBJECT_LOCK (self);
++      self->video_rectangle.w = g_value_get_uint (value);
++      GST_OBJECT_UNLOCK (self);
++      break;
++    case PROP_DST_HEIGHT:
++      GST_OBJECT_LOCK (self);
++      self->video_rectangle.h = g_value_get_uint (value);
++      GST_OBJECT_UNLOCK (self);
++      break;
+     default:
+       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+       break;
+@@ -761,7 +824,8 @@ gst_wayland_sink_show_frame (GstVideoSink * vsink, GstBuffer * buffer)
+     if (!self->window) {
+       /* if we were not provided a window, create one ourselves */
+       self->window = gst_wl_window_new_toplevel (self->display,
+-          &self->video_info, self->fullscreen, &self->render_lock);
++          &self->video_info, &self->video_rectangle,
++          self->fullscreen, &self->render_lock);
+       g_signal_connect_object (self->window, "closed",
+           G_CALLBACK (on_window_closed), self, 0);
+       gst_wl_window_set_rotate_method (self->window,
+diff --git a/ext/wayland/gstwaylandsink.h b/ext/wayland/gstwaylandsink.h
+index 3243d8c..a6dab5e 100644
+--- a/ext/wayland/gstwaylandsink.h
++++ b/ext/wayland/gstwaylandsink.h
+@@ -58,6 +58,7 @@ struct _GstWaylandSink
+   gboolean fullscreen;
+ 
+   gchar *display_name;
++  GstVideoRectangle video_rectangle;
+ 
+   gboolean redraw_pending;
+   GMutex render_lock;
+diff --git a/gst-libs/gst/wayland/gstwlwindow.c b/gst-libs/gst/wayland/gstwlwindow.c
+index 0023d4e..aced15b 100644
+--- a/gst-libs/gst/wayland/gstwlwindow.c
++++ b/gst-libs/gst/wayland/gstwlwindow.c
+@@ -273,7 +273,7 @@ gst_wl_window_ensure_fullscreen (GstWlWindow * self, gboolean fullscreen)
+ 
+ GstWlWindow *
+ gst_wl_window_new_toplevel (GstWlDisplay * display, const GstVideoInfo * info,
+-    gboolean fullscreen, GMutex * render_lock)
++    const GstVideoRectangle * rectangle, gboolean fullscreen, GMutex * render_lock)
+ {
+   GstWlWindow *self;
+   GstWlWindowPrivate *priv;
+@@ -308,12 +308,11 @@ gst_wl_window_new_toplevel (GstWlDisplay * display, const GstVideoInfo * info,
+     xdg_toplevel_add_listener (priv->xdg_toplevel,
+         &xdg_toplevel_listener, self);
+ 
+-    gst_wl_window_ensure_fullscreen (self, fullscreen);
+-
+     /* Finally, commit the xdg_surface state as toplevel */
+     priv->configured = FALSE;
+     wl_surface_commit (priv->area_surface);
+-    wl_display_flush (gst_wl_display_get_display (display));
++    wl_display_dispatch(gst_wl_display_get_display (display));
++    wl_display_roundtrip(gst_wl_display_get_display (display));
+ 
+     g_mutex_lock (&priv->configure_mutex);
+     timeout = g_get_monotonic_time () + 100 * G_TIME_SPAN_MILLISECOND;
+@@ -325,6 +324,7 @@ gst_wl_window_new_toplevel (GstWlDisplay * display, const GstVideoInfo * info,
+       }
+     }
+     g_mutex_unlock (&priv->configure_mutex);
++    gst_wl_window_ensure_fullscreen (self, fullscreen);
+   } else if (fullscreen_shell) {
+     zwp_fullscreen_shell_v1_present_surface (fullscreen_shell,
+         priv->area_surface, ZWP_FULLSCREEN_SHELL_V1_PRESENT_METHOD_ZOOM, NULL);
+@@ -332,10 +332,10 @@ gst_wl_window_new_toplevel (GstWlDisplay * display, const GstVideoInfo * info,
+     GST_ERROR ("Unable to use either xdg_wm_base or zwp_fullscreen_shell.");
+     goto error;
+   }
+-
+-  /* render_rectangle is already set via toplevel_configure in
+-   * xdg_shell fullscreen mode */
+-  if (!(xdg_wm_base && fullscreen)) {
++  if ((rectangle->h != 0) && (rectangle->w != 0) && !fullscreen) {
++    gst_wl_window_set_render_rectangle (self, 0, 0, rectangle->w,
++         rectangle->h);
++  } else {
+     /* set the initial size to be the same as the reported video size */
+     gint width =
+         gst_util_uint64_scale_int_round (info->width, info->par_n, info->par_d);
+diff --git a/gst-libs/gst/wayland/gstwlwindow.h b/gst-libs/gst/wayland/gstwlwindow.h
+index 06c4001..e5d0b4a 100644
+--- a/gst-libs/gst/wayland/gstwlwindow.h
++++ b/gst-libs/gst/wayland/gstwlwindow.h
+@@ -39,8 +39,7 @@ void gst_wl_window_ensure_fullscreen (GstWlWindow * self,
+ 
+ GST_WL_API
+ GstWlWindow *gst_wl_window_new_toplevel (GstWlDisplay * display,
+-        const GstVideoInfo * info, gboolean fullscreen, GMutex * render_lock);
+-
++        const GstVideoInfo * info, const GstVideoRectangle * rectangle, gboolean fullscreen, GMutex * render_lock);
+ GST_WL_API
+ GstWlWindow *gst_wl_window_new_in_surface (GstWlDisplay * display,
+         struct wl_surface * parent, GMutex * render_lock);
+-- 
+2.34.1
+
