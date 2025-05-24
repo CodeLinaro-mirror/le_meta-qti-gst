@@ -49,5 +49,5 @@ RDEPENDS:packagegroup-qti-gst = " \
       ${@bb.utils.contains("MACHINE_FEATURES", "qti-cvp", "gstreamer1.0-plugins-qti-oss-cv-optclflow", "", d)} \
       ${@bb.utils.contains("MACHINE_FEATURES", "qti-cvp", "gstreamer1.0-plugins-qti-oss-cv-imgpyramid", "", d)} \
       ${@bb.utils.contains_any("BASEMACHINE", "sdmsteppe qcs6490", "gstreamer1.0-plugins-qti-oss-jpegenc", "", d)} \
-      ${@bb.utils.contains_any("BASEMACHINE", "qrbx210 qcs6490", "gstreamer1.0-plugins-qti-oss-codec2", "", d)} \
+      ${@bb.utils.contains_any("BASEMACHINE", "qrbx210 qcs6490 sdmsteppe", "gstreamer1.0-plugins-qti-oss-codec2", "", d)} \
     "

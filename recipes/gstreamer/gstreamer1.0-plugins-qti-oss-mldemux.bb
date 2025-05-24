@@ -1,4 +1,4 @@
-inherit cmake
+inherit cmake pkgconfig
 
 SUMMARY = "QTI open-source GStreamer Plug-in for demuxing a tensor stream into multiple streams"
 SECTION = "multimedia"

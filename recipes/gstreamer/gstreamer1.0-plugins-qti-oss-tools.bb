@@ -1,4 +1,4 @@
-inherit cmake
+inherit cmake pkgconfig
 
 SUMMARY = "Generic tools application for GStreamer pipeline verification."
 SECTION = "multimedia"

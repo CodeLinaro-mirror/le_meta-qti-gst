@@ -1,4 +1,4 @@
-inherit cmake
+inherit cmake pkgconfig
 
 SUMMARY = "QTI open-source GStreamer Plug-in for batching buffers from multiple streams into single output buffer"
 SECTION = "multimedia"

@@ -1,4 +1,4 @@
-inherit cmake
+inherit cmake pkgconfig
 
 SUMMARY = "QTI open-source GStreamer Plug-in for socket fd transfer"
 HOMEPAGE = "https://git.codelinaro.org"

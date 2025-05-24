@@ -1,4 +1,4 @@
-inherit cmake
+inherit cmake pkgconfig
 
 SUMMARY = "QTI open-source GStreamer Plug-in for qmmf-sdk"
 HOMEPAGE = "http://www.qualcomm.com"

@@ -1,4 +1,4 @@
-inherit cmake
+inherit cmake pkgconfig
 
 SUMMARY = "GStreamer based daemon utilizing QTI UMD gadget library"
 SECTION = "multimedia"

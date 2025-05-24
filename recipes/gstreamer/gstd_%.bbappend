@@ -1,6 +1,7 @@
 FILESEXTRAPATHS:prepend := "${THISDIR}/${BPN}:"
 
 SRCREV = "d924fcbc2123dcfcb35242ecf5dc2fc3049004b3"
+LIC_FILES_CHKSUM = "file://COPYING;md5=b234ee4d69f5fce4486a80fdaf4a4263"
 
 SRC_URI += "\
            file://gstd.service \
@@ -15,8 +16,9 @@ SRC_URI:remove = "\
 SRC_URI:append:qti-distro-perf = "\
            file://0001-Disable-logging-on-perf-builds.patch \
            "
+SRC_URI:append = "file://0001-gstd-update-python-pip-command.patch"
 
-DEPENDS += "libsoup-2.4 jansson"
+DEPENDS += "libsoup-2.4 jansson readline"
 
 inherit systemd
 
@@ -50,3 +52,5 @@ SYSTEMD_SERVICE:${PN} = "gstd.service"
 FILES:${PN} += "/run \
                 ${localstatedir}/log \
                "
+
+ERROR_QA:remove = "empty-dirs"
