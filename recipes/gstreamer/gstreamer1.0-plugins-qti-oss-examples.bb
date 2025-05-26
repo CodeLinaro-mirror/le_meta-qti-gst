@@ -22,6 +22,8 @@ DEPENDS:remove:qcm6490 = "securemsm"
 DEPENDS:remove:qcm6490 = "media-headers"
 DEPENDS:remove:pineapple = "securemsm"
 DEPENDS:remove:pineapple = "media-headers"
+DEPENDS:remove:sun = "securemsm"
+DEPENDS:remove:sun = "media-headers"
 
 FILESPATH =+ "${WORKSPACE}/vendor/qcom/opensource/gst-plugins-qti-oss/:"
 SRC_URI = "file://gst-plugin-examples/"
@@ -41,6 +43,7 @@ CODEC2_ENCODE := "FALSE"
 CODEC2_ENCODE:qrbx210 := "TRUE"
 CODEC2_ENCODE:kalama := "TRUE"
 CODEC2_ENCODE:pineapple := "TRUE"
+CODEC2_ENCODE:sun := "TRUE"
 CODEC2_ENCODE:qcs6490 := "TRUE"
 
 # Decode-related variables
@@ -66,6 +69,9 @@ EXTRA_OECMAKE += "-DENABLE_ML=${ENABLE_ML}"
 
 FILES:${PN} += "${INSTALL_BINDIR}"
 FILES:${PN} += "${INSTALL_LIBDIR}"
+
+CFLAGS:append:sun += " \
+    -Wno-error=incompatible-pointer-types"
 
 SOLIBS = ".so*"
 FILES_SOLIBSDEV = ""
