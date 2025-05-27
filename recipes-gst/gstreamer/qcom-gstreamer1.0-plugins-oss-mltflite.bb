@@ -12,9 +12,9 @@ DEPENDS += "gstreamer1.0-plugins-base"
 DEPENDS += "qcom-gstreamer1.0-plugins-oss-base"
 DEPENDS += "tensorflow-lite"
 
-FILESPATH =+ "${WORKSPACE}/gst-plugins-qti-oss/:"
-SRC_URI = "file://gst-plugin-mltflite"
-S = "${WORKDIR}/gst-plugin-mltflite"
+FILESPATH =+ "${WORKSPACE}/:"
+SRC_URI = "file://gst-plugins-qti-oss/gst-plugin-mltflite"
+S = "${WORKDIR}/gst-plugins-qti-oss/gst-plugin-mltflite"
 
 # Install directories.
 INSTALL_BINDIR := "${bindir}"

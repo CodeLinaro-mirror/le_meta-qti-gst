@@ -11,9 +11,9 @@ DEPENDS := "gstreamer1.0"
 DEPENDS += "gstreamer1.0-plugins-base"
 DEPENDS += "qcom-gstreamer1.0-plugins-oss-base"
 
-FILESPATH =+ "${WORKSPACE}/gst-plugins-qti-oss/:"
-SRC_URI = "file://gst-plugin-metatransform"
-S = "${WORKDIR}/gst-plugin-metatransform"
+FILESPATH =+ "${WORKSPACE}/:"
+SRC_URI = "file://gst-plugins-qti-oss/gst-plugin-metatransform"
+S = "${WORKDIR}/gst-plugins-qti-oss/gst-plugin-metatransform"
 
 # Install directories.
 INSTALL_BINDIR := "${bindir}"

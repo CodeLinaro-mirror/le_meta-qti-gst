@@ -3,23 +3,17 @@ inherit systemd
 # Add the core names to the OVERRIDES
 OVERRIDES .= ":${LAYERSERIES_CORENAMES}"
 
-DEPENDS:append:qcom-custom-bsp = " libsoup-2.4"
-
 FILESEXTRAPATHS:prepend:qcom-custom-bsp := "${THISDIR}/${BPN}:"
 
-LIC_FILES_CHKSUM:qcom-custom-bsp = "file://COPYING;md5=b234ee4d69f5fce4486a80fdaf4a4263"
+DEPENDS:remove:qcom-custom-bsp = " libsoup-2.4"
+
+DEPENDS:append:qcom-custom-bsp = " libsoup"
 
 SRC_URI:append:qcom-custom-bsp = " file://gstd.service \
-                                   file://0001-Unblock-GSTD-pipeline-if-a-plugin-refuses-to-change-.patch \
-                                   file://0001-gstd-Change-symlinks-to-relative-in-gstd-and-gst-cli.patch"
-
-SRCREV:qcom-custom-bsp = "d924fcbc2123dcfcb35242ecf5dc2fc3049004b3"
-
-SRC_URI:append:qcom-custom-bsp = " file://gstd-env_qcm6490"
-
-SRC_URI:remove:qcom-custom-bsp = "file://0001-gstd-yocto-compatibility.patch"
-
-SRC_URI:append:qcom-custom-bsp = " file://0002-gstd-update-python-pip-command.patch"
+                                   file://gstd-env_qcm6490 \
+                                   file://0001-Delete-pipeline-even-if-state-update-to-NULL-returns.patch \
+                                   file://0002-Add-support-for-libsoup-3.0.patch \
+                                   file://0003-Update-deprecated-meson-functions.patch"
 
 EXTRA_OEMESON:qcom-custom-bsp = "-Dwith-gstd-logstatedir=/var/log/gstd/"
 

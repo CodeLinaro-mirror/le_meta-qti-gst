@@ -13,9 +13,9 @@ DEPENDS += "gstreamer1.0-plugins-base"
 DEPENDS += "qcom-gstreamer1.0-plugins-oss-base"
 DEPENDS += "qcom-rvsdk"
 
-FILESPATH =+ "${WORKSPACE}/gst-plugins-qti-oss/:"
-SRC_URI = "file://gst-plugin-dfs"
-S = "${WORKDIR}/gst-plugin-dfs"
+FILESPATH =+ "${WORKSPACE}/:"
+SRC_URI = "file://gst-plugins-qti-oss/gst-plugin-dfs"
+S = "${WORKDIR}/gst-plugins-qti-oss/gst-plugin-dfs"
 
 # Install directries.
 INSTALL_BINDIR := "${bindir}"

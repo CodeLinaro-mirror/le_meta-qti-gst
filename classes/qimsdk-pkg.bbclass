@@ -92,6 +92,7 @@ GST_SAMPLE_APPS = " \
     qcom-gst-camera-shdr-ldc-eis-example:do_package_write_ipk \
     qcom-gst-camera-single-stream-example:do_package_write_ipk \
     qcom-gst-camera-switch-example:do_package_write_ipk \
+    qcom-gst-camera-per-port-example:do_package_write_ipk \
     qcom-gst-concurrent-videoplay-composition:do_package_write_ipk \
     qcom-gst-multi-camera-example:do_package_write_ipk \
     qcom-gst-multi-stream-example:do_package_write_ipk \
@@ -136,6 +137,10 @@ GST_SAMPLE_APPS:remove:qcs8300 = " \
     qcom-gst-multi-camera-example:do_package_write_ipk \
     qcom-gst-snapshot-stream-example:do_package_write_ipk \
     qcom-gst-video-playback-example:do_package_write_ipk \
+  "
+
+GST_SAMPLE_APPS:remove:qcm6490 = " \
+    qcom-gst-camera-per-port-example:do_package_write_ipk \
   "
 
 addtask do_generate_qim_sdk_setscene
@@ -231,8 +236,8 @@ def get_pkgs_list(d):
                 "libpsl5", "librsvg-2-2", "libsoup-2.4_",
                 "libtheora_", "libwebp_", "mpg123_",
                 "liborc-0", "libsbc1", "libspeex1", "libtag1", "libjson-glib-1.0-0",
-                "libmosquitto1", "libhiredis1.0.0", "libnice_0.1.18", "libsrtp2-1_2.4.2",
-                "libsrt1.4_1.4.4", "qcom-rvsdk_1.0", "gobject-introspection_",
+                "libmosquitto1", "libhiredis1.0.0", "libnice_", "libsrtp2-1_",
+                "libsrt1.4_", "qcom-rvsdk_1.0", "gobject-introspection_",
                 "python3-pycairo_", "python3-pygobject_"]
     for _, pkgdirs, _ in os.walk(os.path.join(deploydir, pkgtype)):
         for pkgdir in pkgdirs:

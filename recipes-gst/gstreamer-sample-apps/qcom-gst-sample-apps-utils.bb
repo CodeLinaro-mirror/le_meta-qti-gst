@@ -10,9 +10,9 @@ LIC_FILES_CHKSUM = "file://${COMMON_LICENSE_DIR}/${LICENSE};md5=7a434440b651f4a4
 DEPENDS := "gstreamer1.0"
 DEPENDS += "gstreamer1.0-plugins-base"
 
-FILESPATH =+ "${WORKSPACE}/gst-plugins-qti-oss/gst-sample-apps:"
-SRC_URI = "file://gst-sample-apps-utils"
-S = "${WORKDIR}/gst-sample-apps-utils"
+FILESPATH =+ "${WORKSPACE}/:"
+SRC_URI = "file://gst-plugins-qti-oss/gst-sample-apps/gst-sample-apps-utils"
+S = "${WORKDIR}/gst-plugins-qti-oss/gst-sample-apps/gst-sample-apps-utils"
 
 # Install directries.
 INSTALL_INCDIR := "${includedir}"

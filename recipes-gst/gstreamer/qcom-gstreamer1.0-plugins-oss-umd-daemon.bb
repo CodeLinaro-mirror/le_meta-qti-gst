@@ -15,9 +15,9 @@ DEPENDS += "${@bb.utils.contains("QCOM_AFR_ALGO", "TRUE", "qti-auto-framing-stab
 RDEPENDS:${PN} := "qti-umd-gadget"
 RDEPENDS:${PN} += "${@bb.utils.contains("QCOM_AFR_ALGO", "TRUE", "qti-auto-framing-stabilization", "", d)}"
 
-FILESPATH =+ "${WORKSPACE}/gst-plugins-qti-oss/:"
-SRC_URI = "file://gst-umd-daemon"
-S = "${WORKDIR}/gst-umd-daemon"
+FILESPATH =+ "${WORKSPACE}/:"
+SRC_URI = "file://gst-plugins-qti-oss/gst-umd-daemon"
+S = "${WORKDIR}/gst-plugins-qti-oss/gst-umd-daemon"
 
 # Install directries.
 INSTALL_BINDIR := "${bindir}"
