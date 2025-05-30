@@ -10,6 +10,10 @@ LIC_FILES_CHKSUM = "file://${COMMON_LICENSE_DIR}/${LICENSE};md5=7a434440b651f4a4
 DEPENDS := "gstreamer1.0"
 DEPENDS += "gstreamer1.0-plugins-base"
 DEPENDS += "gstreamer1.0-rtsp-server"
+DEPENDS += "qcom-gstreamer1.0-plugins-oss-base"
+DEPENDS += "qcom-qnn-sdk"
+DEPENDS += "qcom-snpe-sdk"
+DEPENDS += "tensorflow-lite"
 
 FILESPATH =+ "${WORKSPACE}/:"
 SRC_URI = "file://gst-plugins-qti-oss/gst-plugin-tools"
