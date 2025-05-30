@@ -15,7 +15,7 @@ SRC_URI:append:qcom-custom-bsp = " file://gstd.service \
                                    file://0002-Add-support-for-libsoup-3.0.patch \
                                    file://0003-Update-deprecated-meson-functions.patch"
 
-EXTRA_OEMESON:qcom-custom-bsp = "-Dwith-gstd-logstatedir=/var/log/gstd/"
+EXTRA_OEMESON:qcom-custom-bsp = "-Dwith-gstd-logstatedir=/tmp/gstd/ -Dwith-gstd-runstatedir=/tmp/gstd/"
 
 do_configure:prepend:qcom-custom-bsp () {
         echo -n "" > ${WORKDIR}/git/libgstc/python/Makefile.am
@@ -37,13 +37,10 @@ do_install:append:qcom-custom-bsp () {
 
         install -d ${D}${systemd_system_unitdir}
         install -m 644 ${WORKDIR}/gstd.service ${D}${systemd_system_unitdir}
-
-        install -d -m 777 ${D}${exec_prefix}${localstatedir}/run/gstd
-        install -d -m 777 ${D}${exec_prefix}${localstatedir}/log/gstd
 }
 
 SYSTEMD_SERVICE:${PN}:qcom-custom-bsp = "gstd.service"
 
-FILES:${PN}:append:qcom-custom-bsp  = " ${exec_prefix}${localstatedir}/run/gstd ${exec_prefix}${localstatedir}/log/gstd"
+FILES:${PN}:append:qcom-custom-bsp  = " /tmp/gstd"
 
 INSANE_SKIP:${PN}:append:qcom-custom-bsp = " useless-rpaths empty-dirs"
