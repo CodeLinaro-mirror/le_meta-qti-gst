@@ -13,7 +13,7 @@ DEPENDS += "gstreamer1.0-rtsp-server"
 
 FILESPATH =+ "${WORKSPACE}/vendor/qcom/opensource/gst-plugins-qti-oss/:"
 SRC_URI = "file://gst-plugin-tools/"
-S = "${WORKDIR}/gst-plugin-tools/"
+S = "${WORKDIR}/gst-plugin-tools"
 
 # Install directries.
 INSTALL_BINDIR := "${bindir}"

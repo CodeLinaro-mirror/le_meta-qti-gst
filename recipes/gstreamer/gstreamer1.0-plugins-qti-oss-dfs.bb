@@ -12,9 +12,9 @@ DEPENDS := "gstreamer1.0"
 DEPENDS += "gstreamer1.0-plugins-base"
 DEPENDS += "gstreamer1.0-plugins-qti-oss-base"
 DEPENDS += "vslam"
-DEPENDS:remove:qcs6490 += "vslam"
-DEPENDS:remove:kalama += "vslam"
-DEPENDS:append:qcs6490 += "rv"
+DEPENDS:remove:qcs6490 = "vslam"
+DEPENDS:remove:kalama  = "vslam"
+DEPENDS:append:qcs6490 = " rv"
 
 FILESPATH =+ "${WORKSPACE}/vendor/qcom/opensource/gst-plugins-qti-oss/:"
 
