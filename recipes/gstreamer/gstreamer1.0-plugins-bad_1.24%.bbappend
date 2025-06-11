@@ -6,7 +6,9 @@ SRC_URI:append = "\
   file://0003-waylandsink-support-gap-buffers.patch \
   file://0005-wayland-Add-support-for-NV12_Q08C-compressed-8-bit-f.patch \
   file://0006-Hack-wayland-Add-NV12_Q08C-to-shm-formats.patch \
+  file://0007-waylandsink-support-gbm-protocol.patch \
+  file://0008-waylandsink-support-position-and-dimensions.patch \
 "
 
 PACKAGECONFIG:append = " webrtc sctp srt srtp"
-DEPENDS:append = " libnice libsrtp srt"
+DEPENDS:append = " libnice libsrtp srt gbm"
