@@ -22,13 +22,14 @@ INSTALL_BINDIR := "${bindir}"
 INSTALL_LIBDIR := "${libdir}"
 
 # Default platform definitions.
-IMAGE_MAX_WIDTH         := "4096"
-IMAGE_MAX_HEIGHT        := "4096"
-VIDEO_MAX_WIDTH         := "4096"
-VIDEO_MAX_HEIGHT        := "4096"
-VIDEO_MAX_FPS           := "120/1"
-CAMERA_METADATA_VERSION := "1.0"
-MULTI_CAMERA_ENABLE     := "FALSE"
+IMAGE_MAX_WIDTH               := "4096"
+IMAGE_MAX_HEIGHT              := "4096"
+VIDEO_MAX_WIDTH               := "4096"
+VIDEO_MAX_HEIGHT              := "4096"
+VIDEO_MAX_FPS                 := "120/1"
+CAMERA_METADATA_VERSION       := "1.0"
+MULTI_CAMERA_ENABLE           := "FALSE"
+GET_CAMERA_STATIC_INFO_ENABLE := "TRUE"
 
 # Overwrite the default platform definitions for 8009.
 VIDEO_MAX_WIDTH_apq8009   := "1920"
@@ -54,8 +55,9 @@ CAMERA_METADATA_VERSION_qcs6490 := "1.1"
 VIDEO_MAX_FPS_qcs6490           := "240/1"
 
 # Overwrite the default platform definitions for sdmsteppe.
-VIDEO_YUY2_FORMAT_ENABLE_sdmsteppe := "TRUE"
-VIDEO_YUY2_FORMAT_ENABLE_qcs6490   := "TRUE"
+VIDEO_YUY2_FORMAT_ENABLE_sdmsteppe        := "TRUE"
+GET_CAMERA_STATIC_INFO_ENABLE_sdmsteppe   := "FALSE"
+VIDEO_YUY2_FORMAT_ENABLE_qcs6490          := "TRUE"
 
 EXTRA_OECMAKE += "-DGST_VERSION_REQUIRED=1.14.4"
 EXTRA_OECMAKE += "-DSYSROOT_INCDIR=${STAGING_INCDIR}"
