@@ -134,10 +134,10 @@ index 6bf6778..5aca3b2 100644
  
    /* remove the reference that the caller (GstWlDisplay) owns */
 diff --git a/gst-libs/gst/wayland/gstwldisplay.c b/gst-libs/gst/wayland/gstwldisplay.c
-index a0946bb..25505c6 100644
+index bf1416f..5e948fc 100644
 --- a/gst-libs/gst/wayland/gstwldisplay.c
 +++ b/gst-libs/gst/wayland/gstwldisplay.c
-@@ -538,6 +538,22 @@ gst_wl_display_unregister_buffer (GstWlDisplay * self, gpointer gstmem)
+@@ -539,6 +539,22 @@ gst_wl_display_unregister_buffer (GstWlDisplay * self, gpointer gstmem)
    g_mutex_unlock (&priv->buffers_mutex);
  }
  
