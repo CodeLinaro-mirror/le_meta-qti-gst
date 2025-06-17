@@ -1,52 +1,49 @@
 inherit cmake sdllvm
 inherit cmake pkgconfig
 
-SUMMARY = "QTI open-source GStreamer Plug-in for video encoding decoding with Codec 2.0"
+SUMMARY = "QTI open-source GStreamer Plug-in for decryption"
 SECTION = "multimedia"
 
 LICENSE = "BSD-3-Clause-Clear"
 LIC_FILES_CHKSUM = "file://${COREBASE}/meta-qti-bsp/files/common-licenses/${LICENSE};md5=3771d4920bd6cdb8cbdf1e8344489ee0"
 
-
 # Dependencies.
 DEPENDS := "gstreamer1.0"
+DEPENDS += "linux-msm-headers"
 DEPENDS += "gstreamer1.0-plugins-base"
-DEPENDS += "codec2"
-DEPENDS += "media"
-DEPENDS += "llvm-arm-toolchain-native"
-DEPENDS += "displaydlkm-headers"
+DEPENDS += "gstreamer1.0-plugins-qti-oss-base"
+DEPENDS += "securemsm"
+DEPENDS += "cecdm"
+DEPENDS += "media-headers"
 
 FILESPATH =+ "${WORKSPACE}/vendor/qcom/opensource/gst-plugins-qti-oss/:"
 
-SRC_URI = "file://gst-plugin-codec2/"
-S = "${WORKDIR}/gst-plugin-codec2"
+SRC_URI = "file://gst-plugin-drmdecryptor/"
+S = "${WORKDIR}/gst-plugin-drmdecryptor"
 
 # Install directries.
 INSTALL_BINDIR := "${bindir}"
 INSTALL_LIBDIR := "${libdir}"
 
-CODEC2_CONFIG_VERSION := "2.0"
-#1.16.3
-EXTRA_OECMAKE += "-DGST_VERSION_REQUIRED=1.20.3"
+EXTRA_OECMAKE += "-DGST_VERSION_REQUIRED=1.20.7"
 EXTRA_OECMAKE += "-DSYSROOT_INCDIR=${STAGING_INCDIR}"
+EXTRA_OECMAKE += "-DSYSROOT_INCDIR+=${STAGING_INCDIR}/linux-msm/usr/include/"
 EXTRA_OECMAKE += "-DSYSROOT_LIBDIR=${STAGING_LIBDIR}"
 EXTRA_OECMAKE += "-DKERNEL_BUILDDIR=${STAGING_KERNEL_BUILDDIR}"
-EXTRA_OECMAKE += "-DKERNEL_DIR=${STAGING_KERNEL_DIR}/include/media/"
 EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_INSTALL_BINDIR=${INSTALL_BINDIR}"
 EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_INSTALL_LIBDIR=${INSTALL_LIBDIR}"
 
+
+# Specifying license unknown as BSD-3-Clause-Clear is not in list of known licenses of Gstreamer
 EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_LICENSE=BSD"
 EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_VERSION=${PV}"
 EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_PACKAGE=${PN}"
 EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_SUMMARY="${SUMMARY}""
 EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_ORIGIN="Unknown package origin""
-EXTRA_OECMAKE += "-DGST_CODEC2_CONFIG_VERSION=${CODEC2_CONFIG_VERSION}"
-EXTRA_OECMAKE += "-DGST_ENABLE_LINEAR_DMABUF=${ENABLE_LINEAR_DMABUF}"
-
-ENABLE_LINEAR_DMABUF := "TRUE"
 
 FILES:${PN} += "${INSTALL_BINDIR}  \
                ${INSTALL_LIBDIR} "
+
 
 PACKAGE_ARCH = "${TUNE_ARCH}"
 
