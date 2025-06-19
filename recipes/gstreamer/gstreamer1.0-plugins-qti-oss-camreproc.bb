@@ -34,6 +34,9 @@ CAMERA_METADATA_VERSION:bengal  := "1.1"
 # Overwrite the default platform definitions for kalama.
 CAMERA_METADATA_VERSION:kalama   := "1.0ns"
 
+# Overwrite the default platform definitions for kera.
+CAMERA_METADATA_VERSION:kera   := "1.0ns"
+
 # Overwrite the default platform definitions for qcs6490.
 CAMERA_METADATA_VERSION:qcs6490  := "1.1"
 
