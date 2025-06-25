@@ -45,6 +45,7 @@ do_generate_qim_sdk[depends] = " \
     ${@bb.utils.contains(d.getVar("IMAGE_PKGTYPE", True), "ipk", bb.utils.contains("DISTRO_FEATURES", "qti-qmmf", "gstreamer1.0-plugins-qti-oss-qmmfsrc:do_package_write_ipk", "", d), bb.utils.contains("DISTRO_FEATURES", "qti-qmmf", "gstreamer1.0-plugins-qti-oss-qmmfsrc:do_package_write_deb", "", d), d)} \
     ${@bb.utils.contains(d.getVar("IMAGE_PKGTYPE", True), "ipk", "gstreamer1.0-plugins-qti-oss-socket:do_package_write_ipk", "gstreamer1.0-plugins-qti-oss-socket:do_package_write_deb", d)} \
     ${@bb.utils.contains(d.getVar("IMAGE_PKGTYPE", True), "ipk", "gstreamer1.0-plugins-qti-oss-vcomposer:do_package_write_ipk", "gstreamer1.0-plugins-qti-oss-vcomposer:do_package_write_deb", d)} \
+    ${@bb.utils.contains(d.getVar("IMAGE_PKGTYPE", True), "ipk", "gstreamer1.0-plugins-qti-oss-samplestitching:do_package_write_ipk", "gstreamer1.0-plugins-qti-oss-samplestitching:do_package_write_deb", d)} \
     ${@bb.utils.contains(d.getVar("IMAGE_PKGTYPE", True), "ipk", "gstreamer1.0-plugins-qti-oss-vsplit:do_package_write_ipk", "gstreamer1.0-plugins-qti-oss-vsplit:do_package_write_deb", d)} \
     ${@bb.utils.contains(d.getVar("IMAGE_PKGTYPE", True), "ipk", "gstreamer1.0-plugins-qti-oss-vtransform:do_package_write_ipk", "gstreamer1.0-plugins-qti-oss-vtransform:do_package_write_deb", d)} \
     ${@bb.utils.contains(d.getVar("IMAGE_PKGTYPE", True), "ipk", "gstreamer1.0-plugins-qti-oss-codec2:do_package_write_ipk", "gstreamer1.0-plugins-qti-oss-codec2:do_package_write_deb", d)} \
