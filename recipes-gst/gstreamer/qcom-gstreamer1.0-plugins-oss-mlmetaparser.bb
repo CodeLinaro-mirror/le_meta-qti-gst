@@ -10,7 +10,6 @@ LIC_FILES_CHKSUM = "file://${COMMON_LICENSE_DIR}/${LICENSE};md5=7a434440b651f4a4
 DEPENDS := "gstreamer1.0"
 DEPENDS += "gstreamer1.0-plugins-base"
 DEPENDS += "qcom-gstreamer1.0-plugins-oss-base"
-DEPENDS += "qcom-gstreamer1.0-plugins-oss-mlmeta"
 DEPENDS += "json-glib"
 
 FILESPATH =+ "${WORKSPACE}/:"
