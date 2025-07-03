@@ -1,4 +1,4 @@
-From c711a87450b417f162c012441f87f1a2d3a92f1f Mon Sep 17 00:00:00 2001
+From ffbcfbe6671e7e2838ebb5f249bbcb78dad0be54 Mon Sep 17 00:00:00 2001
 From: Sanjay Chitroda <ckantibh@qti.qualcomm.com>
 Date: Tue, 20 May 2025 18:05:34 +0530
 Subject: [PATCH] waylandsink: support gbm protocol and Q08C/Q10C.
@@ -18,20 +18,20 @@ Signed-off-by: Sanjay Chitroda <ckantibh@qti.qualcomm.com>
 ---
  ext/wayland/gstwaylandsink.c             |  41 ++++-
  ext/wayland/gstwaylandsink.h             |   1 +
- gst-libs/gst/wayland/gstwldisplay.c      |  92 +++++++++++
- gst-libs/gst/wayland/gstwldisplay.h      |  10 ++
+ gst-libs/gst/wayland/gstwldisplay.c      |  93 +++++++++++
+ gst-libs/gst/wayland/gstwldisplay.h      |  13 ++
  gst-libs/gst/wayland/gstwlgbmallocator.c | 187 +++++++++++++++++++++++
  gst-libs/gst/wayland/gstwlgbmallocator.h |  45 ++++++
  gst-libs/gst/wayland/gstwlvideoformat.c  |  94 ++++++++----
  gst-libs/gst/wayland/gstwlvideoformat.h  |  11 ++
- gst-libs/gst/wayland/meson.build         |   9 +-
+ gst-libs/gst/wayland/meson.build         |  11 +-
  gst-libs/gst/wayland/wayland.h           |   1 +
- 10 files changed, 456 insertions(+), 35 deletions(-)
+ 10 files changed, 461 insertions(+), 36 deletions(-)
  create mode 100644 gst-libs/gst/wayland/gstwlgbmallocator.c
  create mode 100644 gst-libs/gst/wayland/gstwlgbmallocator.h
 
 diff --git a/ext/wayland/gstwaylandsink.c b/ext/wayland/gstwaylandsink.c
-index 2adc402..19e5623 100644
+index 2adc402..0b2712f 100644
 --- a/ext/wayland/gstwaylandsink.c
 +++ b/ext/wayland/gstwaylandsink.c
 @@ -73,14 +73,17 @@ GST_DEBUG_CATEGORY (gstwayland_debug);
@@ -82,7 +82,7 @@ index 2adc402..19e5623 100644
 +      gfmt = gst_wl_gbm_format_to_video_format (fmt);
 +      if (gfmt != GST_VIDEO_FORMAT_UNKNOWN) {
 +        g_value_init (&value, G_TYPE_STRING);
-+        g_value_set_static_string (&value, gst_wl_gbm_format_to_string (gfmt));
++        g_value_set_static_string (&value, gst_video_format_to_string (gfmt));
 +        gst_value_list_append_and_take_value (&gbm_list, &value);
 +      }
 +    }
@@ -160,7 +160,7 @@ index f56db16..e209cbc 100644
    gboolean video_info_changed;
    GstVideoInfo video_info;
 diff --git a/gst-libs/gst/wayland/gstwldisplay.c b/gst-libs/gst/wayland/gstwldisplay.c
-index 1f83cb2..a0946bb 100644
+index 1f83cb2..bf1416f 100644
 --- a/gst-libs/gst/wayland/gstwldisplay.c
 +++ b/gst-libs/gst/wayland/gstwldisplay.c
 @@ -26,10 +26,14 @@
@@ -199,7 +199,7 @@ index 1f83cb2..a0946bb 100644
    GMutex buffers_mutex;
    GHashTable *buffers;
    gboolean shutting_down;
-@@ -85,6 +95,7 @@ gst_wl_display_init (GstWlDisplay * self)
+@@ -85,11 +95,13 @@ gst_wl_display_init (GstWlDisplay * self)
  
    priv->shm_formats = g_array_new (FALSE, FALSE, sizeof (uint32_t));
    priv->dmabuf_formats = g_array_new (FALSE, FALSE, sizeof (uint32_t));
@@ -207,7 +207,13 @@ index 1f83cb2..a0946bb 100644
    priv->wl_fd_poll = gst_poll_new (TRUE);
    priv->buffers = g_hash_table_new (g_direct_hash, g_direct_equal);
    g_mutex_init (&priv->buffers_mutex);
-@@ -123,6 +134,7 @@ gst_wl_display_finalize (GObject * gobject)
+ 
+   gst_wl_linux_dmabuf_init_once ();
++  gst_wl_gbm_mallocator_init_once ();
+   gst_wl_shm_allocator_init_once ();
+   gst_wl_videoformat_init_once ();
+ }
+@@ -123,6 +135,7 @@ gst_wl_display_finalize (GObject * gobject)
  
    g_array_unref (priv->shm_formats);
    g_array_unref (priv->dmabuf_formats);
@@ -215,7 +221,7 @@ index 1f83cb2..a0946bb 100644
    gst_poll_free (priv->wl_fd_poll);
    g_hash_table_unref (priv->buffers);
    g_mutex_clear (&priv->buffers_mutex);
-@@ -136,6 +148,9 @@ gst_wl_display_finalize (GObject * gobject)
+@@ -136,6 +149,9 @@ gst_wl_display_finalize (GObject * gobject)
    if (priv->dmabuf)
      zwp_linux_dmabuf_v1_destroy (priv->dmabuf);
  
@@ -225,7 +231,7 @@ index 1f83cb2..a0946bb 100644
    if (priv->xdg_wm_base)
      xdg_wm_base_destroy (priv->xdg_wm_base);
  
-@@ -162,6 +177,11 @@ gst_wl_display_finalize (GObject * gobject)
+@@ -162,6 +178,11 @@ gst_wl_display_finalize (GObject * gobject)
      wl_display_disconnect (priv->display);
    }
  
@@ -237,7 +243,7 @@ index 1f83cb2..a0946bb 100644
    G_OBJECT_CLASS (gst_wl_display_parent_class)->finalize (gobject);
  }
  
-@@ -238,6 +258,30 @@ gst_wl_display_check_format_for_dmabuf (GstWlDisplay * self,
+@@ -238,6 +259,30 @@ gst_wl_display_check_format_for_dmabuf (GstWlDisplay * self,
    return FALSE;
  }
  
@@ -268,7 +274,7 @@ index 1f83cb2..a0946bb 100644
  static void
  handle_xdg_wm_base_ping (void *user_data, struct xdg_wm_base *xdg_wm_base,
      uint32_t serial)
-@@ -279,6 +323,26 @@ registry_handle_global (void *data, struct wl_registry *registry,
+@@ -279,6 +324,26 @@ registry_handle_global (void *data, struct wl_registry *registry,
      priv->dmabuf =
          wl_registry_bind (registry, id, &zwp_linux_dmabuf_v1_interface, 1);
      zwp_linux_dmabuf_v1_add_listener (priv->dmabuf, &dmabuf_listener, self);
@@ -295,7 +301,7 @@ index 1f83cb2..a0946bb 100644
    }
  }
  
-@@ -408,6 +472,10 @@ gst_wl_display_new_existing (struct wl_display * display,
+@@ -408,6 +473,10 @@ gst_wl_display_new_existing (struct wl_display * display,
      g_warning ("Could not bind to zwp_linux_dmabuf_v1");
    }
  
@@ -306,12 +312,12 @@ index 1f83cb2..a0946bb 100644
    if (!priv->xdg_wm_base && !priv->fullscreen_shell) {
      /* If wl_surface and wl_display are passed via GstContext
       * xdg_shell and zwp_fullscreen_shell are not used.
-@@ -558,6 +626,30 @@ gst_wl_display_get_dmabuf_formats (GstWlDisplay * self)
+@@ -558,6 +627,30 @@ gst_wl_display_get_dmabuf_formats (GstWlDisplay * self)
    return priv->dmabuf_formats;
  }
  
 +struct gbm_device *
-+gst_wl_display_get_gbmdevice_v1 (GstWlDisplay * self)
++gst_wl_display_get_gbm_device (GstWlDisplay * self)
 +{
 +  GstWlDisplayPrivate *priv = gst_wl_display_get_instance_private (self);
 +
@@ -319,7 +325,7 @@ index 1f83cb2..a0946bb 100644
 +}
 +
 +struct gbm_buffer_backend *
-+gst_wl_display_get_gbm_v1 (GstWlDisplay * self)
++gst_wl_display_get_gbm_buffer_backend (GstWlDisplay * self)
 +{
 +  GstWlDisplayPrivate *priv = gst_wl_display_get_instance_private (self);
 +
@@ -338,7 +344,7 @@ index 1f83cb2..a0946bb 100644
  gst_wl_display_has_own_display (GstWlDisplay * self)
  {
 diff --git a/gst-libs/gst/wayland/gstwldisplay.h b/gst-libs/gst/wayland/gstwldisplay.h
-index eb07e4f..eb29ecc 100644
+index eb07e4f..2c3d6f2 100644
 --- a/gst-libs/gst/wayland/gstwldisplay.h
 +++ b/gst-libs/gst/wayland/gstwldisplay.h
 @@ -61,6 +61,10 @@ GST_WL_API
@@ -352,7 +358,7 @@ index eb07e4f..eb29ecc 100644
  GST_WL_API
  struct wl_display *gst_wl_display_get_display (GstWlDisplay * self);
  
-@@ -91,9 +95,15 @@ GArray *gst_wl_display_get_shm_formats (GstWlDisplay * self);
+@@ -91,9 +95,18 @@ GArray *gst_wl_display_get_shm_formats (GstWlDisplay * self);
  GST_WL_API
  GArray *gst_wl_display_get_dmabuf_formats (GstWlDisplay * self);
  
@@ -363,14 +369,17 @@ index eb07e4f..eb29ecc 100644
  struct zwp_linux_dmabuf_v1 *gst_wl_display_get_dmabuf_v1 (GstWlDisplay * self);
  
 +GST_WL_API
-+struct gbm_buffer_backend *gst_wl_display_get_gbm_v1 (GstWlDisplay * self);
++struct gbm_buffer_backend *gst_wl_display_get_gbm_buffer_backend (GstWlDisplay * self);
++
++GST_WL_API
++struct gbm_device *gst_wl_display_get_gbm_device (GstWlDisplay * self);
 +
  GST_WL_API
  gboolean gst_wl_display_has_own_display (GstWlDisplay * self);
  
 diff --git a/gst-libs/gst/wayland/gstwlgbmallocator.c b/gst-libs/gst/wayland/gstwlgbmallocator.c
 new file mode 100644
-index 0000000..248e2c5
+index 0000000..66c2b67
 --- /dev/null
 +++ b/gst-libs/gst/wayland/gstwlgbmallocator.c
 @@ -0,0 +1,187 @@
@@ -410,7 +419,7 @@ index 0000000..248e2c5
 +#define GST_CAT_DEFAULT gst_wl_gbm_debug
 +
 +void
-+gst_wl_linux_gbm_init_once (void)
++gst_wl_gbm_mallocator_init_once (void)
 +{
 +  static gsize _init = 0;
 +
@@ -499,7 +508,7 @@ index 0000000..248e2c5
 +    flags = GBM_BO_USAGE_UBWC_ALIGNED_QTI;
 +  }
 +
-+  bo = gbm_bo_import (gst_wl_display_get_gbmdevice_v1(display),
++  bo = gbm_bo_import (gst_wl_display_get_gbm_device(display),
 +       GBM_BO_IMPORT_FD, &bufinfo, flags);
 +  g_return_val_if_fail (bo != NULL, NULL);
 +
@@ -528,7 +537,7 @@ index 0000000..248e2c5
 +  g_mutex_lock (&gbmdata.lock);
 +
 +  /* Creation and configuration of planes  */
-+  params = gbm_buffer_backend_create_params (gst_wl_display_get_gbm_v1
++  params = gbm_buffer_backend_create_params (gst_wl_display_get_gbm_buffer_backend
 +      (display));
 +
 +  /* Request buffer creation */
@@ -563,7 +572,7 @@ index 0000000..248e2c5
 +}
 diff --git a/gst-libs/gst/wayland/gstwlgbmallocator.h b/gst-libs/gst/wayland/gstwlgbmallocator.h
 new file mode 100644
-index 0000000..1dab0d6
+index 0000000..ed0ce16
 --- /dev/null
 +++ b/gst-libs/gst/wayland/gstwlgbmallocator.h
 @@ -0,0 +1,45 @@
@@ -603,7 +612,7 @@ index 0000000..1dab0d6
 +#endif
 +
 +GST_WL_API
-+void gst_wl_linux_gbm_init_once (void);
++void gst_wl_gbm_mallocator_init_once (void);
 +
 +GST_WL_API
 +struct wl_buffer * gst_wl_gbm_memory_construct_wl_buffer (GstBuffer * buffer,
@@ -786,10 +795,10 @@ index bc36a08..098d3b4 100644
 +
  G_END_DECLS
 diff --git a/gst-libs/gst/wayland/meson.build b/gst-libs/gst/wayland/meson.build
-index 5eb4484..8293122 100644
+index 5eb4484..7e16683 100644
 --- a/gst-libs/gst/wayland/meson.build
 +++ b/gst-libs/gst/wayland/meson.build
-@@ -1,6 +1,7 @@
+@@ -1,10 +1,11 @@
  wl_req = '>= 1.15'
  wl_client_dep = dependency('wayland-client', version: wl_req, required: get_option('wayland'))
  libdrm_dep = dependency('libdrm', version: '>= 2.4.55', required: get_option('wayland'))
@@ -797,6 +806,11 @@ index 5eb4484..8293122 100644
  wl_protocol_dep = dependency('wayland-protocols', version: wl_req, required: get_option('wayland'))
  wl_scanner = find_program('wayland-scanner', required: get_option('wayland'))
  # Also used in ext/wayland
+-use_wayland = wl_protocol_dep.found() and wl_client_dep.found() and wl_scanner.found() and libdrm_dep.found()
++use_wayland = wl_protocol_dep.found() and wl_client_dep.found() and wl_scanner.found() and libdrm_dep.found() and libgbm_dep.found()
+ 
+ if use_wayland
+   wl_sources = [
 @@ -12,6 +13,7 @@ if use_wayland
        'gstwlcontext.c',
        'gstwldisplay.c',

@@ -1,4 +1,4 @@
-DEPENDS += "gbm"
+DEPENDS += "gbm weston"
 RDEPENDS:${PN} += "gbm"
 
 FILESEXTRAPATHS:prepend := "${THISDIR}/${PN}/1.22:"
