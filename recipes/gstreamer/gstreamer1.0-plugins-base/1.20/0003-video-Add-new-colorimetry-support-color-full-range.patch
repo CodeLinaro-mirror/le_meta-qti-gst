@@ -3,6 +3,8 @@ From: Guangde <guangde@qti.qualcomm.com>
 Date: Wed, 4 Jun 2025 16:54:23 +0800
 Subject: [PATCH] video: Add new colorimetry support color full range
 
+Upstream-Status: Inappropriate [Qualcomm specific]
+
 Signed-off-by: Guangde <guangde@qti.qualcomm.com>
 ---
  gst-libs/gst/video/video-color.c | 3 +++
