@@ -1,19 +1,19 @@
 inherit cmake pkgconfig
 
-SUMMARY = "Generic tools application for GStreamer pipeline verification."
+SUMMARY = "Generic ml tools application for GStreamer pipeline verification."
 SECTION = "multimedia"
 
 LICENSE = "BSD-3-Clause-Clear"
 LIC_FILES_CHKSUM = "file://${COMMON_LICENSE_DIR}/${LICENSE};md5=7a434440b651f4a472ca93716d01033a"
 
 # Dependencies.
-DEPENDS := "gstreamer1.0"
-DEPENDS += "gstreamer1.0-plugins-base"
-DEPENDS += "gstreamer1.0-rtsp-server"
+DEPENDS += "qcom-qnn-sdk"
+DEPENDS += "qcom-snpe-sdk"
+DEPENDS += "tensorflow-lite"
 
 FILESPATH =+ "${WORKSPACE}/:"
-SRC_URI = "file://gst-plugins-qti-oss/gst-plugin-tools"
-S = "${WORKDIR}/gst-plugins-qti-oss/gst-plugin-tools"
+SRC_URI = "file://gst-plugins-qti-oss/gst-plugin-mltools"
+S = "${WORKDIR}/gst-plugins-qti-oss/gst-plugin-mltools"
 
 # Install directries.
 INSTALL_BINDIR := "${bindir}"
