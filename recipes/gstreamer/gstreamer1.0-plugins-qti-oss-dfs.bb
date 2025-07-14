@@ -32,8 +32,8 @@ RVSDK_API_VERSION := "0x202207"
 #Overwrite the default RVSDK version definitions for qrb5165
 RVSDK_API_VERSION:qrb5165 := "0x202307"
 
-#Overwrite the default RVSDK version definitions for qcm2290-mtp
-RVSDK_API_VERSION:qcm2290-mtp := "0x202307"
+#Overwrite the default RVSDK version definitions for qcm2290-mtp and qcm4325-mtp
+RVSDK_API_VERSION:bengal := "0x202307"
 
 #Overwrite the default RVSDK version definitions for qcs6490
 RVSDK_API_VERSION:qcs6490 := "0x202403"
