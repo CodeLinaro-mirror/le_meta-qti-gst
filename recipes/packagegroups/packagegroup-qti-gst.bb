@@ -20,7 +20,6 @@ RDEPENDS:packagegroup-qti-gst = " \
       gstreamer1.0-rtsp-server \
       gstreamer1.0-plugins-qti-oss-base \
       gstreamer1.0-plugins-qti-oss-tools \
-      gstreamer1.0-plugins-qti-oss-examples \
       gstreamer1.0-plugins-qti-oss-codec2 \
       gstreamer1.0-plugins-qti-oss-mlmeta \
       gstreamer1.0-plugins-qti-oss-overlay \
@@ -49,8 +48,6 @@ RDEPENDS:packagegroup-qti-gst = " \
       ${@bb.utils.contains_any("MACHINE_FEATURES", "qti-cvp qti-eva", "gstreamer1.0-plugins-qti-oss-cv-imgpyramid", "", d)} \
       ${@bb.utils.contains_any("MACHINE_FEATURES", "qti-cvp qti-eva", "gstreamer1.0-plugins-qti-oss-cv-optclflow", "", d)} \
       ${@bb.utils.contains("BASEMACHINE", "pineapple", "gstreamer1.0-plugins-qti-oss-jpegenc", "", d)} \
-      ${@bb.utils.contains("BASEMACHINE", "kalama", "gstreamer1.0-plugins-qti-oss-jpegenc", "", d)} \
-      ${@bb.utils.contains("BASEMACHINE", "kalama", "gstreamer1.0-plugins-qti-oss-camreproc", "", d)} \
       ${@bb.utils.contains("BASEMACHINE", "qrb5165", "gstreamer1.0-plugins-qti-oss-jpegenc", "", d)} \
       ${@bb.utils.contains("BASEMACHINE", "qrb5165", "gstreamer1.0-plugins-qti-oss-drmdecryptor", "", d)} \
       ${@bb.utils.contains("BASEMACHINE", "qcm2290-mtp", "gstreamer1.0-plugins-qti-oss-jpegenc", "", d)} \
