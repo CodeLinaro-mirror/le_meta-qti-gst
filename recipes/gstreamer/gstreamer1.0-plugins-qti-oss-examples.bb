@@ -24,6 +24,7 @@ DEPENDS:remove:pineapple = "securemsm"
 DEPENDS:remove:pineapple = "media-headers"
 DEPENDS:remove:sun = "securemsm"
 DEPENDS:remove:sun = "media-headers"
+DEPENDS:append:kera += " curl"
 
 FILESPATH =+ "${WORKSPACE}/vendor/qcom/opensource/gst-plugins-qti-oss/:"
 SRC_URI = "file://gst-plugin-examples/"
