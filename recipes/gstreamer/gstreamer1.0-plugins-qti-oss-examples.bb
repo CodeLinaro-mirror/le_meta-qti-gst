@@ -9,14 +9,13 @@ LIC_FILES_CHKSUM = "file://${COREBASE}/meta-qti-bsp/files/common-licenses/${LICE
 # Dependencies.
 DEPENDS := "gstreamer1.0"
 DEPENDS += "gstreamer1.0-plugins-qti-oss-base"
-DEPENDS:append += "${@bb.utils.contains('DISTRO_FEATURES', 'qti-camera', 'qmmf-sdk', '', d)}"
-
+DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'qti-camera', 'qmmf-sdk', '', d)}"
 DEPENDS += "${@bb.utils.contains('COMBINED_FEATURES', 'qti-afr-algo', 'qti-auto-framing-stabilization gstreamer1.0-plugins-qti-oss-mlmeta', '', d)}"
 RDEPENDS:${PN} += "${@bb.utils.contains('COMBINED_FEATURES', 'qti-afr-algo', 'qti-auto-framing-stabilization', '', d)}"
 
 FILESPATH =+ "${WORKSPACE}/vendor/qcom/opensource/gst-plugins-qti-oss/:"
 SRC_URI = "file://gst-plugin-examples/"
-S = "${WORKDIR}/gst-plugin-examples/"
+S = "${WORKDIR}/gst-plugin-examples"
 
 # Install directries.
 INSTALL_BINDIR := "${bindir}"
@@ -28,9 +27,10 @@ ENABLE_CAMERA := "TRUE"
 # Encode-related variables
 ENABLE_VIDEO_ENCODE := "TRUE"
 
-CODEC2_ENCODE := "TRUE"
-CODEC2_ENCODE_qrbx210 := "TRUE"
-CODEC2_ENCODE_qcs6490 := "TRUE"
+CODEC2_ENCODE := "FALSE"
+CODEC2_ENCODE:qrbx210 := "TRUE"
+CODEC2_ENCODE:qcs6490 := "TRUE"
+CODEC2_ENCODE:sdmsteppe := "TRUE"
 
 # Decode-related variables
 ENABLE_VIDEO_DECODE := "TRUE"

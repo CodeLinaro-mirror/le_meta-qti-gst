@@ -1,0 +1,279 @@
+From 66545efb496be155e2877993809221fc8f07ccb8 Mon Sep 17 00:00:00 2001
+From: Sanjay Chitroda <ckantibh@qti.qualcomm.com>
+Date: Mon, 19 May 2025 17:52:11 +0530
+Subject: [PATCH] waylandsink: support position and dimensions
+
+Upstream-Status: Inappropriate [Qualcomm specific]
+
+Signed-off-by: Sanjay Chitroda <ckantibh@qti.qualcomm.com>
+---
+ ext/wayland/gstwaylandsink.c       | 107 ++++++++++++++++++++++++++++-
+ ext/wayland/gstwaylandsink.h       |   1 +
+ gst-libs/gst/wayland/gstwlwindow.c |  51 ++++++++++++--
+ gst-libs/gst/wayland/gstwlwindow.h |   7 +-
+ 4 files changed, 156 insertions(+), 10 deletions(-)
+
+diff --git a/ext/wayland/gstwaylandsink.c b/ext/wayland/gstwaylandsink.c
+index 2f116bf..2adc402 100644
+--- a/ext/wayland/gstwaylandsink.c
++++ b/ext/wayland/gstwaylandsink.c
+@@ -60,6 +60,10 @@ enum
+   PROP_0,
+   PROP_DISPLAY,
+   PROP_FULLSCREEN,
++  PROP_X,
++  PROP_Y,
++  PROP_WIDTH,
++  PROP_HEIGHT,
+   PROP_ROTATE_METHOD,
+   PROP_LAST
+ };
+@@ -165,6 +169,28 @@ gst_wayland_sink_class_init (GstWaylandSinkClass * klass)
+           "Whether the surface should be made fullscreen ", FALSE,
+           G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+ 
++  /**
++   * waylandsink:position and dimensions:
++   */
++  g_object_class_install_property (gobject_class, PROP_X,
++      g_param_spec_uint ("x", "X Position", "X postion for the content",
++           0, 1920, 0, G_PARAM_READWRITE | G_PARAM_CONSTRUCT));
++
++  g_object_class_install_property (gobject_class, PROP_Y,
++      g_param_spec_uint ("y", "Y Position", "Y postion for the content",
++           0, 1080, 0, G_PARAM_READWRITE | G_PARAM_CONSTRUCT));
++
++  g_object_class_install_property (gobject_class, PROP_WIDTH,
++      g_param_spec_uint ("width", "Destination Width", "Destination Width "
++          "for the content", 0, 1920, 640,
++          G_PARAM_READWRITE | G_PARAM_CONSTRUCT));
++
++  g_object_class_install_property (gobject_class, PROP_HEIGHT,
++      g_param_spec_uint ("height", "Destination Height", "Destination Height "
++          "for the content", 0, 1080, 480,
++          G_PARAM_READWRITE | G_PARAM_CONSTRUCT));
++
++
+   /**
+    * waylandsink:rotate-method:
+    *
+@@ -244,6 +270,40 @@ gst_wayland_sink_set_rotate_method (GstWaylandSink * self,
+   GST_OBJECT_UNLOCK (self);
+ }
+ 
++static void
++gst_wayland_sink_set_position (GstWaylandSink * self, guint x, guint y)
++{
++  if ((x == self->rectangle.x) && (y == self->rectangle.y))
++    return;
++
++  self->rectangle.x = x;
++  self->rectangle.y = y;
++
++  g_mutex_lock (&self->render_lock);
++
++  if (!self->fullscreen)
++    gst_wl_window_ensure_position (self->window, x, y);
++
++  g_mutex_unlock (&self->render_lock);
++}
++
++static void
++gst_wayland_sink_set_dimensions (GstWaylandSink * self, guint w, guint h)
++{
++  if ((w == self->rectangle.w) && (h == self->rectangle.h))
++    return;
++
++  self->rectangle.w = w;
++  self->rectangle.h = h;
++
++  g_mutex_lock (&self->render_lock);
++
++  if (!self->fullscreen)
++    gst_wl_window_ensure_dimensions (self->window, w, h);
++
++  g_mutex_unlock (&self->render_lock);
++}
++
+ static void
+ gst_wayland_sink_get_property (GObject * object,
+     guint prop_id, GValue * value, GParamSpec * pspec)
+@@ -261,6 +321,26 @@ gst_wayland_sink_get_property (GObject * object,
+       g_value_set_boolean (value, self->fullscreen);
+       GST_OBJECT_UNLOCK (self);
+       break;
++    case PROP_X:
++      GST_OBJECT_LOCK (self);
++      g_value_set_uint (value, self->rectangle.x);
++      GST_OBJECT_UNLOCK (self);
++      break;
++    case PROP_Y:
++      GST_OBJECT_LOCK (self);
++      g_value_set_uint (value, self->rectangle.y);
++      GST_OBJECT_UNLOCK (self);
++      break;
++    case PROP_WIDTH:
++      GST_OBJECT_LOCK (self);
++      g_value_set_uint (value, self->rectangle.w);
++      GST_OBJECT_UNLOCK (self);
++      break;
++    case PROP_HEIGHT:
++      GST_OBJECT_LOCK (self);
++      g_value_set_uint (value, self->rectangle.h);
++      GST_OBJECT_UNLOCK (self);
++      break;
+     case PROP_ROTATE_METHOD:
+       GST_OBJECT_LOCK (self);
+       g_value_set_enum (value, self->current_rotate_method);
+@@ -289,6 +369,30 @@ gst_wayland_sink_set_property (GObject * object,
+       gst_wayland_sink_set_fullscreen (self, g_value_get_boolean (value));
+       GST_OBJECT_UNLOCK (self);
+       break;
++    case PROP_X:
++      GST_OBJECT_LOCK (self);
++      gst_wayland_sink_set_position (
++          self, g_value_get_uint (value), self->rectangle.y);
++      GST_OBJECT_UNLOCK (self);
++      break;
++    case PROP_Y:
++      GST_OBJECT_LOCK (self);
++      gst_wayland_sink_set_position (
++          self, self->rectangle.x, g_value_get_uint (value));
++      GST_OBJECT_UNLOCK (self);
++      break;
++    case PROP_WIDTH:
++      GST_OBJECT_LOCK (self);
++      gst_wayland_sink_set_dimensions (
++          self, g_value_get_uint (value), self->rectangle.h);
++      GST_OBJECT_UNLOCK (self);
++      break;
++    case PROP_HEIGHT:
++      GST_OBJECT_LOCK (self);
++      gst_wayland_sink_set_dimensions (
++          self, self->rectangle.w, g_value_get_uint (value));
++      GST_OBJECT_UNLOCK (self);
++      break;
+     case PROP_ROTATE_METHOD:
+       gst_wayland_sink_set_rotate_method (self, g_value_get_enum (value),
+           FALSE);
+@@ -761,7 +865,8 @@ gst_wayland_sink_show_frame (GstVideoSink * vsink, GstBuffer * buffer)
+     if (!self->window) {
+       /* if we were not provided a window, create one ourselves */
+       self->window = gst_wl_window_new_toplevel (self->display,
+-          &self->video_info, self->fullscreen, &self->render_lock);
++          &self->video_info, &self->rectangle, self->fullscreen,
++          &self->render_lock);
+       g_signal_connect_object (self->window, "closed",
+           G_CALLBACK (on_window_closed), self, 0);
+       gst_wl_window_set_rotate_method (self->window,
+diff --git a/ext/wayland/gstwaylandsink.h b/ext/wayland/gstwaylandsink.h
+index 3243d8c..f56db16 100644
+--- a/ext/wayland/gstwaylandsink.h
++++ b/ext/wayland/gstwaylandsink.h
+@@ -56,6 +56,7 @@ struct _GstWaylandSink
+   gboolean video_info_changed;
+   GstVideoInfo video_info;
+   gboolean fullscreen;
++  GstVideoRectangle rectangle;
+ 
+   gchar *display_name;
+ 
+diff --git a/gst-libs/gst/wayland/gstwlwindow.c b/gst-libs/gst/wayland/gstwlwindow.c
+index 0023d4e..5987a7f 100644
+--- a/gst-libs/gst/wayland/gstwlwindow.c
++++ b/gst-libs/gst/wayland/gstwlwindow.c
+@@ -271,9 +271,31 @@ gst_wl_window_ensure_fullscreen (GstWlWindow * self, gboolean fullscreen)
+     xdg_toplevel_unset_fullscreen (priv->xdg_toplevel);
+ }
+ 
++void
++gst_wl_window_ensure_position (GstWlWindow * self, guint x, guint y)
++{
++  GstWlWindowPrivate *priv;
++
++  g_return_if_fail (self);
++
++  priv = gst_wl_window_get_instance_private (self);
++
++  xdg_toplevel_set_position (priv->xdg_toplevel, x, y);
++}
++
++void
++gst_wl_window_ensure_dimensions (GstWlWindow * self, guint w, guint h)
++{
++  GstWlWindowPrivate *priv;
++
++  g_return_if_fail (self);
++
++  gst_wl_window_set_render_rectangle (self, 0, 0, w, h);
++}
++
+ GstWlWindow *
+ gst_wl_window_new_toplevel (GstWlDisplay * display, const GstVideoInfo * info,
+-    gboolean fullscreen, GMutex * render_lock)
++    const GstVideoRectangle * rectangle, gboolean fullscreen, GMutex * render_lock)
+ {
+   GstWlWindow *self;
+   GstWlWindowPrivate *priv;
+@@ -336,10 +358,26 @@ gst_wl_window_new_toplevel (GstWlDisplay * display, const GstVideoInfo * info,
+   /* render_rectangle is already set via toplevel_configure in
+    * xdg_shell fullscreen mode */
+   if (!(xdg_wm_base && fullscreen)) {
+-    /* set the initial size to be the same as the reported video size */
+-    gint width =
+-        gst_util_uint64_scale_int_round (info->width, info->par_n, info->par_d);
+-    gst_wl_window_set_render_rectangle (self, 0, 0, width, info->height);
++    if ((rectangle->h != 0) && (rectangle->w != 0) && !fullscreen) {
++      gst_wl_window_set_render_rectangle (self, 0, 0, rectangle->w,
++          rectangle->h);
++
++      if (xdg_wm_base) {
++        xdg_toplevel_set_position (priv->xdg_toplevel, rectangle->x,
++            rectangle->y);
++      }
++    } else {
++      /* set the initial size to be the same as the reported video size */
++      gint width =
++          gst_util_uint64_scale_int_round (info->width, info->par_n, info->par_d);
++      gst_wl_window_set_render_rectangle (self, 0, 0, width, info->height);
++
++      if (xdg_wm_base) {
++        xdg_toplevel_set_position (priv->xdg_toplevel, rectangle->x,
++            rectangle->y);
++      }
++
++    }
+   }
+ 
+   return self;
+@@ -609,8 +647,7 @@ gst_wl_window_update_geometry (GstWlWindow * self)
+         priv->render_rectangle.y);
+   }
+ 
+-  if (priv->is_area_surface_mapped)
+-    gst_wl_window_update_borders (self);
++  gst_wl_window_update_borders (self);
+ 
+   if (!priv->configured)
+     return;
+diff --git a/gst-libs/gst/wayland/gstwlwindow.h b/gst-libs/gst/wayland/gstwlwindow.h
+index 06c4001..44cc6fa 100644
+--- a/gst-libs/gst/wayland/gstwlwindow.h
++++ b/gst-libs/gst/wayland/gstwlwindow.h
+@@ -36,11 +36,14 @@ struct _GstWlWindow
+ GST_WL_API
+ void gst_wl_window_ensure_fullscreen (GstWlWindow * self,
+         gboolean fullscreen);
++GST_WL_API
++void gst_wl_window_ensure_position (GstWlWindow * self, guint x, guint y);
++GST_WL_API
++void gst_wl_window_ensure_dimensions (GstWlWindow * self, guint w, guint h);
+ 
+ GST_WL_API
+ GstWlWindow *gst_wl_window_new_toplevel (GstWlDisplay * display,
+-        const GstVideoInfo * info, gboolean fullscreen, GMutex * render_lock);
+-
++        const GstVideoInfo * info, const GstVideoRectangle * rectangle, gboolean fullscreen, GMutex * render_lock);
+ GST_WL_API
+ GstWlWindow *gst_wl_window_new_in_surface (GstWlDisplay * display,
+         struct wl_surface * parent, GMutex * render_lock);
