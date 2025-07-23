@@ -41,5 +41,21 @@ FILES:${PN} += "${INSTALL_LIBDIR}"
 FILES:${PN}-dbg += "${INSTALL_LIBDIR}/gstreamer-1.0/.debug"
 FILES:${PN}-dbg += "${INSTALL_LIBDIR}/gstreamer-1.0/ml/modules/.debug"
 
+FILES:${PN} += "${libdir}/gstreamer-1.0/*.so*"
+FILES:${PN} += "${libdir}/gstreamer-1.0/ml/modules/*.so*"
+FILES:${PN} += "/usr/lib64/gstreamer-1.0/*.so*"
+FILES:${PN} += "/usr/lib64/gstreamer-1.0/ml/modules/*.so*"
+
+do_install:append() {
+    if echo "${PN}" | grep -q "^lib32-"; then
+        if [ -d "${D}/usr/lib64" ]; then
+            echo "Moving lib64 files to lib for 32-bit build"
+            mkdir -p ${D}/usr/lib
+            cp -r ${D}/usr/lib64/* ${D}/usr/lib/ || true
+            rm -rf ${D}/usr/lib64
+        fi
+    fi
+}
+
 SOLIBS = ".so*"
 FILES_SOLIBSDEV = ""

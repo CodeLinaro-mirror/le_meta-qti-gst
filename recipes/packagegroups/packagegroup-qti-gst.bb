@@ -60,6 +60,8 @@ RDEPENDS:packagegroup-qti-gst = " \
       ${@bb.utils.contains("BASEMACHINE", "qcm2290-mtp", "gstreamer1.0-plugins-qti-oss-drmdecryptor", "", d)} \
       ${@bb.utils.contains("BASEMACHINE", "qcm4325-mtp", "gstreamer1.0-plugins-qti-oss-jpegenc", "", d)} \
       ${@bb.utils.contains("BASEMACHINE", "qcm4325-mtp", "gstreamer1.0-plugins-qti-oss-drmdecryptor", "", d)} \
+      ${@bb.utils.contains("BASEMACHINE", "qcm4325-mtp-32", "gstreamer1.0-plugins-qti-oss-jpegenc", "", d)} \
+      ${@bb.utils.contains("BASEMACHINE", "qcm4325-mtp-32", "gstreamer1.0-plugins-qti-oss-drmdecryptor", "", d)} \
       ${@bb.utils.contains("BASEMACHINE", "qcs6490", "gstreamer1.0-plugins-qti-oss-jpegenc", "", d)} \
       ${@bb.utils.contains("BASEMACHINE", "qcs6490", bb.utils.contains_any("COMBINED_FEATURES", "qti-video qti-audio", "gstreamer1.0-omx", "", d), "", d)} \
     "

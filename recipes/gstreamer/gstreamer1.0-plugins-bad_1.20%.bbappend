@@ -2,6 +2,7 @@ require ${@bb.utils.contains('BASEMACHINE', 'kalama', bb.utils.contains('PRODUCT
 require ${@bb.utils.contains('BASEMACHINE', 'kalama', bb.utils.contains('PRODUCT', 'ubuntu', bb.utils.contains('DISTRO_FEATURES', 'qimsdk-layers', 'update-alternatives/gstreamer1.0-plugins-bad.inc', '', d), '', d), '', d)}
 
 DISTRO_FEATURES:remove:pineapple += "opengl"
+DISTRO_FEATURES:remove:qcm4325-mtp-32 += "opengl"
 
 DEPENDS += "gbm"
 

@@ -60,14 +60,67 @@ EXTRA_OECMAKE += "-DGST_CODEC2_CONFIG_VERSION=${CODEC2_CONFIG_VERSION}"
 EXTRA_OECMAKE += "-DGST_ENABLE_LINEAR_DMABUF=${ENABLE_LINEAR_DMABUF}"
 EXTRA_OECMAKE += "-DGST_ENABLE_AUDIO_PLUGINS=${ENABLE_AUDIO_PLUGINS}"
 
+do_configure:prepend() {
+    if echo "${PN}" | grep -q "^lib32-"; then
+        echo "Applying 32-bit specific configuration for ${PN}"
+
+        # Symlinks for 32-bit gcc libs
+        mkdir -p ${WORKDIR}/lib32-recipe-sysroot/usr/lib/gcc/arm-oemllib32-linux-gnueabi/11.5.0
+        ln -sf ${WORKDIR}/lib32-recipe-sysroot/usr/lib/arm-oemllib32-linux-gnueabi/11.5.0/* \
+               ${WORKDIR}/lib32-recipe-sysroot/usr/lib/gcc/arm-oemllib32-linux-gnueabi/11.5.0/
+
+        cp -r "${GIT_CEILING_DIRECTORIES}/recipe-sysroot/usr/include/"  "${PKG_CONFIG_SYSROOT_DIR}/usr/"
+
+        # Fix VFP ABI mismatch: switch from hard to softfp
+        sed -i 's/-mfloat-abi=hard/-mfloat-abi=softfp/g' ${WORKDIR}/toolchain.cmake || true
+
+        # Add softfp stub header
+        target_incdir="${WORKDIR}/lib32-recipe-sysroot/usr/include/gnu"
+        if [ ! -f "${target_incdir}/stubs-soft.h" ]; then
+            echo "/* Stub: redirected to stubs-hard.h for build workaround */" > ${target_incdir}/stubs-soft.h
+            echo '#include "stubs-hard.h"' >> ${target_incdir}/stubs-soft.h
+        fi
+    fi
+}
+
 FILES:${PN} += "${INSTALL_BINDIR}"
-FILES:${PN} += "${INSTALL_LIBDIR}"
+FILES:${PN} += "/usr/lib/gstreamer-1.0/libgstqtic2venc.so"
+FILES:${PN} += "/usr/lib/gstreamer-1.0/libgstqtic2vdec.so"
+
+do_install:append() {
+    if echo "${PN}" | grep -q "^lib32-"; then
+        if [ -d "${D}/usr/lib64" ]; then
+            echo "Moving lib64 files to lib for 32-bit build"
+            mkdir -p ${D}/usr/lib
+            cp -r ${D}/usr/lib64/* ${D}/usr/lib/ || true
+            rm -rf ${D}/usr/lib64
+        fi
+    fi
+}
+
 
 SOLIBS = ".so*"
 FILES_SOLIBSDEV = ""
 TOOLCHAIN = "sdllvm"
 
-placeholder := "${TARGET_SYS}"
-TARGET_SYS = "${@bb.utils.contains('BASEMACHINE', 'kalama', bb.utils.contains('PRODUCT', 'ubuntu', bb.utils.contains('DISTRO_FEATURES', 'qimsdk-layers', '${TARGET_ARCH}-linux-gnu', '${placeholder}', d), '${placeholder}', d), '${placeholder}', d)}"
-TARGET_CFLAGS += "${@bb.utils.contains('BASEMACHINE', 'kalama', bb.utils.contains('PRODUCT', 'ubuntu', bb.utils.contains('DISTRO_FEATURES', 'qimsdk-layers', '-I${STAGING_INCDIR}/c++', '', d), '', d), '', d)}"
-DEBUG_PREFIX_MAP:remove = "-fcanon-prefix-map"
+# Apply your proven camera fix approach for 32-bit builds
+python __anonymous() {
+    if not d.getVar("PN").startswith("lib32-"):
+        return
+
+    d.appendVar("EXTRA_OECMAKE", " -DUSE_32BIT_C2_LIBS=ON")
+    d.appendVar("DEPENDS", " lib32-gcc-runtime lib32-glibc")
+
+    d.setVar("GCC_VER", "11.5.0")
+    d.setVar("TARGET_TRIPLE", "arm-oemllib32-linux-gnueabi")
+
+    gcc_flags = "\
+      -DCMAKE_C_COMPILER=${RECIPE_SYSROOT_NATIVE}/usr/bin/llvm-arm-toolchain/bin/clang \
+      -DCMAKE_CXX_COMPILER=${RECIPE_SYSROOT_NATIVE}/usr/bin/llvm-arm-toolchain/bin/clang++ \
+      -DCMAKE_C_FLAGS='--target=${TARGET_TRIPLE} --sysroot=${RECIPE_SYSROOT} -fuse-ld=lld -march=armv7-a -mthumb -mfpu=neon -mfloat-abi=softfp' \
+      -DCMAKE_CXX_FLAGS='--target=${TARGET_TRIPLE} --sysroot=${RECIPE_SYSROOT} -fuse-ld=lld -march=armv7-a -mthumb -mfpu=neon -mfloat-abi=softfp' \
+      -DCMAKE_EXE_LINKER_FLAGS='-fuse-ld=lld' \
+      -DCMAKE_SHARED_LINKER_FLAGS='-fuse-ld=lld' \
+    "
+    d.appendVar("EXTRA_OECMAKE", gcc_flags)
+}
