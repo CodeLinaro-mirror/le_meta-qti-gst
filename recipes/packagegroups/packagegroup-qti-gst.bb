@@ -32,6 +32,7 @@ RDEPENDS:packagegroup-qti-gst = " \
       gstreamer1.0-plugins-qti-oss-voverlay \
       gstreamer1.0-plugins-qti-oss-batch \
       gstreamer1.0-plugins-qti-oss-metamux \
+      gstreamer1.0-plugins-qti-oss-samplemux \
       gstreamer1.0-plugins-qti-oss-mlvconverter \
       gstreamer1.0-plugins-qti-oss-mlvdetection \
       gstreamer1.0-plugins-qti-oss-mlvclassification \
