@@ -3,6 +3,8 @@ require ${@bb.utils.contains('BASEMACHINE', 'kalama', bb.utils.contains('PRODUCT
 
 DISTRO_FEATURES:remove:pineapple += "opengl"
 
+PACKAGECONFIG:append = " kms"
+
 DEPENDS += "gbm"
 
 FILESEXTRAPATHS:prepend := "${THISDIR}/gstreamer1.0-plugins-bad/1.20.4:"
