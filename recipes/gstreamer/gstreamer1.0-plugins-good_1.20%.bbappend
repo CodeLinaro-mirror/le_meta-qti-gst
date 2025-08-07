@@ -13,3 +13,5 @@ SRC_URI:remove:qcm6490 = "file://0001-Add-pulsedirectsink-plugin.patch"
 SRC_URI:append:qcm6490 = " file://0004-v4l2-Add-support-for-dma-memory-allocation.patch"
 SRC_URI:append:qcm6490 = " file://0005-v4l2-Add-support-for-dynamic-resolution-change.patch"
 SRC_URI:append:qcm6490 = " file://0006-v4l2-Add-support-for-UBWC-input.patch"
+
+PACKAGECONFIG:remove = "v4l2"
