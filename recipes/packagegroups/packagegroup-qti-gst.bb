@@ -52,6 +52,8 @@ RDEPENDS:packagegroup-qti-gst = " \
       ${@bb.utils.contains("BASEMACHINE", "kalama", "gstreamer1.0-plugins-qti-oss-jpegenc", "", d)} \
       ${@bb.utils.contains("BASEMACHINE", "kalama", "gstreamer1.0-plugins-qti-oss-camreproc", "", d)} \
       ${@bb.utils.contains("BASEMACHINE", "pineapple", "gstreamer1.0-plugins-qti-oss-camreproc", "", d)} \
+      ${@bb.utils.contains("BASEMACHINE", "sun", "gstreamer1.0-plugins-qti-oss-jpegenc", "", d)} \
+      ${@bb.utils.contains("BASEMACHINE", "sun", "gstreamer1.0-plugins-qti-oss-camreproc", "", d)} \
       ${@bb.utils.contains("BASEMACHINE", "qrb5165", "gstreamer1.0-plugins-qti-oss-jpegenc", "", d)} \
       ${@bb.utils.contains("BASEMACHINE", "qrb5165", "gstreamer1.0-plugins-qti-oss-drmdecryptor", "", d)} \
       ${@bb.utils.contains("BASEMACHINE", "qcm2290-mtp", "gstreamer1.0-plugins-qti-oss-jpegenc", "", d)} \

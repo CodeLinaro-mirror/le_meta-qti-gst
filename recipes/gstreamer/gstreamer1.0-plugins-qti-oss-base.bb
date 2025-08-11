@@ -50,3 +50,5 @@ FILES:${PN} += "${INSTALL_LIBDIR}"
 
 SOLIBS = ".so*"
 FILES_SOLIBSDEV = ""
+
+INSANE_SKIP:${PN} = "dev-so"

@@ -1,6 +1,7 @@
 FILESEXTRAPATHS:prepend := "${THISDIR}/${BPN}:"
 
 SRCREV = "d924fcbc2123dcfcb35242ecf5dc2fc3049004b3"
+LIC_FILES_CHKSUM = "file://COPYING;md5=b234ee4d69f5fce4486a80fdaf4a4263"
 
 SRC_URI += "\
            file://gstd.service \
@@ -9,6 +10,7 @@ SRC_URI += "\
 SRC_URI:append:kalama += "file://gstd-env_kalama"
 SRC_URI:append:pineapple += "file://gstd-env_pineapple"
 SRC_URI:append:qcs6490 += "file://gstd-env_qcs6490"
+SRC_URI:append:sun += "file://gstd-env_sun"
 
 SRC_URI:remove = "\
            file://0001-gstd-yocto-compatibility.patch \
@@ -20,6 +22,7 @@ SRC_URI:append:qti-distro-perf = "\
            "
 
 DEPENDS += "libsoup-2.4 jansson"
+DEPENDS:append:sun += " readline python3-pip-native"
 
 inherit systemd
 
@@ -46,10 +49,15 @@ do_install:prepend:qcs6490() {
         install -d ${D}${localstatedir}/log/gstd
 }
 
+do_install:prepend:sun() {
+        install -d ${D}${localstatedir}/run/gstd
+        install -d ${D}${localstatedir}/log/gstd
+}
+
 do_install:append() {
         install -d ${D}${sysconfdir}/default
 
-        if [ ${BASEMACHINE} == "kalama" ] || [ ${BASEMACHINE} == "qcs6490" ] || [ ${BASEMACHINE} == "pineapple" ]; then
+        if [ ${BASEMACHINE} == "kalama" ] || [ ${BASEMACHINE} == "qcs6490" ] || [ ${BASEMACHINE} == "pineapple" ] || [ ${BASEMACHINE} == "sun" ]; then
           install -m 666 ${WORKDIR}/gstd-env_${BASEMACHINE} ${D}${sysconfdir}/default/gstd
         else
           echo "OPTARGS=\"-a 0.0.0.0\"" >> ${D}${sysconfdir}/default/gstd
