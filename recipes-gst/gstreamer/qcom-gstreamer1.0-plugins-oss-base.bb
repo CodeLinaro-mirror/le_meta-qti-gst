@@ -9,7 +9,7 @@ LIC_FILES_CHKSUM = "file://${COMMON_LICENSE_DIR}/${LICENSE};md5=7a434440b651f4a4
 # Dependencies.
 DEPENDS := "gstreamer1.0"
 DEPENDS += "gstreamer1.0-plugins-base"
-DEPENDS += "qcom-fastcv-binaries"
+DEPENDS:append:qcom-custom-bsp = " qcom-fastcv-binaries"
 DEPENDS += "virtual/kernel"
 DEPENDS += "virtual/egl"
 DEPENDS += "virtual/libgles2"

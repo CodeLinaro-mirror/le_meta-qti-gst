@@ -1,6 +1,6 @@
-FILESEXTRAPATHS:prepend:qcom-custom-bsp := "${THISDIR}/gstreamer1.0-plugins-bad/1.24.9:"
+FILESEXTRAPATHS:prepend:qcom := "${THISDIR}/gstreamer1.0-plugins-bad/1.24.9:"
 
-SRC_URI:append:qcom-custom-bsp = "\
+SRC_URI:append:qcom = "\
   file://0001-gstreamer1.0-plugins-bad-Add-meson-option-to-build-a.patch \
   file://0002-waylandsink-release-pending-buffers-in-composer.patch \
   file://0003-waylandsink-support-gap-buffers.patch \
@@ -9,5 +9,5 @@ SRC_URI:append:qcom-custom-bsp = "\
   file://0006-Hack-wayland-Add-NV12_Q08C-to-shm-formats.patch \
 "
 
-PACKAGECONFIG:append:qcom-custom-bsp = " webrtc sctp srt srtp"
-DEPENDS:append:qcom:qcom-custom-bsp = " libnice libsrtp srt"
+PACKAGECONFIG:append:qcom = " webrtc sctp srt srtp"
+DEPENDS:append:qcom = " libnice libsrtp srt"
