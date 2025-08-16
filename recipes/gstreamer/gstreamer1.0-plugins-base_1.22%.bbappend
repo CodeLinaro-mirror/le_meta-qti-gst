@@ -5,4 +5,5 @@ SRC_URI:append = "\
     file://0002-videometa-add-aggregation-function-for-allocation-me.patch \
     file://0003-videometa-Update-the-aggregation-logic-for-stride-al.patch \
     file://0004-video-Add-support-for-NV12_Q10LE32C-compressed-10-bit-format.patch \
+    file://0005-video-Add-new-colorimetry-support-color-full-range.patch \
 "

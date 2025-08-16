@@ -36,9 +36,6 @@ CAMERA_METADATA_VERSION:kalama := "1.0ns"
 # Overwrite the default platform definitions for pineapple.
 CAMERA_METADATA_VERSION:pineapple := "1.0ns"
 
-# Overwrite the default platform definitions for kera.
-CAMERA_METADATA_VERSION:kera := "1.0ns"
-
 EXTRA_OECMAKE += "-DGST_VERSION_REQUIRED=1.14.4"
 EXTRA_OECMAKE += "-DSYSROOT_INCDIR=${STAGING_INCDIR}"
 EXTRA_OECMAKE += "-DSYSROOT_LIBDIR=${STAGING_LIBDIR}"
