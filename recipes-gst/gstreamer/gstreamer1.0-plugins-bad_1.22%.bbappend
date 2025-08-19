@@ -7,6 +7,7 @@ SRC_URI:append:qcom-custom-bsp = "\
   file://0004-waylandsink-support-gap-buffers.patch \
   file://0005-waylandsink-increase-timeout-limitation-in-gst_wl_wi.patch \
   file://0006-waylandsink-Restore-support-for-render-rectangle.patch \
+  file://0007-waylandsink-window-not-null-before-using.patch \
 "
 
 PACKAGECONFIG:append:qcom-custom-bsp = " webrtc sctp srt srtp"
