@@ -24,6 +24,7 @@ SRC_URI:append:qti-distro-perf = "\
 
 DEPENDS += "libsoup-2.4 jansson"
 DEPENDS:append:sun += " readline python3-pip-native"
+DEPENDS:append:kera += " readline python3-pip-native"
 
 inherit systemd
 
