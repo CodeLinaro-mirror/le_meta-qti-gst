@@ -32,6 +32,7 @@ RDEPENDS:packagegroup-qti-gst = " \
       gstreamer1.0-plugins-qti-oss-voverlay \
       gstreamer1.0-plugins-qti-oss-batch \
       gstreamer1.0-plugins-qti-oss-metamux \
+      gstreamer1.0-plugins-qti-oss-samplemux \
       gstreamer1.0-plugins-qti-oss-mlvconverter \
       gstreamer1.0-plugins-qti-oss-mlvdetection \
       gstreamer1.0-plugins-qti-oss-mlvclassification \
@@ -39,6 +40,7 @@ RDEPENDS:packagegroup-qti-gst = " \
       gstreamer1.0-plugins-qti-oss-mlvsuperresolution \
       gstreamer1.0-plugins-qti-oss-mlvpose \
       gstreamer1.0-plugins-qti-oss-mldemux \
+      gstreamer1.0-plugins-qti-oss-sensorsrc \
       ${@bb.utils.contains("MACHINE_FEATURES", "qti-aic", "gstreamer1.0-plugins-qti-oss-mlaic", "", d)} \
       ${@bb.utils.contains("DISTRO_FEATURES", "tensorflow-lite", "gstreamer1.0-plugins-qti-oss-mltflite", "", d)} \
       ${@bb.utils.contains("DISTRO_FEATURES", "qti-snpe", "gstreamer1.0-plugins-qti-oss-mlsnpe", "", d)} \
