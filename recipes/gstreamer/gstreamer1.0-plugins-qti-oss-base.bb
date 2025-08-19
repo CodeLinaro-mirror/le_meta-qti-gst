@@ -19,6 +19,9 @@ DEPENDS += "fastcv-noship"
 DEPENDS:remove:qcm6490 = "fastcv-noship"
 DEPENDS:append:qcm6490 = " fastcv-binaries"
 
+# Remove before fastcv enable
+DEPENDS:remove:kera = "fastcv-noship"
+
 # Dependency on IB2C library used in GLES Video Converter.
 DEPENDS += "qti-ib2c"
 RDEPENDS:${PN} += "qti-ib2c"
