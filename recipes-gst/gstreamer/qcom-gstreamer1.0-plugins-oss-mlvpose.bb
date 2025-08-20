@@ -40,3 +40,8 @@ FILES:${PN} += "${INSTALL_LIBDIR}"
 
 SOLIBS = ".so*"
 FILES_SOLIBSDEV = ""
+
+python do_package:prepend() {
+    bb.warn("This mlvpose plugin will be deprecated in the future! "
+        "Use qtimlpostprocess instead.")
+}

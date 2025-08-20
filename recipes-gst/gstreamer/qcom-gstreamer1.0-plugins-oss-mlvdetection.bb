@@ -43,3 +43,8 @@ FILES:${PN}-dbg += "${INSTALL_LIBDIR}/gstreamer-1.0/ml/modules/.debug"
 
 SOLIBS = ".so*"
 FILES_SOLIBSDEV = ""
+
+python do_package:prepend() {
+    bb.warn("This mlvdetection plugin will be deprecated in the future! "
+        "Use qtimlpostprocess instead.")
+}
