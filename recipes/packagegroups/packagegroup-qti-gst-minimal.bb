@@ -18,7 +18,6 @@ RDEPENDS:packagegroup-qti-gst-minimal = " \
       gstreamer1.0-rtsp-server \
       gstreamer1.0-plugins-qti-oss-base \
       gstreamer1.0-plugins-qti-oss-tools \
-      gstreamer1.0-plugins-qti-oss-examples \
       gstreamer1.0-plugins-qti-oss-overlay \
       gstreamer1.0-plugins-qti-oss-vtransform \
       ${@bb.utils.contains_any("COMBINED_FEATURES", "qti-video qti-audio", "gstreamer1.0-omx", "", d)} \
