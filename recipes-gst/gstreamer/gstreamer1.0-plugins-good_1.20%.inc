@@ -1,13 +1,13 @@
-DEPENDS:append:qcom-custom-bsp = " qemu-native"
+DEPENDS:append:qcom = " qemu-native"
 DEPENDS:append:qcs9100 = " qcom-displaydlkm"
 DEPENDS:append:qcs8300 = " qcom-displaydlkm"
-DEPENDS:append:qcom-custom-bsp = " gtk+3"
+DEPENDS:append:qcom = " gtk+3"
 
-PACKAGECONFIG:append:qcom-custom-bsp = " gtk"
+PACKAGECONFIG:append:qcom = " gtk"
 
-FILESEXTRAPATHS:prepend:qcom-custom-bsp := "${THISDIR}/gstreamer1.0-plugins-good/1.20:"
+FILESEXTRAPATHS:prepend:qcom := "${THISDIR}/gstreamer1.0-plugins-good/1.20:"
 
-SRC_URI:append:qcom-custom-bsp = "\
+SRC_URI:append:qcom = "\
      file://0002-v4l2-Add-support-for-fd-memory-import.patch \
      file://0003-gstreamer1.0-plugins-good-modify-caps.patch \
      file://0004-v4l2-Add-support-for-dma-memory-allocation.patch \

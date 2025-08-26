@@ -1,6 +1,6 @@
-FILESEXTRAPATHS:prepend:qcom-custom-bsp := "${THISDIR}/gstreamer1.0-plugins-bad/1.22:"
+FILESEXTRAPATHS:prepend:qcom := "${THISDIR}/gstreamer1.0-plugins-bad/1.22:"
 
-SRC_URI:append:qcom-custom-bsp = "\
+SRC_URI:append:qcom = "\
   file://0001-wayland-Add-support-for-NV12_Q08C-compressed-8-bit-f.patch \
   file://0002-Hack-wayland-Add-NV12_Q08C-to-shm-formats.patch \
   file://0003-waylandsink-release-pending-buffers-in-composer.patch \
@@ -10,6 +10,5 @@ SRC_URI:append:qcom-custom-bsp = "\
   file://0007-waylandsink-window-not-null-before-using.patch \
 "
 
-PACKAGECONFIG:append:qcom-custom-bsp = " webrtc sctp srt srtp"
-DEPENDS:append:qcom:qcom-custom-bsp = " libnice libsrtp srt"
-
+PACKAGECONFIG:append:qcom = " webrtc sctp srt srtp"
+DEPENDS:append:qcom = " libnice libsrtp srt"
