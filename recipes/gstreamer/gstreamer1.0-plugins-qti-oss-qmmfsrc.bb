@@ -62,10 +62,10 @@ FEATURE_LOGICAL_CAMERA_SUPPORT:kalama                := "TRUE"
 FEATURE_LOGICAL_CAMERA_SENSOR_SWITCH:kalama          := "TRUE"
 
 # Overwrite the default platform definitions for pineapple.
-IMAGE_MAX_WIDTH:pineapple                 := "9248"
-IMAGE_MAX_HEIGHT:pineapple                := "6944"
-VIDEO_MAX_WIDTH:pineapple                 := "9248"
-VIDEO_MAX_HEIGHT:pineapple                := "6944"
+IMAGE_MAX_WIDTH:pineapple                 := "16384"
+IMAGE_MAX_HEIGHT:pineapple                := "8192"
+VIDEO_MAX_WIDTH:pineapple                 := "16384"
+VIDEO_MAX_HEIGHT:pineapple                := "8192"
 VIDEO_MAX_FPS:pineapple                   := "480/1"
 CAMERA_METADATA_VERSION:pineapple         := "1.0ns"
 VIDEO_TYPE_SUPPORT:pineapple              := "TRUE"
@@ -75,15 +75,29 @@ IMAGE_NV12_FORMAT_ENABLE:pineapple        := "TRUE"
 FEATURE_LOGICAL_CAMERA_SUPPORT:pineapple                := "TRUE"
 FEATURE_LOGICAL_CAMERA_SENSOR_SWITCH:pineapple          := "TRUE"
 
-# Overwrite the default platform definitions for qcm2290-mtp.
-IMAGE_MAX_WIDTH:qcm2290-mtp          := "9248"
-IMAGE_MAX_HEIGHT:qcm2290-mtp         := "6944"
-VIDEO_MAX_WIDTH:qcm2290-mtp          := "9248"
-VIDEO_MAX_HEIGHT:qcm2290-mtp         := "6944"
-VIDEO_MAX_FPS:qcm2290-mtp            := "480/1"
-CAMERA_METADATA_VERSION:qcm2290-mtp  := "1.1"
-VIDEO_UYVY_FORMAT_ENABLE:qcm2290-mtp := "TRUE"
-IMAGE_NV12_FORMAT_ENABLE:qcm2290-mtp := "TRUE"
+# Overwrite the default platform definitions for kera.
+IMAGE_MAX_WIDTH:kera                 := "9248"
+IMAGE_MAX_HEIGHT:kera                := "6944"
+VIDEO_MAX_WIDTH:kera                 := "9248"
+VIDEO_MAX_HEIGHT:kera                := "6944"
+VIDEO_MAX_FPS:kera                   := "480/1"
+CAMERA_METADATA_VERSION:kera         := "1.0ns"
+VIDEO_TYPE_SUPPORT:kera              := "TRUE"
+VIDEO_P010_10LE_FORMAT_ENABLE:kera   := "TRUE"
+VIDEO_NV12_10LE32_FORMAT_ENABLE:kera := "TRUE"
+IMAGE_NV12_FORMAT_ENABLE:kera        := "TRUE"
+FEATURE_LOGICAL_CAMERA_SUPPORT:kera                := "TRUE"
+FEATURE_LOGICAL_CAMERA_SENSOR_SWITCH:kera          := "TRUE"
+
+# Overwrite the default platform definitions for qcm2290-mtp and qcm4325-mtp.
+IMAGE_MAX_WIDTH:bengal          := "9248"
+IMAGE_MAX_HEIGHT:bengal         := "6944"
+VIDEO_MAX_WIDTH:bengal          := "9248"
+VIDEO_MAX_HEIGHT:bengal         := "6944"
+VIDEO_MAX_FPS:bengal            := "480/1"
+CAMERA_METADATA_VERSION:bengal  := "1.1"
+VIDEO_UYVY_FORMAT_ENABLE:bengal := "TRUE"
+IMAGE_NV12_FORMAT_ENABLE:bengal := "TRUE"
 
 # Overwrite the default platform definitions for qcs6490.
 VIDEO_MAX_FPS:qcs6490            := "240/1"
@@ -93,6 +107,21 @@ VIDEO_YUY2_FORMAT_ENABLE:qcs6490 := "TRUE"
 # Overwrite the default platform definitions for qcm6490
 VIDEO_TYPE_SUPPORT:qcm6490 := "TRUE"
 CAMERA_SERVICE:qcm6490     := "LECAM"
+
+
+# Overwrite the default platform definitions for sun.
+IMAGE_MAX_WIDTH:sun                 := "9248"
+IMAGE_MAX_HEIGHT:sun                := "6944"
+VIDEO_MAX_WIDTH:sun                 := "9248"
+VIDEO_MAX_HEIGHT:sun                := "6944"
+VIDEO_MAX_FPS:sun                   := "480/1"
+CAMERA_METADATA_VERSION:sun         := "1.0ns"
+VIDEO_TYPE_SUPPORT:sun              := "TRUE"
+VIDEO_P010_10LE_FORMAT_ENABLE:sun   := "TRUE"
+VIDEO_NV12_10LE32_FORMAT_ENABLE:sun := "TRUE"
+IMAGE_NV12_FORMAT_ENABLE:sun        := "TRUE"
+FEATURE_LOGICAL_CAMERA_SUPPORT:sun                := "TRUE"
+FEATURE_LOGICAL_CAMERA_SENSOR_SWITCH:sun          := "TRUE"
 
 # Qmmf Feature Set
 QMMF_FEATURE_SET := \
