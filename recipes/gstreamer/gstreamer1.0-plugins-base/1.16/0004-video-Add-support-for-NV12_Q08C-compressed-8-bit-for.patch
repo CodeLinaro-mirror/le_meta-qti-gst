@@ -1,4 +1,4 @@
-From bd6811b6068b9e5a6b5064e943eaa67ca24b61b1 Mon Sep 17 00:00:00 2001
+From 14f6694797faae68405c456c678e1fe8b5c2f34e Mon Sep 17 00:00:00 2001
 From: Tushar Patra Jamula <quic_tjamula@quicinc.com>
 Date: Mon, 13 Jan 2025 20:05:44 +0530
 Subject: [PATCH] video: Add support for NV12_Q08C (compressed 8-bit) format
@@ -7,20 +7,20 @@ Upstream-Status: Inappropriate [Qualcomm specific]
 
 Signed-off-by: Tushar Patra Jamula <quic_tjamula@quicinc.com>
 ---
- gst-libs/gst/video/video-format.c | 23 +++++++++++++++++++++++
+ gst-libs/gst/video/video-format.c | 23 ++++++++++++++++++++++
  gst-libs/gst/video/video-format.h | 10 +++++++++-
- gst-libs/gst/video/video-info.c   | 23 +++++++++++++++++++++++
+ gst-libs/gst/video/video-info.c   | 32 +++++++++++++++++++++++++++++++
  gst-libs/gst/video/video-scaler.c |  1 +
- 4 files changed, 56 insertions(+), 1 deletion(-)
+ 4 files changed, 65 insertions(+), 1 deletion(-)
 
 diff --git a/gst-libs/gst/video/video-format.c b/gst-libs/gst/video/video-format.c
-index ac37a75..b36acb0 100644
+index 0986c0b7d..62bc1eb60 100644
 --- a/gst-libs/gst/video/video-format.c
 +++ b/gst-libs/gst/video/video-format.c
 @@ -1787,6 +1787,24 @@ pack_NV21 (const GstVideoFormatInfo * info, GstVideoPackFlags flags,
      video_orc_pack_Y (dy, s, width);
  }
- 
+
 +#define PACK_NV12_Q08C GST_VIDEO_FORMAT_NV12, unpack_NV12_Q08C, 1, pack_NV12_Q08C
 +static void
 +unpack_NV12_Q08C (const GstVideoFormatInfo * info, GstVideoPackFlags flags,
@@ -50,7 +50,7 @@ index ac37a75..b36acb0 100644
 +      GST_MAKE_FOURCC ('Q', '0', '8', 'C'), DPTH888, PSTR122, PLANE011,
 +      OFFS001, SUB420, PACK_NV12_Q08C),
  };
- 
+
  static GstVideoFormat
 @@ -5922,6 +5943,8 @@ gst_video_format_from_fourcc (guint32 fourcc)
        return GST_VIDEO_FORMAT_VUYA;
@@ -58,11 +58,11 @@ index ac37a75..b36acb0 100644
        return GST_VIDEO_FORMAT_BGR10A2_LE;
 +    case GST_MAKE_FOURCC ('Q', '0', '8', 'C'):
 +      return GST_VIDEO_FORMAT_NV12_Q08C;
- 
+
      default:
        return GST_VIDEO_FORMAT_UNKNOWN;
 diff --git a/gst-libs/gst/video/video-format.h b/gst-libs/gst/video/video-format.h
-index 30189b2..729b047 100644
+index 1593e9842..dd1f5a4be 100644
 --- a/gst-libs/gst/video/video-format.h
 +++ b/gst-libs/gst/video/video-format.h
 @@ -118,6 +118,7 @@ G_BEGIN_DECLS
@@ -85,53 +85,62 @@ index 30189b2..729b047 100644
 +   */
 +  GST_VIDEO_FORMAT_NV12_Q08C,
  } GstVideoFormat;
- 
+
  #define GST_VIDEO_MAX_PLANES 4
-@@ -562,7 +570,7 @@ gconstpointer  gst_video_format_get_palette          (GstVideoFormat format, gsi
+@@ -565,7 +573,7 @@ gconstpointer  gst_video_format_get_palette          (GstVideoFormat format, gsi
    "A420_10LE, A422_10BE, A422_10LE, A444_10BE, A444_10LE, NV61, P010_10BE, " \
    "P010_10LE, IYU2, VYUY, GBRA, GBRA_10BE, GBRA_10LE, BGR10A2_LE, GBR_12BE, GBR_12LE, " \
    "GBRA_12BE, GBRA_12LE, I420_12BE, I420_12LE, I422_12BE, I422_12LE, " \
 -  "Y444_12BE, Y444_12LE, GRAY10_LE32, NV12_10LE32, NV16_10LE32, NV12_10LE40 }"
 +  "Y444_12BE, Y444_12LE, GRAY10_LE32, NV12_10LE32, NV16_10LE32, NV12_10LE40, NV12_Q08C }"
- 
+
  /**
   * GST_VIDEO_CAPS_MAKE:
 diff --git a/gst-libs/gst/video/video-info.c b/gst-libs/gst/video/video-info.c
-index 7aed055..b5a9089 100644
+index 038f608de..2184a3f3a 100644
 --- a/gst-libs/gst/video/video-info.c
 +++ b/gst-libs/gst/video/video-info.c
-@@ -1115,6 +1115,29 @@ fill_planes (GstVideoInfo * info)
+@@ -1116,6 +1116,38 @@ fill_planes (GstVideoInfo * info, gsize plane_size[GST_VIDEO_MAX_PLANES])
          cr_h = GST_ROUND_UP_2 (cr_h);
        info->size = info->offset[1] + info->stride[0] * cr_h;
        break;
 +    case GST_VIDEO_FORMAT_NV12_Q08C:
 +    {
-+      gint meta_width = 0, meta_height = 0;
-+      gint luma_meta_size = 0, chroma_meta_size = 0;
++      gint y_plane_stride = 0, y_meta_stride = 0, y_meta_scanline = 0;
++      gint uv_plane_stride = 0, uv_meta_stride = 0, uv_meta_scanline = 0;
++      gint y_plane_scanline = 0, y_plane_size = 0, y_meta_size = 0;
++      gint uv_plane_scanline = 0, uv_plane_size = 0, uv_meta_size = 0;
 +
-+      /* metadata size for Luma */
-+      meta_width = GST_ROUND_UP_64 (width >> 5);
-+      meta_height = GST_ROUND_UP_16 (height >> 3);
-+      luma_meta_size =  GST_ROUND_UP_N (meta_width * meta_height, 4096);
++      y_plane_stride = GST_ROUND_UP_128 (width);
++      y_plane_scanline = GST_ROUND_UP_32 (height);
++      uv_plane_stride = GST_ROUND_UP_128 (width);
++      uv_plane_scanline = GST_ROUND_UP_32 (GST_ROUND_UP_2 (height) / 2);
 +
-+      /* height changes for chroma */
-+      meta_height = GST_ROUND_UP_16 (((height + 1) >> 1) >> 3);
-+      chroma_meta_size = GST_ROUND_UP_N (meta_width * meta_height, 4096);
++      y_meta_stride = GST_ROUND_UP_64 (GST_ROUND_UP_32 (width) / 32);
++      y_meta_scanline = GST_ROUND_UP_16 (GST_ROUND_UP_8 (height) / 8);
++      uv_meta_stride = GST_ROUND_UP_64 (
++          GST_ROUND_UP_16 (GST_ROUND_UP_2 (width) / 2) / 16);
++      uv_meta_scanline = GST_ROUND_UP_16 (
++          GST_ROUND_UP_8 (GST_ROUND_UP_2 (height) / 2) / 8);
 +
-+      info->stride[0] = GST_ROUND_UP_128 (width);
-+      info->stride[1] = info->stride[0];
++      y_plane_size = GST_ROUND_UP_N (y_plane_stride * y_plane_scanline, 4096);
++      uv_plane_size = GST_ROUND_UP_N (uv_plane_stride * uv_plane_scanline, 4096);
++
++      y_meta_size = GST_ROUND_UP_N (y_meta_stride * y_meta_scanline, 4096);
++      uv_meta_size = GST_ROUND_UP_N (uv_meta_stride * uv_meta_scanline, 4096);
++
++      info->stride[0] = y_plane_stride;
++      info->stride[1] = uv_plane_stride;
 +      info->offset[0] = 0;
-+      info->offset[1] = luma_meta_size +
-+          info->stride[0] * GST_ROUND_UP_32 (height);
-+      info->size = info->offset[1] + chroma_meta_size +
-+          info->stride[0] * GST_ROUND_UP_32 (height >> 1);
++      info->offset[1] = y_plane_size + y_meta_size;
++      info->size = info->offset[1] + uv_plane_size + uv_meta_size;
 +      break;
 +    }
- 
+
      case GST_VIDEO_FORMAT_ENCODED:
        break;
 diff --git a/gst-libs/gst/video/video-scaler.c b/gst-libs/gst/video/video-scaler.c
-index ce30a0e..d0b9600 100644
+index ce30a0eeb..d0b96005a 100644
 --- a/gst-libs/gst/video/video-scaler.c
 +++ b/gst-libs/gst/video/video-scaler.c
 @@ -1250,6 +1250,7 @@ get_functions (GstVideoScaler * hscale, GstVideoScaler * vscale,
@@ -142,3 +151,5 @@ index ce30a0e..d0b9600 100644
        *bits = 8;
        *n_elems = 2;
        break;
+--
+2.25.1
