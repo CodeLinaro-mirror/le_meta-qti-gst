@@ -9,9 +9,10 @@ LIC_FILES_CHKSUM = "file://${COMMON_LICENSE_DIR}/${LICENSE};md5=7a434440b651f4a4
 # Dependencies.
 DEPENDS := "gstreamer1.0"
 DEPENDS += "gstreamer1.0-plugins-base"
-DEPENDS += "adreno"
 DEPENDS += "qcom-fastcv-binaries"
-DEPENDS += "qcom-ib2c"
+DEPENDS += "virtual/kernel"
+DEPENDS += "virtual/egl"
+DEPENDS += "virtual/libgles2"
 DEPENDS += "json-glib"
 
 FILESPATH =+ "${WORKSPACE}/:"

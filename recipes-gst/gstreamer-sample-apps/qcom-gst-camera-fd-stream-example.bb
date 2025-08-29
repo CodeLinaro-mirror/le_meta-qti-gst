@@ -9,29 +9,26 @@ LIC_FILES_CHKSUM = "file://${QCOM_COMMON_LICENSE_DIR}${LICENSE};md5=3771d4920bd6
 # Dependencies.
 DEPENDS := "gstreamer1.0"
 DEPENDS += "gstreamer1.0-plugins-base"
-DEPENDS += "json-glib"
+DEPENDS += "gstreamer1.0-plugins-bad"
 DEPENDS += "qcom-gst-sample-apps-utils"
 DEPENDS += "qcom-camera-server"
 
 FILESPATH =+ "${WORKSPACE}/:"
-SRC_URI = "file://gst-plugins-qti-oss/gst-sample-apps/gst-ai-smartcodec-example"
-S = "${WORKDIR}/gst-plugins-qti-oss/gst-sample-apps/gst-ai-smartcodec-example"
+SRC_URI = "file://gst-plugins-qti-oss/gst-sample-apps/gst-camera-fd-stream-example"
+S = "${WORKDIR}/gst-plugins-qti-oss/gst-sample-apps/gst-camera-fd-stream-example"
 
 # Install directries.
 INSTALL_BINDIR := "${bindir}"
 INSTALL_LIBDIR := "${libdir}"
-INSTALL_CONFIG := "${sysconfdir}/configs/"
 
 EXTRA_OECMAKE += "-DGST_VERSION_REQUIRED=1.20.7"
-EXTRA_OECMAKE += "-DSYSROOT_INCDIR=${STAGING_INCDIR}"
-EXTRA_OECMAKE += "-DSYSROOT_LIBDIR=${STAGING_LIBDIR}"
+EXTRA_OECMAKE += "-DSYSROOT_INCDIR=${STAGING_INCDIR}"
+EXTRA_OECMAKE += "-DSYSROOT_LIBDIR=${STAGING_LIBDIR}"
 EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_INSTALL_BINDIR=${INSTALL_BINDIR}"
 EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_INSTALL_LIBDIR=${INSTALL_LIBDIR}"
-EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_INSTALL_CONFIG=${INSTALL_CONFIG}"
 
 FILES:${PN} += "${INSTALL_BINDIR}"
 FILES:${PN} += "${INSTALL_LIBDIR}"
-FILES:${PN} += "${INSTALL_CONFIG}"
 
 SOLIBS = ".so*"
 FILES_SOLIBSDEV = ""
