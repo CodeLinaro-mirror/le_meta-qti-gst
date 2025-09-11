@@ -6,6 +6,7 @@ SRC_URI:append = "\
   file://0003-waylandsink-release-pending-buffers-in-composer.patch \
   file://0004-waylandsink-support-gap-buffers.patch \
   file://0005-waylandsink-increase-timeout-limitation-in-gst_wl_wi.patch \
+  file://0006-waylandsink-support-position-and-dimensions.patch \
 "
 
 PACKAGECONFIG:append = " webrtc sctp srt srtp"
