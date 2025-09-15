@@ -5,7 +5,7 @@ DISTRO_FEATURES:remove:pineapple += "opengl"
 
 DEPENDS += "gbm"
 
-FILESEXTRAPATHS:prepend := "${THISDIR}/gstreamer1.0-plugins-bad/1.20.4:"
+FILESEXTRAPATHS:prepend := "${THISDIR}/${PN}/1.20.4:"
 
 SRC_URI:append = "\
   file://0001-waylandsink-support-position-and-dimensions.patch \
