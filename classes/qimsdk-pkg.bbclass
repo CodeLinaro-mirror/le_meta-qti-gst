@@ -165,6 +165,8 @@ do_generate_qim_sdk[depends] = " \
     gobject-introspection:do_package_write_ipk \
     python3-pycairo:do_package_write_ipk \
     python3-pygobject:do_package_write_ipk \
+    python3-pip:do_package_write_ipk \
+    git:do_package_write_ipk \
     ${GST_PLUGINS} \
     ${GST_SAMPLE_APPS} \
   "
@@ -226,7 +228,7 @@ def get_pkgs_list(d):
                 "liborc-0", "libsbc1", "libspeex1", "libtag1", "libjson-glib-1.0-0",
                 "libmosquitto1", "hiredis", "libnice_", "libsrtp2-1_",
                 "libsrt1.4_", "qcom-rvsdk_1.0", "gobject-introspection_",
-                "python3-pycairo_", "python3-pygobject_"]
+                "python3-pycairo_", "python3-pygobject_", "python3-pip_", "git_"]
     for _, pkgdirs, _ in os.walk(os.path.join(deploydir, pkgtype)):
         for pkgdir in pkgdirs:
             for f in os.listdir(os.path.join(deploydir, pkgtype, pkgdir)):
