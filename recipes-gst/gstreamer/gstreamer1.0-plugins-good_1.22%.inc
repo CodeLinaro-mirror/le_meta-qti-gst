@@ -18,4 +18,5 @@ SRC_URI:append:qcom = "\
     file://0015-v4l2-fix-runtime-change-between-system-and-DMA-buffe.patch \
     file://0016-v4l2-Make-the-extra-controls-property-dynamic.patch \
     file://0017-v4l2-Add-support-for-colorimetry-bt2100-pq-and-1-4-5.patch \
+    file://0018-v4l2-Add-support-for-GST_VIDEO_FORMAT_NV12_Q10LE32C-.patch \
 "
