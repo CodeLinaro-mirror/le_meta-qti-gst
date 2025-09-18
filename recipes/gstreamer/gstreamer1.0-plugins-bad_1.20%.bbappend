@@ -18,6 +18,7 @@ SRC_URI:append = "\
   file://0005-videoparser-support-protected-content-caps.patch \
   file://0006-videoparser-update-width-and-height-on-resolution-ch.patch \
   file://0006-waylandsink-increase-timeout-limitation-in-gst_wl_wi.patch \
+  file://0007-waylandsink-change-driver-node-for-gbm-buffer-backend.patch \
 "
 
 do_configure:prepend() {

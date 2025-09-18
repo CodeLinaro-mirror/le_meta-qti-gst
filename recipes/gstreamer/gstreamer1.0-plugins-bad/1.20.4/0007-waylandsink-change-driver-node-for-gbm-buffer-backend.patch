@@ -1,0 +1,30 @@
+From e62aca9697339134ef7bbbfd2f9b43741d798956 Mon Sep 17 00:00:00 2001
+From: lisu <lisu@qti.qualcomm.com>
+Date: Mon, 15 Sep 2025 22:10:15 -0700
+Subject: [PATCH] waylandsink: change driver node for gbm buffer backend
+ protocol
+
+/dev/dri/card0 cannot work in waylandsink, change the node from
+"dev/dri/card0" to "/dev/dri/renderD128"
+
+Signed-off-by: lisu <lisu@qti.qualcomm.com>
+---
+ ext/wayland/wldisplay.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/ext/wayland/wldisplay.c b/ext/wayland/wldisplay.c
+index 3e3d8160d8..0052f1c7fa 100644
+--- a/ext/wayland/wldisplay.c
++++ b/ext/wayland/wldisplay.c
+@@ -286,7 +286,7 @@ registry_handle_global (void *data, struct wl_registry *registry,
+     self->gbm =
+         wl_registry_bind (registry, id, &gbm_buffer_backend_interface, 1);
+ 
+-    if ((self->gbmfd = open ("/dev/dri/card0", O_RDWR)) < 0) {
++    if ((self->gbmfd = open ("/dev/dri/renderD128", O_RDWR)) < 0) {
+       self->gbmfd = open ("/dev/fb0", O_RDWR);
+       g_return_if_fail (self->gbmfd >= 0);
+     }
+-- 
+2.34.1
+
