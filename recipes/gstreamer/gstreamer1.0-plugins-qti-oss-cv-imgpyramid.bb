@@ -15,6 +15,7 @@ DEPENDS:append:qrb5165 += "cvp-noship"
 DEPENDS:append:kalama += "eva-noship"
 DEPENDS:append:pineapple += "eva-noship"
 DEPENDS:append:kera += "eva-noship"
+DEPENDS:append:sun += "eva-noship"
 
 FILESPATH =+ "${WORKSPACE}/vendor/qcom/opensource/gst-plugins-qti-oss/:"
 
