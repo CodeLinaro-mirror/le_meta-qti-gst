@@ -1,4 +1,4 @@
-From f07e15cb19b5898fcb9d3f033f8dbed8f1b10da4 Mon Sep 17 00:00:00 2001
+From 0f7481f4384812b5f2a7e6bda211c237fc9ede71 Mon Sep 17 00:00:00 2001
 From: Stilyan Uzunov <quic_suzunov@quicinc.com>
 Date: Thu, 20 Feb 2025 14:07:34 +0000
 Subject: [PATCH] gstreamer1.0-plugins-base: Add meson option to build all
@@ -13,9 +13,10 @@ Upstream-Status: Inappropriate [Qualcomm specific]
 Signed-off-by: Stilyan Uzunov <quic_suzunov@quicinc.com>
 ---
  gst-libs/gst/meson.build | 30 +++++++++++++++++-------------
- meson.build              | 35 +++++++++++++++++++++--------------
+ gst/meson.build          | 16 ++++++++++------
+ meson.build              | 37 +++++++++++++++++++++++--------------
  meson_options.txt        |  4 ++++
- 3 files changed, 42 insertions(+), 27 deletions(-)
+ 4 files changed, 54 insertions(+), 33 deletions(-)
 
 diff --git a/gst-libs/gst/meson.build b/gst-libs/gst/meson.build
 index 42c0a6f..2dd2b7f 100644
@@ -52,14 +53,35 @@ index 42c0a6f..2dd2b7f 100644
 +else
 +  subdir('video')
 +endif
+diff --git a/gst/meson.build b/gst/meson.build
+index 5eec601..c3f1cb0 100644
+--- a/gst/meson.build
++++ b/gst/meson.build
+@@ -1,6 +1,10 @@
+-foreach plugin : ['adder', 'app', 'audioconvert', 'audiomixer', 'audiorate', 'audioresample',
+-                  'audiotestsrc', 'compositor', 'dsd', 'debugutils', 'encoding', 'gio', 'overlaycomposition',
+-                  'pbtypes', 'playback', 'rawparse', 'subparse', 'tcp', 'typefind',
+-                  'videoconvertscale', 'videorate', 'videotestsrc', 'volume']
+-  subdir(plugin)
+-endforeach
++if build_all_plugins
++  foreach plugin : ['adder', 'app', 'audioconvert', 'audiomixer', 'audiorate', 'audioresample',
++                    'audiotestsrc', 'compositor', 'dsd', 'debugutils', 'encoding', 'gio', 'overlaycomposition',
++                    'pbtypes', 'playback', 'rawparse', 'subparse', 'tcp', 'typefind',
++                    'videoconvertscale', 'videorate', 'videotestsrc', 'volume']
++    subdir(plugin)
++  endforeach
++else
++  subdir('videorate')
++endif
 diff --git a/meson.build b/meson.build
-index c195376..9102394 100644
+index 3f6730c..d23196a 100644
 --- a/meson.build
 +++ b/meson.build
-@@ -504,26 +504,33 @@ else
+@@ -504,26 +504,35 @@ else
    pathsep = ':'
  endif
- 
+
 +build_all_plugins = get_option('build-all-plugins')
 +
  python3 = import('python').find_installation()
@@ -69,7 +91,7 @@ index c195376..9102394 100644
 -subdir('sys')
 -subdir('tools')
 -subdir('tests')
- 
+
 -# xgettext is optional (on Windows for instance)
 -if find_program('xgettext', required : get_option('nls')).found()
 -  core_conf.set('ENABLE_NLS', 1)
@@ -88,10 +110,12 @@ index c195376..9102394 100644
 +  endif
 +  subdir('docs')
 +  subdir('scripts')
++else
++  subdir('gst')
  endif
 -subdir('docs')
 -subdir('scripts')
- 
+
  base_libraries = ['allocators', 'app', 'audio', 'fft', 'pbutils', 'riff', 'rtp', 'rtsp', 'sdp', 'tag', 'video']
 -if build_gstgl
 -  core_conf.set('HAVE_GL', 1)
@@ -102,7 +126,7 @@ index c195376..9102394 100644
 +    base_libraries += 'gl'
 +  endif
  endif
- 
+
  pkgconfig_plugins_base_libs_variables = [
 diff --git a/meson_options.txt b/meson_options.txt
 index 17b5743..29f9372 100644
@@ -119,6 +143,6 @@ index 17b5743..29f9372 100644
  option('glib_debug', type : 'feature', value : 'auto', yield : true, description : 'Enable GLib debug infrastructure (see docs/macros.txt)')
  option('glib_assert', type : 'boolean', value : true, yield : true, description : 'Enable GLib assertion (see docs/macros.txt)',
    deprecated: {'enabled' : 'true', 'disabled' : 'false', 'auto' : 'false'},
--- 
-2.25.1
+--
+2.47.3
 
