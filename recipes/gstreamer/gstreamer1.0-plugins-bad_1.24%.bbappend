@@ -1,4 +1,4 @@
-FILESEXTRAPATHS:prepend := "${THISDIR}/gstreamer1.0-plugins-bad/1.24:"
+FILESEXTRAPATHS:prepend := "${THISDIR}/${PN}/1.24:"
 
 SRC_URI:append = "\
   file://0001-gstreamer1.0-plugins-bad-Add-meson-option-to-build-a.patch \
