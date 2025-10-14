@@ -14,7 +14,6 @@ DEPENDS += "securemsm"
 DEPENDS += "media-headers"
 DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'qti-camera', 'qmmf-sdk', '', d)}"
 
-DEPENDS += "${@bb.utils.contains('COMBINED_FEATURES', 'qti-afr-algo', 'qti-auto-framing-stabilization gstreamer1.0-plugins-qti-oss-mlmeta', '', d)}"
 RDEPENDS:${PN} += "${@bb.utils.contains('COMBINED_FEATURES', 'qti-afr-algo', 'qti-auto-framing-stabilization', '', d)}"
 
 DEPENDS:append:qcm6490 = " camera-server"
