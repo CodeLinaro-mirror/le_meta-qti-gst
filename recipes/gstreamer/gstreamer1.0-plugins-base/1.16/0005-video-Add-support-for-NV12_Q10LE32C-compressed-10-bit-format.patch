@@ -1,4 +1,4 @@
-From 2bd434b646fa4269dfe94da15e9f7809d56a992e Mon Sep 17 00:00:00 2001
+From 01ec9848414943cc15417cfba4b19490abdab12b Mon Sep 17 00:00:00 2001
 From: Hui Liu <quic_huliu@quicinc.com>
 Date: Wed, 12 Mar 2025 12:48:50 +0800
 Subject: [PATCH] video: Add support for NV12_Q10LE32C (compressed 10-bit)
@@ -8,10 +8,10 @@ Upstream-Status: Inappropriate [Qualcomm specific]
 
 Signed-off-by: Hui Liu <quic_huliu@quicinc.com>
 ---
- gst-libs/gst/video/video-format.c | 23 ++++++++++++++++++++
- gst-libs/gst/video/video-format.h | 10 ++++++++-
- gst-libs/gst/video/video-info.c   | 35 ++++++++++++++++++++++++++++++-
- 3 files changed, 66 insertions(+), 2 deletions(-)
+ gst-libs/gst/video/video-format.c | 23 +++++++++++++++++++++
+ gst-libs/gst/video/video-format.h | 10 +++++++++-
+ gst-libs/gst/video/video-info.c   | 33 +++++++++++++++++++++++++++++++
+ 3 files changed, 65 insertions(+), 1 deletion(-)
 
 diff --git a/gst-libs/gst/video/video-format.c b/gst-libs/gst/video/video-format.c
 index 62bc1eb60..f91b8edc2 100644
@@ -97,14 +97,13 @@ index dd1f5a4be..3b3c4dadd 100644
  /**
   * GST_VIDEO_CAPS_MAKE:
 diff --git a/gst-libs/gst/video/video-info.c b/gst-libs/gst/video/video-info.c
-index 7e7ef024b..498805488 100644
+index 2184a3f3a..0d3768de2 100644
 --- a/gst-libs/gst/video/video-info.c
 +++ b/gst-libs/gst/video/video-info.c
-@@ -1139,7 +1139,40 @@ fill_planes (GstVideoInfo * info, gsize plane_size[GST_VIDEO_MAX_PLANES])
-           info->stride[0] * GST_ROUND_UP_32 (height >> 1);
+@@ -1148,7 +1148,40 @@ fill_planes (GstVideoInfo * info, gsize plane_size[GST_VIDEO_MAX_PLANES])
+       info->size = info->offset[1] + uv_plane_size + uv_meta_size;
        break;
      }
--
 +    case GST_VIDEO_FORMAT_NV12_Q10LE32C:
 +    {
 +      gint y_plane_stride = 0, y_meta_stride = 0, y_meta_scanline = 0;
@@ -131,7 +130,7 @@ index 7e7ef024b..498805488 100644
 +
 +      y_meta_size = GST_ROUND_UP_N (y_meta_stride * y_meta_scanline, 4096);
 +      uv_meta_size = GST_ROUND_UP_N (uv_meta_stride * uv_meta_scanline, 4096);
-+
+
 +      info->stride[0] = y_plane_stride;
 +      info->stride[1] = uv_plane_stride;
 +      info->offset[0] = 0;
@@ -142,3 +141,5 @@ index 7e7ef024b..498805488 100644
      case GST_VIDEO_FORMAT_ENCODED:
        break;
      case GST_VIDEO_FORMAT_UNKNOWN:
+--
+2.25.1
