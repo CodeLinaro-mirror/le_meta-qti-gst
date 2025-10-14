@@ -8,7 +8,6 @@ LIC_FILES_CHKSUM = "file://${COREBASE}/meta-qti-bsp/files/common-licenses/${LICE
 
 # Dependencies.
 DEPENDS := "gstreamer1.0"
-DEPENDS += "gstreamer1.0-plugins-qti-oss-mlmeta"
 DEPENDS += "qti-umd-gadget"
 DEPENDS += "${@bb.utils.contains('COMBINED_FEATURES', \
 		'qti-afr-algo', 'qti-auto-framing-stabilization', '', d)}"
