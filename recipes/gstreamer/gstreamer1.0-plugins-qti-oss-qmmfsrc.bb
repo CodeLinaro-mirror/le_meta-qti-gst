@@ -17,7 +17,7 @@ DEPENDS:append:qcm6490 = " camera-server"
 
 FILESPATH =+ "${WORKSPACE}/vendor/qcom/opensource/gst-plugins-qti-oss/:"
 SRC_URI = "file://gst-plugin-qmmfsrc/"
-S = "${WORKDIR}/gst-plugin-qmmfsrc/"
+S = "${WORKDIR}/gst-plugin-qmmfsrc"
 
 # Install directries.
 INSTALL_BINDIR := "${bindir}"
