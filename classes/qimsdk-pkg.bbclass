@@ -35,7 +35,6 @@ do_generate_qim_sdk[depends] = " \
     ${@bb.utils.contains(d.getVar("IMAGE_PKGTYPE", True), "ipk", "gstreamer1.0-plugins-qti-oss-batch:do_package_write_ipk", "gstreamer1.0-plugins-qti-oss-batch:do_package_write_deb", d)} \
     ${@bb.utils.contains(d.getVar("IMAGE_PKGTYPE", True), "ipk", "gstreamer1.0-plugins-qti-oss-metamux:do_package_write_ipk", "gstreamer1.0-plugins-qti-oss-metamux:do_package_write_deb", d)} \
     ${@bb.utils.contains(d.getVar("IMAGE_PKGTYPE", True), "ipk", "gstreamer1.0-plugins-qti-oss-mldemux:do_package_write_ipk", "gstreamer1.0-plugins-qti-oss-mldemux:do_package_write_deb", d)} \
-    ${@bb.utils.contains(d.getVar("IMAGE_PKGTYPE", True), "ipk", "gstreamer1.0-plugins-qti-oss-mlmeta:do_package_write_ipk", "gstreamer1.0-plugins-qti-oss-mlmeta:do_package_write_deb", d)} \
     ${@bb.utils.contains(d.getVar("IMAGE_PKGTYPE", True), "ipk", "gstreamer1.0-plugins-qti-oss-mlvconverter:do_package_write_ipk", "gstreamer1.0-plugins-qti-oss-mlvconverter:do_package_write_deb", d)} \
     ${@bb.utils.contains(d.getVar("IMAGE_PKGTYPE", True), "ipk", "gstreamer1.0-plugins-qti-oss-mlvclassification:do_package_write_ipk", "gstreamer1.0-plugins-qti-oss-mlvclassification:do_package_write_deb", d)} \
     ${@bb.utils.contains(d.getVar("IMAGE_PKGTYPE", True), "ipk", "gstreamer1.0-plugins-qti-oss-mlvdetection:do_package_write_ipk", "gstreamer1.0-plugins-qti-oss-mlvdetection:do_package_write_deb", d)} \

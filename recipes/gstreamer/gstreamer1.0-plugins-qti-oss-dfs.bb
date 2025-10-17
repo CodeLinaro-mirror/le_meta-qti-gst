@@ -16,6 +16,7 @@ DEPENDS:remove:qcs6490 += "vslam"
 DEPENDS:remove:kalama += "vslam"
 DEPENDS:remove:pineapple += "vslam"
 DEPENDS:remove:kera += "vslam"
+DEPENDS:remove:vienna += "vslam"
 DEPENDS:remove:sun += "vslam"
 DEPENDS:append:qcs6490 += "rv"
 
@@ -48,6 +49,9 @@ RVSDK_API_VERSION:pineapple := "0x202404"
 
 #Overwrite the default RVSDK version definitions for kera
 RVSDK_API_VERSION:kera := "0x202404"
+
+#Overwrite the default RVSDK version definitions for vienna
+RVSDK_API_VERSION:vienna := "0x202404"
 
 #Overwrite the default RVSDK version definitions for sun
 RVSDK_API_VERSION:sun := "0x202404"
