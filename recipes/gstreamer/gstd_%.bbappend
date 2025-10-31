@@ -92,6 +92,7 @@ do_install:append() {
         rm -rf ${D}${localstatedir}/run
         rm -rf ${D}${bindir}/gstd-client
         ln -s /usr/bin/gst-client-1.0 ${D}${bindir}/gstd-client
+	ln -snf /usr/bin/gstd-1.0 ${D}${bindir}/gstd
 }
 
 SYSTEMD_SERVICE:${PN} = "gstd.service"
