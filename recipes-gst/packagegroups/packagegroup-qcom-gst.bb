@@ -52,7 +52,6 @@ RDEPENDS:${PN}:qcom = " \
     qcom-gstreamer1.0-plugins-oss-mlaconverter \
     qcom-gstreamer1.0-plugins-oss-mlaclassification \
     qcom-gstreamer1.0-plugins-oss-mldemux \
-    qcom-gstreamer1.0-plugins-oss-mlmeta \
     qcom-gstreamer1.0-plugins-oss-mlmetaparser \
     qcom-gstreamer1.0-plugins-oss-mlvconverter \
     qcom-gstreamer1.0-plugins-oss-mlvclassification \
