@@ -13,10 +13,6 @@ DEPENDS += "gbm"
 DEPENDS += "adreno"
 DEPENDS += "fastcv-noship"
 
-# Conditional dependency in IB2C library used in GLES Video Converter.
-DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'qti-ib2c', 'qti-ib2c', '', d)}"
-RDEPENDS_${PN} += "${@bb.utils.contains('DISTRO_FEATURES', 'qti-ib2c', 'qti-ib2c', '', d)}"
-
 FILESPATH =+ "${WORKSPACE}/vendor/qcom/opensource/gst-plugins-qti-oss/:"
 
 SRC_URI = "file://gst-plugin-base/"
