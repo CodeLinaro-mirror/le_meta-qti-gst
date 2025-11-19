@@ -5,5 +5,4 @@ SRC_URI += "\
   file://0002-video-info-add-gst_video_info_align_full.patch \
   file://0003-videometa-add-alignment-field.patch \
   file://0004-video-Add-support-for-NV12_Q08C-compressed-8-bit-for.patch \
-  file://0005-video-Add-support-for-NV12_Q10LE32C-compressed-10-bit-format.patch \
 "

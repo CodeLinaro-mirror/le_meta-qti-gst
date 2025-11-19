@@ -1,6 +1,6 @@
-inherit cmake pkgconfig
+inherit cmake pkgconfig qprebuilt systemd
 
-SUMMARY = "QTI open-source GStreamer Plug-in for CVP image pyramid"
+SUMMARY = "Qualcomm open-source GStreamer source Plug-in for vision mezz sensors"
 HOMEPAGE = "https://git.codelinaro.org"
 SECTION = "multimedia"
 
@@ -11,14 +11,11 @@ LIC_FILES_CHKSUM = "file://${COREBASE}/meta-qti-bsp/files/common-licenses/${LICE
 DEPENDS := "gstreamer1.0"
 DEPENDS += "gstreamer1.0-plugins-base"
 DEPENDS += "gstreamer1.0-plugins-qti-oss-base"
-DEPENDS:append:qrb5165 += "cvp-noship"
-DEPENDS:append:kalama += "eva-noship"
-DEPENDS:append:pineapple += "eva-noship"
+DEPENDS += "sensors-ship-qti"
 
 FILESPATH =+ "${WORKSPACE}/vendor/qcom/opensource/gst-plugins-qti-oss/:"
-
-SRC_URI = "file://gst-plugin-cv-imgpyramid/"
-S = "${WORKDIR}/gst-plugin-cv-imgpyramid"
+SRC_URI = "file://gst-plugin-sensorsrc"
+S = "${WORKDIR}/gst-plugin-sensorsrc"
 
 # Install directries.
 INSTALL_BINDIR := "${bindir}"
@@ -29,18 +26,15 @@ EXTRA_OECMAKE += "-DSYSROOT_INCDIR=${STAGING_INCDIR}"
 EXTRA_OECMAKE += "-DSYSROOT_LIBDIR=${STAGING_LIBDIR}"
 EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_INSTALL_BINDIR=${INSTALL_BINDIR}"
 EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_INSTALL_LIBDIR=${INSTALL_LIBDIR}"
-EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_INSTALL_ENGINEDIR=${INSTALL_LIBDIR}"
 
+EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_LICENSE=BSD"
 EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_VERSION=${PV}"
 EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_PACKAGE=${PN}"
 EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_SUMMARY="${SUMMARY}""
-EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_ORIGIN=${HOMEPAGE}"
-EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_LICENSE=BSD"
+EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_ORIGIN="Unknown package origin""
 
-FILES:${PN} += "${INSTALL_BINDIR}"
+FILES:${PN} += "/usr/bin/*"
 FILES:${PN} += "${INSTALL_LIBDIR}"
-
-FILES:${PN}-dbg += "${INSTALL_LIBDIR}/gstreamer-1.0/.debug"
 
 SOLIBS = ".so*"
 FILES_SOLIBSDEV = ""
