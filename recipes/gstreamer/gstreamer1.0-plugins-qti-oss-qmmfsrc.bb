@@ -89,6 +89,20 @@ IMAGE_NV12_FORMAT_ENABLE:kera        := "TRUE"
 FEATURE_LOGICAL_CAMERA_SUPPORT:kera                := "TRUE"
 FEATURE_LOGICAL_CAMERA_SENSOR_SWITCH:kera          := "TRUE"
 
+# Overwrite the default platform definitions for vienna.
+IMAGE_MAX_WIDTH:vienna      := "9248"
+IMAGE_MAX_HEIGHT:vienna     := "6944"
+VIDEO_MAX_WIDTH:vienna      := "9248"
+VIDEO_MAX_HEIGHT:vienna     := "6944"
+VIDEO_MAX_FPS:vienna        := "480/1"
+CAMERA_METADATA_VERSION:vienna         := "1.0ns"
+VIDEO_TYPE_SUPPORT:vienna   := "TRUE"
+VIDEO_P010_10LE_FORMAT_ENABLE:vienna   := "TRUE"
+VIDEO_NV12_10LE32_FORMAT_ENABLE:vienna := "TRUE"
+IMAGE_NV12_FORMAT_ENABLE:vienna        := "TRUE"
+FEATURE_LOGICAL_CAMERA_SUPPORT:vienna     := "TRUE"
+FEATURE_LOGICAL_CAMERA_SENSOR_SWITCH:vienna := "TRUE"
+
 # Overwrite the default platform definitions for qcm2290-mtp and qcm4325-mtp.
 IMAGE_MAX_WIDTH:bengal          := "9248"
 IMAGE_MAX_HEIGHT:bengal         := "6944"
