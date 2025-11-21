@@ -2,3 +2,4 @@ OPTARGS="-a 0.0.0.0"
 XDG_RUNTIME_DIR=/run/user/root
 WAYLAND_DISPLAY=wayland-1
 GST_REGISTRY=/data/gst/gstreamer1.0/.cache/registry.aarch64.bin
+LOGFILE="--gstd-log-filename /tmp/gstd.log --gst-log-filename /tmp/gst.log --pid-path /tmp"
