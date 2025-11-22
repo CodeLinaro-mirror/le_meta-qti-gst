@@ -15,6 +15,8 @@ DEPENDS += "vslam"
 DEPENDS:remove:qcs6490 += "vslam"
 DEPENDS:remove:kalama += "vslam"
 DEPENDS:remove:pineapple += "vslam"
+DEPENDS:remove:kera += "vslam"
+DEPENDS:remove:sun += "vslam"
 DEPENDS:append:qcs6490 += "rv"
 
 FILESPATH =+ "${WORKSPACE}/vendor/qcom/opensource/gst-plugins-qti-oss/:"
@@ -43,6 +45,12 @@ RVSDK_API_VERSION:kalama := "0x202404"
 
 #Overwrite the default RVSDK version definitions for pineapple
 RVSDK_API_VERSION:pineapple := "0x202404"
+
+#Overwrite the default RVSDK version definitions for kera
+RVSDK_API_VERSION:kera := "0x202404"
+
+#Overwrite the default RVSDK version definitions for sun
+RVSDK_API_VERSION:sun := "0x202404"
 
 EXTRA_OECMAKE += "-DGST_VERSION_REQUIRED=1.14.4"
 EXTRA_OECMAKE += "-DSYSROOT_INCDIR=${STAGING_INCDIR}"
