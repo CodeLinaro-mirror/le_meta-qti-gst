@@ -13,6 +13,8 @@ DEPENDS += "gstreamer1.0-plugins-base"
 DEPENDS += "qcom-gstreamer1.0-plugins-oss-base"
 DEPENDS += "hiredis"
 
+RDEPENDS:${PN} += "hiredis"
+
 FILESPATH =+ "${WORKSPACE}/:"
 
 SRC_URI = "file://gst-plugins-qti-oss/gst-plugin-redissink/"

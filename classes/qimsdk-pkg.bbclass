@@ -32,7 +32,6 @@ GST_PLUGINS = " \
     qcom-gstreamer1.0-plugins-oss-mlaclassification:do_package_write_ipk \
     qcom-gstreamer1.0-plugins-oss-mlaconverter:do_package_write_ipk \
     qcom-gstreamer1.0-plugins-oss-mldemux:do_package_write_ipk \
-    qcom-gstreamer1.0-plugins-oss-mlmeta:do_package_write_ipk \
     qcom-gstreamer1.0-plugins-oss-mlmetaparser:do_package_write_ipk \
     qcom-gstreamer1.0-plugins-oss-mlvconverter:do_package_write_ipk \
     qcom-gstreamer1.0-plugins-oss-mlvclassification:do_package_write_ipk \
@@ -162,6 +161,7 @@ do_generate_qim_sdk[depends] = " \
     srt:do_package_write_ipk \
     taglib:do_package_write_ipk \
     mosquitto:do_package_write_ipk \
+    librdkafka:do_package_write_ipk \
     qcom-rvsdk:do_package_write_ipk \
     gobject-introspection:do_package_write_ipk \
     python3-pycairo:do_package_write_ipk \
@@ -227,7 +227,7 @@ def get_pkgs_list(d):
                 "libpsl5", "librsvg-2-2", "libsoup-2.4_",
                 "libtheora_", "libwebp_", "mpg123_",
                 "liborc-0", "libsbc1", "libspeex1", "libtag1", "libjson-glib-1.0-0",
-                "libmosquitto1", "hiredis", "libnice_", "libsrtp2-1_",
+                "libmosquitto1", "librdkafka_", "hiredis_", "libnice_", "libsrtp2-1_",
                 "libsrt1.4_", "qcom-rvsdk_1.0", "gobject-introspection_",
                 "python3-pycairo_", "python3-pygobject_", "python3-pip_", "git_"]
     for _, pkgdirs, _ in os.walk(os.path.join(deploydir, pkgtype)):

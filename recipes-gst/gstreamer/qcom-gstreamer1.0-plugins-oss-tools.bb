@@ -10,6 +10,10 @@ LIC_FILES_CHKSUM = "file://${COMMON_LICENSE_DIR}/${LICENSE};md5=7a434440b651f4a4
 DEPENDS := "gstreamer1.0"
 DEPENDS += "gstreamer1.0-plugins-base"
 DEPENDS += "gstreamer1.0-rtsp-server"
+DEPENDS += "qcom-gstreamer1.0-plugins-oss-base"
+DEPENDS += "tensorflow-lite"
+DEPENDS:append:qcom-custom-bsp = " qcom-qnn-sdk"
+DEPENDS:append:qcom-custom-bsp = " qcom-snpe-sdk"
 
 FILESPATH =+ "${WORKSPACE}/:"
 SRC_URI = "file://gst-plugins-qti-oss/gst-plugin-tools"
@@ -19,11 +23,15 @@ S = "${WORKDIR}/gst-plugins-qti-oss/gst-plugin-tools"
 INSTALL_BINDIR := "${bindir}"
 INSTALL_LIBDIR := "${libdir}"
 
+BUILD_CUSTOM:qcom-base-bsp := "FALSE"
+BUILD_CUSTOM:qcom-custom-bsp := "TRUE"
+
 EXTRA_OECMAKE += "-DGST_VERSION_REQUIRED=1.20.7"
 EXTRA_OECMAKE += "-DSYSROOT_INCDIR=${STAGING_INCDIR}"
 EXTRA_OECMAKE += "-DSYSROOT_LIBDIR=${STAGING_LIBDIR}"
 EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_INSTALL_BINDIR=${INSTALL_BINDIR}"
 EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_INSTALL_LIBDIR=${INSTALL_LIBDIR}"
+EXTRA_OECMAKE += "-DBUILD_CUSTOM=${BUILD_CUSTOM}"
 
 FILES:${PN} += "${INSTALL_BINDIR}"
 FILES:${PN} += "${INSTALL_LIBDIR}"
