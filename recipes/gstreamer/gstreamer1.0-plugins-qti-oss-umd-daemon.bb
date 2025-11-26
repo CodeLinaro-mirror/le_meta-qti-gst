@@ -17,7 +17,7 @@ RDEPENDS:${PN} += "${@bb.utils.contains("COMBINED_FEATURES", "qti-afr-algo", "qt
 
 FILESPATH =+ "${WORKSPACE}/vendor/qcom/opensource/gst-plugins-qti-oss/:"
 SRC_URI = "file://gst-umd-daemon/"
-S = "${WORKDIR}/gst-umd-daemon/"
+S = "${WORKDIR}/gst-umd-daemon"
 
 # Install directries.
 INSTALL_BINDIR := "${bindir}"

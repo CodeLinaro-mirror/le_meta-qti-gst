@@ -72,7 +72,7 @@ EXTRA_OECMAKE += "-DENABLE_ML=${ENABLE_ML}"
 FILES:${PN} += "${INSTALL_BINDIR}"
 FILES:${PN} += "${INSTALL_LIBDIR}"
 
-CFLAGS:append:sun += " \
+CFLAGS:append:sun = " \
     -Wno-error=incompatible-pointer-types"
 
 SOLIBS = ".so*"
