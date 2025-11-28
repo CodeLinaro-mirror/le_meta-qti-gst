@@ -89,6 +89,20 @@ IMAGE_NV12_FORMAT_ENABLE:kera        := "TRUE"
 FEATURE_LOGICAL_CAMERA_SUPPORT:kera                := "TRUE"
 FEATURE_LOGICAL_CAMERA_SENSOR_SWITCH:kera          := "TRUE"
 
+# Overwrite the default platform definitions for alor.
+IMAGE_MAX_WIDTH:alor                 := "9248"
+IMAGE_MAX_HEIGHT:alor                := "6944"
+VIDEO_MAX_WIDTH:alor                 := "9248"
+VIDEO_MAX_HEIGHT:alor                := "6944"
+VIDEO_MAX_FPS:alor                   := "480/1"
+CAMERA_METADATA_VERSION:alor         := "1.0ns"
+VIDEO_TYPE_SUPPORT:alor              := "TRUE"
+VIDEO_P010_10LE_FORMAT_ENABLE:alor   := "TRUE"
+VIDEO_NV12_10LE32_FORMAT_ENABLE:alor := "TRUE"
+IMAGE_NV12_FORMAT_ENABLE:alor        := "TRUE"
+FEATURE_LOGICAL_CAMERA_SUPPORT:alor                := "TRUE"
+FEATURE_LOGICAL_CAMERA_SENSOR_SWITCH:alor          := "TRUE"
+
 # Overwrite the default platform definitions for vienna.
 IMAGE_MAX_WIDTH:vienna      := "9248"
 IMAGE_MAX_HEIGHT:vienna     := "6944"
