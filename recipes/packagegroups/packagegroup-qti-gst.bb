@@ -22,6 +22,7 @@ RDEPENDS:packagegroup-qti-gst = " \
       gstreamer1.0-plugins-qti-oss-tools \
       gstreamer1.0-plugins-qti-oss-examples \
       gstreamer1.0-plugins-qti-oss-codec2 \
+      gstreamer1.0-plugins-qti-oss-hexagon \
       gstreamer1.0-plugins-qti-oss-overlay \
       gstreamer1.0-plugins-qti-oss-socket \
       gstreamer1.0-plugins-qti-oss-vtransform \
