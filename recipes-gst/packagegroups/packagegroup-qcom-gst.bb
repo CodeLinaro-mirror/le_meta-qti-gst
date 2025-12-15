@@ -59,6 +59,7 @@ RDEPENDS:${PN}:qcom = " \
     qcom-gstreamer1.0-plugins-oss-mlvdetection \
     qcom-gstreamer1.0-plugins-oss-mlvpose \
     qcom-gstreamer1.0-plugins-oss-mlvsegmentation \
+    qcom-gstreamer1.0-plugins-oss-mlbin \
     qcom-gstreamer1.0-plugins-oss-msgbroker \
     qcom-gstreamer1.0-plugins-oss-objtracker \
     qcom-gstreamer1.0-plugins-oss-overlay \
