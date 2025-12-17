@@ -68,7 +68,18 @@ do_install:append() {
         rm -rf ${D}${localstatedir}/run
         rm -rf ${D}${bindir}/gstd-client
         ln -s /usr/bin/gst-client-1.0 ${D}${bindir}/gstd-client
-        ln -snf /usr/bin/gstd-1.0 ${D}${bindir}/gstd
+
+        GSTD_PV="${PV}"
+
+        if [ -f ${D}${bindir}/gstd-${GSTD_PV%%+*} ]; then
+          mv ${D}${bindir}/gstd-${GSTD_PV%%+*} ${D}${bindir}/gstd-gstd
+        elif [ -f ${D}/${bindir}/gstd ]; then
+          mv ${D}${bindir}/gstd ${D}${bindir}/gstd-gstd
+        fi
+
+        if [ -f ${D}${bindir}/gstd-gstd ]; then
+          ln -snf gstd-gstd ${D}${bindir}/gstd
+        fi
 }
 
 SYSTEMD_SERVICE:${PN} = "gstd.service"
