@@ -7,7 +7,7 @@ LICENSE = "BSD-3-Clause-Clear"
 LIC_FILES_CHKSUM = "file://${QCOM_COMMON_LICENSE_DIR}${LICENSE};md5=3771d4920bd6cdb8cbdf1e8344489ee0"
 
 # Dependencies.
-RDEPENDS:${PN} := "gstreamer1.0-python bash"
+RDEPENDS:${PN} := "gstreamer1.0-python bash python3-virtualenv python3-pip git"
 
 FILESPATH =+ "${WORKSPACE}/:"
 SRC_URI = "file://gst-plugins-qti-oss/gst-python-examples"
