@@ -14,6 +14,7 @@ DEPENDS += "gbm"
 DEPENDS += "adreno"
 DEPENDS:remove:pineapple = "adreno"
 DEPENDS:remove:alor = "adreno"
+DEPENDS += "qmmf-sdk"
 
 # Dependency on FastCV library used in FCV Video Converter.
 DEPENDS += "fastcv-noship"
