@@ -11,6 +11,9 @@ DEPENDS := "gstreamer1.0"
 DEPENDS += "gstreamer1.0-plugins-base"
 DEPENDS += "gbm"
 DEPENDS += "adreno"
+DEPENDS += "qmmf-sdk"
+
+# Dependency on FastCV library used in FCV Video Converter.
 DEPENDS += "fastcv-noship"
 
 FILESPATH =+ "${WORKSPACE}/vendor/qcom/opensource/gst-plugins-qti-oss/:"
