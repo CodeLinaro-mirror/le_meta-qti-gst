@@ -19,8 +19,9 @@ SRC_URI:append:qti-distro-perf = "\
 
 DEPENDS += "libsoup-2.4 jansson"
 DEPENDS:append:sun	= " readline python3-pip-native"
-DEPENDS:append:kera	= " readline python3-pip-native"
-DEPENDS:append:vienna	= " readline python3-pip-native"
+DEPENDS:append:kera = " readline python3-pip-native"
+DEPENDS:append:alor = " readline python3-pip-native"
+DEPENDS:append:vienna = " readline python3-pip-native"
 
 inherit systemd
 
@@ -33,7 +34,7 @@ do_configure:prepend() {
 }
 
 do_install:prepend() {
-        MACHINES="kalama qcs6490 pineapple sun kera vienna"
+        MACHINES="kalama qcs6490 pineapple sun kera vienna alor"
 
         if echo "$MACHINES" | grep -wq "${BASEMACHINE}"; then
           install -d ${D}${localstatedir}/run/gstd
@@ -44,7 +45,7 @@ do_install:prepend() {
 do_install:append() {
         install -d ${D}${sysconfdir}/default
 
-        MACHINES="kalama qcs6490 pineapple sun kera vienna"
+        MACHINES="kalama qcs6490 pineapple sun kera vienna alor"
 
         if echo "$MACHINES" | grep -wq "${BASEMACHINE}"; then
           install -m 666 ${WORKDIR}/gstd-env_wayland ${D}${sysconfdir}/default/gstd
@@ -67,7 +68,18 @@ do_install:append() {
         rm -rf ${D}${localstatedir}/run
         rm -rf ${D}${bindir}/gstd-client
         ln -s /usr/bin/gst-client-1.0 ${D}${bindir}/gstd-client
-	ln -snf /usr/bin/gstd-1.0 ${D}${bindir}/gstd
+
+        GSTD_PV="${PV}"
+
+        if [ -f ${D}${bindir}/gstd-${GSTD_PV%%+*} ]; then
+          mv ${D}${bindir}/gstd-${GSTD_PV%%+*} ${D}${bindir}/gstd-gstd
+        elif [ -f ${D}/${bindir}/gstd ]; then
+          mv ${D}${bindir}/gstd ${D}${bindir}/gstd-gstd
+        fi
+
+        if [ -f ${D}${bindir}/gstd-gstd ]; then
+          ln -snf gstd-gstd ${D}${bindir}/gstd
+        fi
 }
 
 SYSTEMD_SERVICE:${PN} = "gstd.service"
