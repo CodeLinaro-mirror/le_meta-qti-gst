@@ -13,8 +13,8 @@ DEPENDS += "gstreamer1.0-plugins-qti-oss-base"
 DEPENDS += "securemsm"
 DEPENDS += "media-headers"
 DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'qti-camera', 'qmmf-sdk', '', d)}"
+DEPENDS += "curl"
 
-DEPENDS += "${@bb.utils.contains('COMBINED_FEATURES', 'qti-afr-algo', 'qti-auto-framing-stabilization gstreamer1.0-plugins-qti-oss-mlmeta', '', d)}"
 RDEPENDS:${PN} += "${@bb.utils.contains('COMBINED_FEATURES', 'qti-afr-algo', 'qti-auto-framing-stabilization', '', d)}"
 
 DEPENDS:append:qcm6490 = " camera-server"
@@ -24,7 +24,6 @@ DEPENDS:remove:pineapple = "securemsm"
 DEPENDS:remove:pineapple = "media-headers"
 DEPENDS:remove:sun = "securemsm"
 DEPENDS:remove:sun = "media-headers"
-DEPENDS:append:kera += " curl"
 
 FILESPATH =+ "${WORKSPACE}/vendor/qcom/opensource/gst-plugins-qti-oss/:"
 SRC_URI = "file://gst-plugin-examples/"
@@ -45,6 +44,8 @@ CODEC2_ENCODE:qrbx210 := "TRUE"
 CODEC2_ENCODE:kalama := "TRUE"
 CODEC2_ENCODE:pineapple := "TRUE"
 CODEC2_ENCODE:kera := "TRUE"
+CODEC2_ENCODE:alor := "TRUE"
+CODEC2_ENCODE:vienna := "TRUE"
 CODEC2_ENCODE:sun := "TRUE"
 CODEC2_ENCODE:qcs6490 := "TRUE"
 
@@ -72,7 +73,7 @@ EXTRA_OECMAKE += "-DENABLE_ML=${ENABLE_ML}"
 FILES:${PN} += "${INSTALL_BINDIR}"
 FILES:${PN} += "${INSTALL_LIBDIR}"
 
-CFLAGS:append:sun += " \
+CFLAGS:append:sun = " \
     -Wno-error=incompatible-pointer-types"
 
 SOLIBS = ".so*"

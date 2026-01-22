@@ -1,4 +1,4 @@
-FILESEXTRAPATHS:prepend := "${THISDIR}/gstreamer1.0-plugins-good/1.22:"
+FILESEXTRAPATHS:prepend := "${THISDIR}/${PN}/1.22:"
 
 SRC_URI:append = "\
     file://0001-v4l2-Add-support-for-V4L2_PIX_FMT_QC08C-format.patch \
@@ -19,4 +19,5 @@ SRC_URI:append = "\
     file://0016-v4l2-Make-the-extra-controls-property-dynamic.patch \
     file://0017-v4l2-Add-support-for-colorimetry-bt2100-pq-and-1-4-5.patch \
     file://0018-Add-pulsedirectsink-plugin.patch \
+    file://0019-gstreamer1.0-plugins-good-modify-caps.patch \
 "

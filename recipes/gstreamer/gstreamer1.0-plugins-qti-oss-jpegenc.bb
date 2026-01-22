@@ -39,6 +39,12 @@ CAMERA_METADATA_VERSION:pineapple := "1.0ns"
 # Overwrite the default platform definitions for kera.
 CAMERA_METADATA_VERSION:kera := "1.0ns"
 
+# Overwrite the default platform definitions for alor.
+CAMERA_METADATA_VERSION:alor := "1.0ns"
+
+# Overwrite the default platform definitions for vienna.
+CAMERA_METADATA_VERSION:vienna := "1.0ns"
+
 # Overwrite the default platform definitions for sun.
 CAMERA_METADATA_VERSION:sun := "1.0ns"
 

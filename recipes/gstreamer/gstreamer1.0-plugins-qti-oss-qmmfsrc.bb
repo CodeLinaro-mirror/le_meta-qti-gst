@@ -17,7 +17,7 @@ DEPENDS:append:qcm6490 = " camera-server"
 
 FILESPATH =+ "${WORKSPACE}/vendor/qcom/opensource/gst-plugins-qti-oss/:"
 SRC_URI = "file://gst-plugin-qmmfsrc/"
-S = "${WORKDIR}/gst-plugin-qmmfsrc/"
+S = "${WORKDIR}/gst-plugin-qmmfsrc"
 
 # Install directries.
 INSTALL_BINDIR := "${bindir}"
@@ -88,6 +88,34 @@ VIDEO_NV12_10LE32_FORMAT_ENABLE:kera := "TRUE"
 IMAGE_NV12_FORMAT_ENABLE:kera        := "TRUE"
 FEATURE_LOGICAL_CAMERA_SUPPORT:kera                := "TRUE"
 FEATURE_LOGICAL_CAMERA_SENSOR_SWITCH:kera          := "TRUE"
+
+# Overwrite the default platform definitions for alor.
+IMAGE_MAX_WIDTH:alor                 := "9248"
+IMAGE_MAX_HEIGHT:alor                := "6944"
+VIDEO_MAX_WIDTH:alor                 := "9248"
+VIDEO_MAX_HEIGHT:alor                := "6944"
+VIDEO_MAX_FPS:alor                   := "480/1"
+CAMERA_METADATA_VERSION:alor         := "1.0ns"
+VIDEO_TYPE_SUPPORT:alor              := "TRUE"
+VIDEO_P010_10LE_FORMAT_ENABLE:alor   := "TRUE"
+VIDEO_NV12_10LE32_FORMAT_ENABLE:alor := "TRUE"
+IMAGE_NV12_FORMAT_ENABLE:alor        := "TRUE"
+FEATURE_LOGICAL_CAMERA_SUPPORT:alor                := "TRUE"
+FEATURE_LOGICAL_CAMERA_SENSOR_SWITCH:alor          := "TRUE"
+
+# Overwrite the default platform definitions for vienna.
+IMAGE_MAX_WIDTH:vienna      := "9248"
+IMAGE_MAX_HEIGHT:vienna     := "6944"
+VIDEO_MAX_WIDTH:vienna      := "9248"
+VIDEO_MAX_HEIGHT:vienna     := "6944"
+VIDEO_MAX_FPS:vienna        := "480/1"
+CAMERA_METADATA_VERSION:vienna         := "1.0ns"
+VIDEO_TYPE_SUPPORT:vienna   := "TRUE"
+VIDEO_P010_10LE_FORMAT_ENABLE:vienna   := "TRUE"
+VIDEO_NV12_10LE32_FORMAT_ENABLE:vienna := "TRUE"
+IMAGE_NV12_FORMAT_ENABLE:vienna        := "TRUE"
+FEATURE_LOGICAL_CAMERA_SUPPORT:vienna     := "TRUE"
+FEATURE_LOGICAL_CAMERA_SENSOR_SWITCH:vienna := "TRUE"
 
 # Overwrite the default platform definitions for qcm2290-mtp and qcm4325-mtp.
 IMAGE_MAX_WIDTH:bengal          := "9248"
