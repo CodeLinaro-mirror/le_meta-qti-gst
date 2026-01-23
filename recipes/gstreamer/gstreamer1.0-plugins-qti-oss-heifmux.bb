@@ -13,6 +13,7 @@ DEPENDS += "gstreamer1.0-plugins-base"
 DEPENDS += "gstreamer1.0-plugins-bad"
 DEPENDS += "gstreamer1.0-plugins-qti-oss-base"
 DEPENDS += "libheif"
+RDEPENDS:${PN} += "libheif"
 
 FILESPATH =+ "${WORKSPACE}/vendor/qcom/opensource/gst-plugins-qti-oss/:"
 
