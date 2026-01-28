@@ -25,16 +25,23 @@ DEPENDS:append:vienna   = " readline python3-pip-native"
 
 inherit systemd
 
-EXTRA_OEMESON = "-Dwith-gstd-logstatedir=/tmp -Dwith-gstd-runstatedir=/tmp/"
+EXTRA_OECONF = "--with-gstd-runstatedir=/tmp \
+                --with-gstd-logstatedir=/tmp/ \
+                "
+
+EXTRA_OEMESON = "-Dwith-gstd-logstatedir=/tmp \
+                 -Dwith-gstd-runstatedir=/tmp/ \
+                 "
 
 do_configure:prepend() {
         echo -n "" > ${WORKDIR}/git/libgstc/python/Makefile.am
 }
 
 do_install:prepend() {
-        MACHINES="kalama qcs6490 pineapple sun kera vienna alor"
-
-        if echo "$MACHINES" | grep -wq "${BASEMACHINE}"; then
+        if ${@'true' if bb.data.inherits_class('autotools', d) else 'false'}; then
+          install -d ${D}${localstatedir}/run/gstd
+          install -d ${D}${localstatedir}/log/gstd
+        elif ${@'true' if bb.data.inherits_class('meson', d) else 'false'}; then
           install -d ${D}${exec_prefix}${localstatedir}/run/gstd
           install -d ${D}${exec_prefix}${localstatedir}/log/gstd
         fi
@@ -62,6 +69,7 @@ do_install:append() {
         install -d ${D}${systemd_system_unitdir}
         install -m 644 ${WORKDIR}/gstd.service ${D}${systemd_system_unitdir}
 
+        install -d ${D}/tmp
         rm -rf ${D}${exec_prefix}/tmp
         rm -rf ${D}${localstatedir}/run
         rm -rf ${D}${bindir}/gstd-client
