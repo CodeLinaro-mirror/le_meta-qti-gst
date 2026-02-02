@@ -21,8 +21,6 @@ DEPENDS:append:qcm6490 = " property-vault syslog-plumber"
 DEPENDS:remove:qcs6490 = "graphicsdlkm"
 DEPENDS:remove:pineapple = "adreno"
 DEPENDS:remove:pineapple = "graphicsdlkm"
-DEPENDS:remove:alor = "adreno"
-DEPENDS:remove:alor = "graphicsdlkm"
 
 RDEPENDS:${PN}:append:qcm6490 = " property-vault"
 
