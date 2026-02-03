@@ -35,8 +35,5 @@ EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_VERSION=${PV}"
 FILES:${PN} += "${INSTALL_BINDIR}"
 FILES:${PN} += "${INSTALL_LIBDIR}"
 
-FILES:${PN}-dbg += "${INSTALL_LIBDIR}/gstreamer-1.0/.debug"
-FILES:${PN}-dbg += "${INSTALL_LIBDIR}/gstreamer-1.0/ml/modules/.debug"
-
 SOLIBS = ".so*"
 FILES_SOLIBSDEV = ""
