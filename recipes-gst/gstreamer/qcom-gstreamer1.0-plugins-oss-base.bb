@@ -14,6 +14,7 @@ DEPENDS += "virtual/kernel"
 DEPENDS += "virtual/egl"
 DEPENDS += "virtual/libgles2"
 DEPENDS += "json-glib"
+DEPENDS += "qcom-camera-server"
 
 FILESPATH =+ "${WORKSPACE}/:"
 SRC_URI = "file://gst-plugins-qti-oss/gst-plugin-base"
