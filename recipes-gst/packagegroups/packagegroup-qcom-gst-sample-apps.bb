@@ -47,7 +47,6 @@ RDEPENDS:${PN}:qcom = " \
     qcom-gst-videocodec-concurrent-playback \
     qcom-gst-video-playback-example \
     qcom-gst-video-transcode-example \
-    qcom-gst-webrtc-sendrecv-example \
     qcom-gst-weston-composition-example \
     qcom-gst-ai-audio-classification \
     qcom-gst-ai-multistream-batch-inference \
