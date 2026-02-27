@@ -1,4 +1,4 @@
-FILESEXTRAPATHS:prepend := "${THISDIR}/gstreamer1.0-plugins-base/1.24:"
+FILESEXTRAPATHS:prepend := "${THISDIR}/${PN}/1.24:"
 
 SRC_URI:append = "\
     file://0001-video-Add-support-for-NV12_Q08C-compressed-8-bit-for.patch \

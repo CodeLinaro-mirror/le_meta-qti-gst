@@ -11,7 +11,6 @@ LIC_FILES_CHKSUM:qcm6490 = "file://${COMMON_LICENSE_DIR}/${LICENSE};md5=7a434440
 # Dependencies.
 DEPENDS := "gstreamer1.0"
 DEPENDS += "gstreamer1.0-plugins-base"
-DEPENDS += "gstreamer1.0-plugins-qti-oss-mlmeta"
 DEPENDS += "gstreamer1.0-plugins-qti-oss-base"
 DEPENDS += "adreno"
 DEPENDS += "graphicsdlkm"
