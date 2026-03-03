@@ -10,10 +10,10 @@ LIC_FILES_CHKSUM = "file://${COREBASE}/meta-qti-bsp/files/common-licenses/${LICE
 DEPENDS := "gstreamer1.0"
 DEPENDS += "gstreamer1.0-plugins-qti-oss-mlmeta"
 DEPENDS += "qti-umd-gadget"
-DEPENDS += "${@bb.utils.contains("COMBINED_FEATURES", "qti-afr-algo", "qti-auto-framing-stabilization", "", d)}"
+DEPENDS += "qti-auto-framing-stabilization"
 
 RDEPENDS:${PN} := "qti-umd-gadget"
-RDEPENDS:${PN} += "${@bb.utils.contains("COMBINED_FEATURES", "qti-afr-algo", "qti-auto-framing-stabilization", "", d)}"
+RDEPENDS:${PN} += "qti-auto-framing-stabilization"
 
 FILESPATH =+ "${WORKSPACE}/vendor/qcom/opensource/gst-plugins-qti-oss/:"
 SRC_URI = "file://gst-umd-daemon/"
