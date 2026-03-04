@@ -13,7 +13,6 @@ DEPENDS += "gstreamer1.0-plugins-base"
 DEPENDS += "gbm"
 DEPENDS += "adreno"
 DEPENDS:remove:pineapple = "adreno"
-DEPENDS += "qmmf-sdk"
 
 # Dependency on FastCV library used in FCV Video Converter.
 DEPENDS += "fastcv-noship"
@@ -23,14 +22,10 @@ DEPENDS:append:qcm6490 = " fastcv-binaries"
 # Dependency on IB2C library used in GLES Video Converter.
 DEPENDS += "qti-ib2c"
 RDEPENDS:${PN} += "qti-ib2c"
-DEPENDS:remove:qcs6490 = "qti-ib2c"
-RDEPENDS:${PN}:remove:qcs6490 = "qti-ib2c"
-DEPENDS:remove:pineapple = "qti-ib2c"
-RDEPENDS:${PN}:remove:pineapple = "qti-ib2c"
 DEPENDS:remove:qcm4325-mtp = "qti-ib2c"
 RDEPENDS:${PN}:remove:qcm4325-mtp = "qti-ib2c"
-DEPENDS:remove:qcm2290-mtp-32 = "qti-ib2c"
-RDEPENDS:${PN}:remove:qcm2290-mtp-32 = "qti-ib2c"
+DEPENDS:remove:qcm2290-mtp = "qti-ib2c"
+RDEPENDS:${PN}:remove:qcm2290-mtp = "qti-ib2c"
 
 FILESPATH =+ "${WORKSPACE}/vendor/qcom/opensource/gst-plugins-qti-oss/:"
 
@@ -57,26 +52,8 @@ do_configure:prepend() {
     fi
 }
 
-## FILES configuration that handles both architectures
-#FILES:${PN} = "${libdir}/*.so*"
-#FILES:${PN} += "${bindir}/*"
-## Add explicit lib64 path for when CMake installs there incorrectly
-#FILES:${PN} += "/usr/lib64/*.so*"
-#
-## Development files
-#FILES:${PN}-dev = "${includedir}/gstreamer-1.0/gst/utils/*"
-#FILES:${PN}-dev += "${includedir}/gstreamer-1.0/gst/ml/*"
-#FILES:${PN}-dev += "${includedir}/gstreamer-1.0/gst/video/*"
-#FILES:${PN}-dev += "${includedir}/gstreamer-1.0/gst/cv/*"
-#FILES:${PN}-dev += "${includedir}/gstreamer-1.0/gst/allocators/*"
-#FILES:${PN}-dev += "${includedir}/gstreamer-1.0/gst/memory/*"
-#
-## Debug files
-#FILES:${PN}-dbg = "${libdir}/.debug/*"
-#FILES:${PN}-dbg += "/usr/lib64/.debug/*"
-#
-## Enable shared library versioning
 SOLIBS = ".so*"
 FILES_SOLIBSDEV = ""
 
 INSANE_SKIP:${PN} = "dev-so"
+
