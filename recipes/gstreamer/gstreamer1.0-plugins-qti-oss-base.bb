@@ -12,6 +12,7 @@ DEPENDS := "gstreamer1.0"
 DEPENDS += "gstreamer1.0-plugins-base"
 DEPENDS += "gbm"
 DEPENDS += "adreno"
+DEPENDS += "qmmf-sdk"
 DEPENDS:remove:pineapple = "adreno"
 
 # Dependency on FastCV library used in FCV Video Converter.
