@@ -13,13 +13,13 @@ FILESPATH =+ "${WORKSPACE}/:"
 SRC_URI = "file://gst-plugins-qti-oss/gst-python-examples"
 S = "${WORKDIR}/gst-plugins-qti-oss/gst-python-examples"
 
-INSTALL_CONFIG := "${sysconfdir}/media/"
-
 do_install() {
     mkdir -p ${D}${bindir}
-    mkdir -p ${D}${INSTALL_CONFIG}
+    mkdir -p ${D}${datadir}/qdemo/
     install -m 755 ${S}/*.py ${D}${bindir}/
     install -m 755 ${S}/files/Qdemo ${D}${bindir}/
-    install -m 755 ${S}/files/Qdemo.png ${D}${INSTALL_CONFIG}
-    install -m 755 ${S}/files/Qdemo.gif ${D}${INSTALL_CONFIG}
+    install -m 755 ${S}/files/Qdemo.png ${D}${datadir}/qdemo/
+    install -m 755 ${S}/files/Qdemo.gif ${D}${datadir}/qdemo/
 }
+
+FILES:${PN} += "${datadir}/qdemo/*"
