@@ -83,3 +83,7 @@ RDEPENDS:${PN}:append:qcom-custom-bsp = " \
     qcom-gstreamer1.0-plugins-oss-smartvencbin \
     qcom-gstreamer1.0-plugins-oss-test-framework \
    "
+
+RDEPENDS:${PN}:append:qcom-custom-bsp:qcm6490 = " \
+    qcom-gstreamer1.0-plugins-oss-jpegenc \
+   "
