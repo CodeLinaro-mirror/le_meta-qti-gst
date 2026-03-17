@@ -102,6 +102,7 @@ GST_SAMPLE_APPS = " \
     qcom-gst-videocodec-concurrent-playback:do_package_write_ipk \
     qcom-gst-video-playback-example:do_package_write_ipk \
     qcom-gst-video-transcode-example:do_package_write_ipk \
+    qcom-gst-webrtc-sendrecv-example:do_package_write_ipk \
     qcom-gst-weston-composition-example:do_package_write_ipk \
     qcom-gst-ai-audio-classification:do_package_write_ipk \
     qcom-gst-ai-multistream-batch-inference:do_package_write_ipk \
