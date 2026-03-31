@@ -18,10 +18,10 @@ SRC_URI:append:qti-distro-perf = "\
            "
 
 DEPENDS += "libsoup-2.4 jansson"
-DEPENDS:append:sun	= " readline python3-pip-native"
-DEPENDS:append:kera = " readline python3-pip-native"
-DEPENDS:append:alor = " readline python3-pip-native"
-DEPENDS:append:vienna = " readline python3-pip-native"
+DEPENDS:append:sun      = " readline python3-pip-native"
+DEPENDS:append:kera     = " readline python3-pip-native"
+DEPENDS:append:alor     = " readline python3-pip-native"
+DEPENDS:append:vienna   = " readline python3-pip-native"
 
 inherit systemd
 
@@ -29,16 +29,21 @@ EXTRA_OECONF = "--with-gstd-runstatedir=/tmp \
                 --with-gstd-logstatedir=/tmp/ \
                 "
 
+EXTRA_OEMESON = "-Dwith-gstd-logstatedir=/tmp \
+                 -Dwith-gstd-runstatedir=/tmp/ \
+                 "
+
 do_configure:prepend() {
         echo -n "" > ${WORKDIR}/git/libgstc/python/Makefile.am
 }
 
 do_install:prepend() {
-        MACHINES="kalama qcs6490 pineapple sun kera vienna alor"
-
-        if echo "$MACHINES" | grep -wq "${BASEMACHINE}"; then
+        if ${@'true' if bb.data.inherits_class('autotools', d) else 'false'}; then
           install -d ${D}${localstatedir}/run/gstd
           install -d ${D}${localstatedir}/log/gstd
+        elif ${@'true' if bb.data.inherits_class('meson', d) else 'false'}; then
+          install -d ${D}${exec_prefix}${localstatedir}/run/gstd
+          install -d ${D}${exec_prefix}${localstatedir}/log/gstd
         fi
 }
 
@@ -65,6 +70,7 @@ do_install:append() {
         install -m 644 ${WORKDIR}/gstd.service ${D}${systemd_system_unitdir}
 
         install -d ${D}/tmp
+        rm -rf ${D}${exec_prefix}/tmp
         rm -rf ${D}${localstatedir}/run
         rm -rf ${D}${bindir}/gstd-client
         ln -s /usr/bin/gst-client-1.0 ${D}${bindir}/gstd-client
@@ -84,7 +90,7 @@ do_install:append() {
 
 SYSTEMD_SERVICE:${PN} = "gstd.service"
 
-FILES:${PN} += "/tmp \
+FILES:${PN} += " /tmp \
                "
 
 INSANE_SKIP:${PN} += "useless-rpaths empty-dirs"
