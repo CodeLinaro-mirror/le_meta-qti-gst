@@ -21,3 +21,5 @@ SRC_URI:append = "\
     file://0018-Add-pulsedirectsink-plugin.patch \
     file://0019-gstreamer1.0-plugins-good-modify-caps.patch \
 "
+
+EXTRA_OEMESON:append = " -Dv4l2-probe=false"
