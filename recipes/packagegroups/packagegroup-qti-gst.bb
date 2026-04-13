@@ -98,7 +98,3 @@ RDEPENDS:packagegroup-qti-gst:remove:qcm6490 = " \
 RDEPENDS:packagegroup-qti-gst:append:qcm6490 = " \
       gstreamer1.0-plugins-qti-oss-qmmfsrc \
     "
-
-RDEPENDS:packagegroup-qti-gst:remove:vienna = " \
-      gstreamer1.0-plugins-qti-oss-codec2 \
-    "
