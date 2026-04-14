@@ -22,6 +22,7 @@ DEPENDS:append:sun      = " readline python3-pip-native"
 DEPENDS:append:kera     = " readline python3-pip-native"
 DEPENDS:append:alor     = " readline python3-pip-native"
 DEPENDS:append:vienna   = " readline python3-pip-native"
+DEPENDS:append:pebble   = " readline python3-pip-native"
 
 inherit systemd
 
@@ -50,7 +51,7 @@ do_install:prepend() {
 do_install:append() {
         install -d ${D}${sysconfdir}/default
 
-        MACHINES="kalama qcs6490 pineapple sun kera vienna alor"
+        MACHINES="kalama qcs6490 pineapple sun kera vienna alor pebble"
 
         if echo "$MACHINES" | grep -wq "${BASEMACHINE}"; then
           install -m 666 ${WORKDIR}/gstd-env_wayland ${D}${sysconfdir}/default/gstd
