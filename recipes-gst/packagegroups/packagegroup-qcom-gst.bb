@@ -73,7 +73,7 @@ RDEPENDS:${PN}:qcom = " \
     qcom-gstreamer1.0-plugins-oss-vtransform \
     qcom-gstreamer1.0-plugins-oss-mlmetaextractor \
     qcom-gstreamer1.0-plugins-oss-mlpostprocess \
-    qcom-gstreamer1.0-plugins-oss-limiter \
+    qcom-gstreamer1.0-plugins-oss-sync \
    "
 
 RDEPENDS:${PN}:append:qcom-custom-bsp = " \
