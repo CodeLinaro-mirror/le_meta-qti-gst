@@ -139,9 +139,9 @@ CAMERA_SERVICE:qcm6490     := "LECAM"
 
 # Overwrite the default platform definitions for sun.
 IMAGE_MAX_WIDTH:sun                 := "9248"
-IMAGE_MAX_HEIGHT:sun                := "6944"
+IMAGE_MAX_HEIGHT:sun                := "8192"
 VIDEO_MAX_WIDTH:sun                 := "9248"
-VIDEO_MAX_HEIGHT:sun                := "6944"
+VIDEO_MAX_HEIGHT:sun                := "8192"
 VIDEO_MAX_FPS:sun                   := "480/1"
 CAMERA_METADATA_VERSION:sun         := "1.0ns"
 VIDEO_TYPE_SUPPORT:sun              := "TRUE"

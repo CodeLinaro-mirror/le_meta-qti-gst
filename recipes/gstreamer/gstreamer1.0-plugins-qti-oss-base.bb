@@ -10,6 +10,7 @@ LIC_FILES_CHKSUM:qcm6490 = "file://${COMMON_LICENSE_DIR}/${LICENSE};md5=7a434440
 # Dependencies.
 DEPENDS := "gstreamer1.0"
 DEPENDS += "gstreamer1.0-plugins-base"
+DEPENDS += "json-glib"
 DEPENDS += "gbm"
 DEPENDS += "adreno"
 DEPENDS += "qmmf-sdk"
