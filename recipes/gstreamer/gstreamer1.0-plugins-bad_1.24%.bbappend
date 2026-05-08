@@ -13,3 +13,9 @@ SRC_URI:append = "\
 
 PACKAGECONFIG:append = " webrtc sctp srt srtp"
 DEPENDS:append = " libnice libsrtp srt gbm"
+
+do_configure:prepend:qrbx210-rbx() {
+  install -d ${STAGING_DIR_HOST}${datadir}/wayland-protocols/stable/gbm-buffer-backend/
+  cp ${WORKSPACE}/display/vendor/qcom/opensource/display/weston/protocol/gbm-buffer-backend.xml ${STAGING_DIR_HOST}${datadir}/wayland-protocols/stable/gbm-buffer-backend ||
+  cp ${STAGING_DIR}/${MACHINE}/usr/share/libweston-10/protocols/gbm-buffer-backend.xml ${STAGING_DIR_HOST}${datadir}/wayland-protocols/stable/gbm-buffer-backend
+}
