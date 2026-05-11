@@ -10,12 +10,15 @@ LIC_FILES_CHKSUM = "file://${COMMON_LICENSE_DIR}/${LICENSE};md5=7a434440b651f4a4
 DEPENDS := "gstreamer1.0"
 DEPENDS += "gstreamer1.0-plugins-base"
 DEPENDS:append:qcom-custom-bsp = " qcom-fastcv-binaries"
+DEPENDS += "opencv"
 DEPENDS += "virtual/kernel"
 DEPENDS += "virtual/egl"
 DEPENDS += "virtual/libgles2"
 DEPENDS += "json-glib"
 DEPENDS += "python3-pygobject"
 DEPENDS += "qcom-camera-server"
+
+RDEPENDS:${PN} += "opencv"
 
 FILESPATH =+ "${WORKSPACE}/:"
 SRC_URI = "file://gst-plugins-qti-oss/gst-plugin-base"
