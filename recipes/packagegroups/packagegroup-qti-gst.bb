@@ -42,6 +42,8 @@ RDEPENDS:packagegroup-qti-gst = " \
       gstreamer1.0-plugins-qti-oss-jpegpacker \
       gstreamer1.0-plugins-qti-oss-heifmux \
       gstreamer1.0-plugins-qti-oss-rtspbin \
+      gstreamer1.0-plugins-qti-oss-mlpostprocess \
+      gstreamer1.0-plugins-qti-oss-sync \
       ${@bb.utils.contains("MACHINE_FEATURES", "qti-aic", "gstreamer1.0-plugins-qti-oss-mlaic", "", d)} \
       ${@bb.utils.contains("DISTRO_FEATURES", "tensorflow-lite", "gstreamer1.0-plugins-qti-oss-mltflite", "", d)} \
       ${@bb.utils.contains("DISTRO_FEATURES", "qti-snpe", "gstreamer1.0-plugins-qti-oss-mlsnpe", "", d)} \
