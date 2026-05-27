@@ -33,3 +33,5 @@ DEBIANNAME:${PN}-dev = "${PN}-dev"
 DEBIANNAME:${PN}-dbg = "${PN}-dbg"
 DEBIANNAME:${PN}-src = "${PN}-src"
 
+
+EXTRA_OECMAKE:append = " -DENABLE_GST_SAMPLE_APPS=${ENABLE_GST_SAMPLE_APPS}"

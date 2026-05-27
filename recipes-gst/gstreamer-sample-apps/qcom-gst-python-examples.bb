@@ -23,3 +23,5 @@ do_install() {
 }
 
 FILES:${PN} += "${datadir}/qdemo/*"
+
+EXTRA_OECMAKE:append = " -DENABLE_GST_SAMPLE_APPS=${ENABLE_GST_SAMPLE_APPS}"
