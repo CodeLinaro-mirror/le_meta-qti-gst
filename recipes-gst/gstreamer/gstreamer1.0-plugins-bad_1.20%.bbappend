@@ -18,6 +18,9 @@ SRC_URI:append = "\
   file://0006-waylandsink-increase-timeout-limitation-in-gst_wl_wi.patch \
 "
 
+PACKAGECONFIG:append = " webrtc sctp srt srtp"
+DEPENDS:append = " weston libnice libsrtp"
+
 do_configure:prepend() {
   install -d ${STAGING_DIR_HOST}${datadir}/wayland-protocols/stable/gbm-buffer-backend/
   if [ ${BASEMACHINE} == "qrb5165" ] || [ ${BASEMACHINE} == "qcm2290-mtp" ] || [ ${BASEMACHINE} == "qcm4325-mtp" ]; then

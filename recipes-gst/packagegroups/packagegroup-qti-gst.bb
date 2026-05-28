@@ -37,6 +37,9 @@ RDEPENDS:packagegroup-qti-gst = " \
       gstreamer1.0-plugins-qti-oss-mlvsuperresolution \
       gstreamer1.0-plugins-qti-oss-mlvpose \
       gstreamer1.0-plugins-qti-oss-mldemux \
+      gstreamer1.0-plugins-qti-oss-mlmetaparser \
+      gstreamer1.0-plugins-qti-oss-metatransform \
+      gstreamer1.0-plugins-qti-oss-restricted-zone \
       gstreamer1.0-plugins-qti-oss-objtracker \
       gstreamer1.0-plugins-qti-oss-dngpacker \
       gstreamer1.0-plugins-qti-oss-jpegpacker \
