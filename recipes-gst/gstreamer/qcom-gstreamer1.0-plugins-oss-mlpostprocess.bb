@@ -12,7 +12,6 @@ DEPENDS += "gstreamer1.0-plugins-base"
 DEPENDS += "qcom-gstreamer1.0-plugins-oss-base"
 DEPENDS += "cairo"
 DEPENDS += "opencv"
-DEPENDS += "json-glib"
 
 FILESPATH =+ "${WORKSPACE}/:"
 SRC_URI = "file://gst-plugins-qti-oss/gst-plugin-mlpostprocess"
