@@ -7,6 +7,7 @@ SRC_URI += "\
   file://0004-waylandsink-release-pending-buffers-in-composer.patch \
   file://0005-waylandsink-support-gap-buffers.patch \
   file://0006-waylandsink-increase-timeout-limitation-in-gst_wl_wi.patch \
+  file://0007-waylandsink-fix-thread-hang-during-shutdown-with-sec.patch \
 "
 
 DEPENDS += " weston libnice libsrtp wayland-protocols"

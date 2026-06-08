@@ -1,0 +1,114 @@
+From 0a1ec66752d72d71f374a42b60011499d317514f Mon Sep 17 00:00:00 2001
+From: vkondaba <vkondaba@qti.qualcomm.com>
+Date: Mon, 8 Jun 2026 15:19:45 +0530
+Subject: [PATCH] waylandsink: fix thread hang during shutdown with secure
+ buffers
+
+- updated shutdown flag before thread join
+- added multiple shutdown checks in loop to ensure timely exit
+
+Change-Id: Ie7c641802437ef2f3830c43bbd488d262ad10be9
+Signed-off-by: Vishwatej Kondabathula <vkondaba@qti.qualcomm.com>
+
+Upstream-Status: Pending
+---
+ ext/wayland/wldisplay.c | 52 +++++++++++++++++++++++++++++++++++++----
+ 1 file changed, 47 insertions(+), 5 deletions(-)
+
+diff --git a/ext/wayland/wldisplay.c b/ext/wayland/wldisplay.c
+index 1483e0e..3267952 100644
+--- a/ext/wayland/wldisplay.c
++++ b/ext/wayland/wldisplay.c
+@@ -67,10 +67,6 @@ gst_wl_display_finalize (GObject * gobject)
+ {
+   GstWlDisplay *self = GST_WL_DISPLAY (gobject);
+ 
+-  gst_poll_set_flushing (self->wl_fd_poll, TRUE);
+-  if (self->thread)
+-    g_thread_join (self->thread);
+-
+   /* to avoid buffers being unregistered from another thread
+    * at the same time, take their ownership */
+   g_mutex_lock (&self->buffers_mutex);
+@@ -78,6 +74,12 @@ gst_wl_display_finalize (GObject * gobject)
+   g_hash_table_foreach (self->buffers, gst_wl_ref_wl_buffer, NULL);
+   g_mutex_unlock (&self->buffers_mutex);
+ 
++  wl_display_cancel_read (self->display);
++  gst_poll_set_flushing (self->wl_fd_poll, TRUE);
++
++  if (self->thread)
++    g_thread_join (self->thread);
++
+   g_hash_table_foreach (self->buffers,
+       (GHFunc) gst_wl_buffer_force_release_and_unref, NULL);
+   g_hash_table_remove_all (self->buffers);
+@@ -351,6 +353,7 @@ gst_wl_display_thread_run (gpointer data)
+ {
+   GstWlDisplay *self = data;
+   GstPollFD pollfd = GST_POLL_FD_INIT;
++  gboolean shutting_down = FALSE;
+ 
+   pollfd.fd = wl_display_get_fd (self->display);
+   gst_poll_add_fd (self->wl_fd_poll, &pollfd);
+@@ -358,10 +361,40 @@ gst_wl_display_thread_run (gpointer data)
+ 
+   /* main loop */
+   while (1) {
+-    while (wl_display_prepare_read_queue (self->display, self->queue) != 0)
++    /* shutdown check at the START of each loop iteration */
++    g_mutex_lock (&self->buffers_mutex);
++    shutting_down = self->shutting_down;
++    g_mutex_unlock (&self->buffers_mutex);
++
++    if (shutting_down)
++      break;
++
++    /* Process pending events */
++    while (wl_display_prepare_read_queue (self->display, self->queue) != 0) {
++      /* shutdown check DURING event processing */
++      g_mutex_lock (&self->buffers_mutex);
++      shutting_down = self->shutting_down;
++      g_mutex_unlock (&self->buffers_mutex);
++
++      if (shutting_down)
++        break;
++
+       wl_display_dispatch_queue_pending (self->display, self->queue);
++    }
++
++    if (shutting_down)
++      break;
++
+     wl_display_flush (self->display);
+ 
++    /* shutdown check before polling */
++    g_mutex_lock (&self->buffers_mutex);
++    shutting_down = self->shutting_down;
++    g_mutex_unlock (&self->buffers_mutex);
++
++    if (shutting_down)
++      break;
++
+     if (gst_poll_wait (self->wl_fd_poll, GST_CLOCK_TIME_NONE) < 0) {
+       gboolean normal = (errno == EBUSY);
+       wl_display_cancel_read (self->display);
+@@ -370,6 +403,15 @@ gst_wl_display_thread_run (gpointer data)
+       else
+         goto error;
+     }
++
++    /* shutdown check before reading events */
++    g_mutex_lock (&self->buffers_mutex);
++    shutting_down = self->shutting_down;
++    g_mutex_unlock (&self->buffers_mutex);
++
++    if (shutting_down)
++      break;
++
+     if (wl_display_read_events (self->display) == -1)
+       goto error;
+     wl_display_dispatch_queue_pending (self->display, self->queue);
+-- 
+2.34.1
+
