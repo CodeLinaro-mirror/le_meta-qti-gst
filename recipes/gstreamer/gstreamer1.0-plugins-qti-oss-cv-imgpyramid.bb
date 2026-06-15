@@ -18,6 +18,7 @@ DEPENDS:append:pineapple = " eva-noship"
 DEPENDS:append:kera = " eva-noship"
 DEPENDS:append:sun = " eva-noship"
 DEPENDS:append:alor = " eva-noship"
+DEPENDS:append:pebble = " eva-noship"
 
 FILESPATH =+ "${WORKSPACE}/vendor/qcom/opensource/gst-plugins-qti-oss/:"
 

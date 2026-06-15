@@ -50,6 +50,7 @@ CODEC2_ENCODE:alor := "TRUE"
 CODEC2_ENCODE:vienna := "TRUE"
 CODEC2_ENCODE:sun := "TRUE"
 CODEC2_ENCODE:qcs6490 := "TRUE"
+CODEC2_ENCODE:pebble := "TRUE"
 
 # Decode-related variables
 ENABLE_VIDEO_DECODE := "TRUE"

@@ -18,6 +18,7 @@ DEPENDS:remove:pineapple = "vslam"
 DEPENDS:remove:kera = "vslam"
 DEPENDS:remove:alor = "vslam"
 DEPENDS:remove:vienna = "vslam"
+DEPENDS:remove:pebble = "vslam"
 DEPENDS:remove:sun = "vslam"
 DEPENDS:append:qcs6490 = " rv"
 
@@ -53,6 +54,9 @@ RVSDK_API_VERSION:kera := "0x202404"
 
 #Overwrite the default RVSDK version definitions for alor
 RVSDK_API_VERSION:alor := "0x202404"
+
+#Overwrite the default RVSDK version definitions for pebble
+RVSDK_API_VERSION:pebble := "0x202404"
 
 #Overwrite the default RVSDK version definitions for vienna
 RVSDK_API_VERSION:vienna := "0x202404"
