@@ -151,6 +151,10 @@ IMAGE_NV12_FORMAT_ENABLE:sun        := "TRUE"
 FEATURE_LOGICAL_CAMERA_SUPPORT:sun                := "TRUE"
 FEATURE_LOGICAL_CAMERA_SENSOR_SWITCH:sun          := "TRUE"
 
+# Overwrite the default platform definitions for qrbx210-rbx.
+CAMERA_METADATA_VERSION_qrbx210-rbx := "1.1"
+VIDEO_TYPE_SUPPORT_qrbx210-rbx      := "TRUE"
+
 # Qmmf Feature Set
 QMMF_FEATURE_SET := \
     "-DFEATURE_LOGICAL_CAMERA_SUPPORT=${FEATURE_LOGICAL_CAMERA_SUPPORT}"
