@@ -8,6 +8,7 @@ SRC_URI:append = "\
   file://0005-waylandsink-increase-timeout-limitation-in-gst_wl_wi.patch \
   file://0006-waylandsink-support-position-and-dimensions.patch \
   file://0007-waylandsink-support-gbm-protocol-and-Q08C-Q10C.patch \
+  file://0008-videoparser-Add-support-for-protected-content-caps.patch \
 "
 
 PACKAGECONFIG:append = " webrtc sctp srt srtp"
