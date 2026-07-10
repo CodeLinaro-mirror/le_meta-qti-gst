@@ -29,7 +29,6 @@ DEPENDS:remove:sun = "securemsm"
 DEPENDS:remove:sun = "media-headers"
 DEPENDS:remove:qrbx210-rbx = "securemsm"
 DEPENDS:remove:qrbx210-rbx = "media-headers"
-DEPENDS:append:kera = " cecdm"
 
 FILESPATH =+ "${WORKSPACE}/vendor/qcom/opensource/gst-plugins-qti-oss/:"
 SRC_URI = "file://gst-plugin-examples/"
