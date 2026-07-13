@@ -103,6 +103,20 @@ IMAGE_NV12_FORMAT_ENABLE:alor        := "TRUE"
 FEATURE_LOGICAL_CAMERA_SUPPORT:alor                := "TRUE"
 FEATURE_LOGICAL_CAMERA_SENSOR_SWITCH:alor          := "TRUE"
 
+# Overwrite the default platform definitions for pebble.
+IMAGE_MAX_WIDTH:pebble                 := "9248"
+IMAGE_MAX_HEIGHT:pebble                := "6944"
+VIDEO_MAX_WIDTH:pebble                 := "9248"
+VIDEO_MAX_HEIGHT:pebble                := "6944"
+VIDEO_MAX_FPS:pebble                   := "480/1"
+CAMERA_METADATA_VERSION:pebble         := "1.0ns"
+VIDEO_TYPE_SUPPORT:pebble              := "TRUE"
+VIDEO_P010_10LE_FORMAT_ENABLE:pebble   := "TRUE"
+VIDEO_NV12_10LE32_FORMAT_ENABLE:pebble := "TRUE"
+IMAGE_NV12_FORMAT_ENABLE:pebble        := "TRUE"
+FEATURE_LOGICAL_CAMERA_SUPPORT:pebble               := "TRUE"
+FEATURE_LOGICAL_CAMERA_SENSOR_SWITCH:pebble         := "TRUE"
+
 # Overwrite the default platform definitions for vienna.
 IMAGE_MAX_WIDTH:vienna      := "9248"
 IMAGE_MAX_HEIGHT:vienna     := "6944"
@@ -150,6 +164,10 @@ VIDEO_NV12_10LE32_FORMAT_ENABLE:sun := "TRUE"
 IMAGE_NV12_FORMAT_ENABLE:sun        := "TRUE"
 FEATURE_LOGICAL_CAMERA_SUPPORT:sun                := "TRUE"
 FEATURE_LOGICAL_CAMERA_SENSOR_SWITCH:sun          := "TRUE"
+
+# Overwrite the default platform definitions for qrbx210-rbx.
+CAMERA_METADATA_VERSION_qrbx210-rbx := "1.1"
+VIDEO_TYPE_SUPPORT_qrbx210-rbx      := "TRUE"
 
 # Qmmf Feature Set
 QMMF_FEATURE_SET := \

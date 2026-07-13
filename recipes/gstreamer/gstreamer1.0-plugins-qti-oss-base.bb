@@ -1,4 +1,4 @@
-inherit cmake pkgconfig
+inherit cmake pkgconfig gobject-introspection
 
 SUMMARY = "QTI open-source GStreamer base"
 SECTION = "multimedia"
@@ -11,9 +11,11 @@ LIC_FILES_CHKSUM:qcm6490 = "file://${COMMON_LICENSE_DIR}/${LICENSE};md5=7a434440
 DEPENDS := "gstreamer1.0"
 DEPENDS += "gstreamer1.0-plugins-base"
 DEPENDS += "json-glib"
+DEPENDS += "python3-pygobject"
 DEPENDS += "gbm"
 DEPENDS += "adreno"
 DEPENDS:remove:pineapple = "adreno"
+DEPENDS:remove:pebble = "adreno"
 DEPENDS += "qmmf-sdk"
 
 # Dependency on FastCV library used in FCV Video Converter.
@@ -30,17 +32,21 @@ S = "${WORKDIR}/gst-plugin-base"
 INSTALL_INCDIR := "${includedir}"
 INSTALL_BINDIR := "${bindir}"
 INSTALL_LIBDIR := "${libdir}"
+INSTALL_DATADIR := "${datadir}"
 
 EXTRA_OECMAKE += "-DGST_VERSION_REQUIRED=1.14.4"
 EXTRA_OECMAKE += "-DSYSROOT_INCDIR=${STAGING_INCDIR}"
 EXTRA_OECMAKE += "-DSYSROOT_LIBDIR=${STAGING_LIBDIR}"
-EXTRA_OECMAKE += "-DKERNEL_BUILDDIR=${STAGING_INCDIR}/linux-msm"
+EXTRA_OECMAKE += "-DSYSROOT_BINDIR=${STAGING_BINDIR}"
+EXTRA_OECMAKE += "-DPYTHON_SITEPACKAGES_DIR=${PYTHON_SITEPACKAGES_DIR}"
 EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_INSTALL_INCDIR=${INSTALL_INCDIR}"
 EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_INSTALL_BINDIR=${INSTALL_BINDIR}"
 EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_INSTALL_LIBDIR=${INSTALL_LIBDIR}"
+EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_INSTALL_DATADIR=${INSTALL_DATADIR}"
 
 FILES:${PN} += "${INSTALL_BINDIR}"
 FILES:${PN} += "${INSTALL_LIBDIR}"
+FILES:${PN} += "${INSTALL_DATADIR}"
 
 SOLIBS = ".so*"
 FILES_SOLIBSDEV = ""

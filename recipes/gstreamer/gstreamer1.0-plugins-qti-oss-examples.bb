@@ -24,6 +24,9 @@ DEPENDS:remove:pineapple = "securemsm"
 DEPENDS:remove:pineapple = "media-headers"
 DEPENDS:remove:sun = "securemsm"
 DEPENDS:remove:sun = "media-headers"
+DEPENDS:remove:qrbx210-rbx = "securemsm"
+DEPENDS:remove:qrbx210-rbx = "media-headers"
+DEPENDS:append:kera = " cecdm"
 
 FILESPATH =+ "${WORKSPACE}/vendor/qcom/opensource/gst-plugins-qti-oss/:"
 SRC_URI = "file://gst-plugin-examples/"
@@ -48,6 +51,7 @@ CODEC2_ENCODE:alor := "TRUE"
 CODEC2_ENCODE:vienna := "TRUE"
 CODEC2_ENCODE:sun := "TRUE"
 CODEC2_ENCODE:qcs6490 := "TRUE"
+CODEC2_ENCODE:pebble := "TRUE"
 
 # Decode-related variables
 ENABLE_VIDEO_DECODE := "TRUE"
@@ -74,6 +78,9 @@ FILES:${PN} += "${INSTALL_BINDIR}"
 FILES:${PN} += "${INSTALL_LIBDIR}"
 
 CFLAGS:append:sun = " \
+    -Wno-error=incompatible-pointer-types"
+
+CFLAGS:append:qrbx210-rbx = " \
     -Wno-error=incompatible-pointer-types"
 
 SOLIBS = ".so*"

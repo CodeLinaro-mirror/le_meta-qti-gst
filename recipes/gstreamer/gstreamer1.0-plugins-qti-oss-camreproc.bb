@@ -49,6 +49,12 @@ CAMERA_METADATA_VERSION:qcs6490  := "1.1"
 # Overwrite the default platform definitions for sun.
 CAMERA_METADATA_VERSION:sun   := "1.0ns"
 
+# Overwrite the default platform definitions for qrbx210-rbx.
+CAMERA_METADATA_VERSION_qrbx210-rbx := "1.1"
+
+# Overwrite the default platform definitions for pebble.
+CAMERA_METADATA_VERSION:pebble   := "1.0ns"
+
 EXTRA_OECMAKE += "-DGST_VERSION_REQUIRED=1.14.4"
 EXTRA_OECMAKE += "-DSYSROOT_INCDIR=${STAGING_INCDIR}"
 EXTRA_OECMAKE += "-DSYSROOT_LIBDIR=${STAGING_LIBDIR}"
