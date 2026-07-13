@@ -20,6 +20,9 @@ DEPENDS += "libsoup-2.4"
 
 RDEPENDS:${PN} += "${@bb.utils.contains('COMBINED_FEATURES', 'qti-afr-algo', 'qti-auto-framing-stabilization', '', d)}"
 
+DEPENDS:remove:pebble = "qmmf-sdk"
+DEPENDS:append:pebble = " qcom-camera-server"
+
 DEPENDS:append:qcm6490 = " camera-server"
 DEPENDS:remove:qcm6490 = "securemsm"
 DEPENDS:remove:qcm6490 = "media-headers"
