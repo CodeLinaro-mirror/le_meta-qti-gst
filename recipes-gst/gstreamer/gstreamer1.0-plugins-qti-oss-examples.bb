@@ -10,10 +10,13 @@ LIC_FILES_CHKSUM:qcm6490 = "file://${COMMON_LICENSE_DIR}/${LICENSE};md5=7a434440
 # Dependencies.
 DEPENDS := "gstreamer1.0"
 DEPENDS += "gstreamer1.0-plugins-qti-oss-base"
+DEPENDS += "gstreamer1.0-plugins-bad"
 DEPENDS += "securemsm"
 DEPENDS += "media-headers"
 DEPENDS += "${@bb.utils.contains('DISTRO_FEATURES', 'qti-camera', 'qmmf-sdk', '', d)}"
 DEPENDS += "curl"
+DEPENDS += "json-glib"
+DEPENDS += "libsoup-2.4"
 
 RDEPENDS:${PN} += "${@bb.utils.contains('COMBINED_FEATURES', 'qti-afr-algo', 'qti-auto-framing-stabilization', '', d)}"
 
@@ -26,7 +29,6 @@ DEPENDS:remove:sun = "securemsm"
 DEPENDS:remove:sun = "media-headers"
 DEPENDS:remove:qrbx210-rbx = "securemsm"
 DEPENDS:remove:qrbx210-rbx = "media-headers"
-DEPENDS:append:kera = " cecdm"
 
 FILESPATH =+ "${WORKSPACE}/vendor/qcom/opensource/gst-plugins-qti-oss/:"
 SRC_URI = "file://gst-plugin-examples/"
@@ -62,6 +64,9 @@ ENABLE_DISPLAY := "TRUE"
 # ML-related variables
 ENABLE_ML := "TRUE"
 
+# WebRTC enable
+ENABLE_WEBRTC := "TRUE"
+
 EXTRA_OECMAKE += "-DGST_VERSION_REQUIRED=1.14.4"
 EXTRA_OECMAKE += "-DSYSROOT_INCDIR=${STAGING_INCDIR}"
 EXTRA_OECMAKE += "-DSYSROOT_LIBDIR=${STAGING_LIBDIR}"
@@ -73,6 +78,7 @@ EXTRA_OECMAKE += "-DENABLE_VIDEO_ENCODE=${ENABLE_VIDEO_ENCODE}"
 EXTRA_OECMAKE += "-DENABLE_VIDEO_DECODE=${ENABLE_VIDEO_DECODE}"
 EXTRA_OECMAKE += "-DENABLE_DISPLAY=${ENABLE_DISPLAY}"
 EXTRA_OECMAKE += "-DENABLE_ML=${ENABLE_ML}"
+EXTRA_OECMAKE += "-DENABLE_WEBRTC=${ENABLE_WEBRTC}"
 
 FILES:${PN} += "${INSTALL_BINDIR}"
 FILES:${PN} += "${INSTALL_LIBDIR}"
