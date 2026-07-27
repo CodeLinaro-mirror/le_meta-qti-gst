@@ -17,11 +17,15 @@ DEPENDS += "adreno"
 DEPENDS:remove:pineapple = "adreno"
 DEPENDS:remove:pebble = "adreno"
 DEPENDS += "qmmf-sdk"
+DEPENDS += "linux-msm-headers"
 
 # Dependency on FastCV library used in FCV Video Converter.
 DEPENDS += "fastcv-noship"
 DEPENDS:remove:qcm6490 = "fastcv-noship"
 DEPENDS:append:qcm6490 = " fastcv-binaries"
+
+# Remove unsupported dependency
+DEPENDS:remove:qrbx210 = "python3-pygobject"
 
 FILESPATH =+ "${WORKSPACE}/vendor/qcom/opensource/gst-plugins-qti-oss/:"
 
@@ -43,6 +47,7 @@ EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_INSTALL_INCDIR=${INSTALL_INCDIR}"
 EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_INSTALL_BINDIR=${INSTALL_BINDIR}"
 EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_INSTALL_LIBDIR=${INSTALL_LIBDIR}"
 EXTRA_OECMAKE += "-DGST_PLUGINS_QTI_OSS_INSTALL_DATADIR=${INSTALL_DATADIR}"
+EXTRA_OECMAKE += "-DKERNEL_MSM_INCDIR=${STAGING_INCDIR}/linux-msm/usr/include"
 
 FILES:${PN} += "${INSTALL_BINDIR}"
 FILES:${PN} += "${INSTALL_LIBDIR}"
