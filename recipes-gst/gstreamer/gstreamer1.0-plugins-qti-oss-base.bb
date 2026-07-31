@@ -15,6 +15,7 @@ DEPENDS += "python3-pygobject"
 DEPENDS += "gbm"
 DEPENDS += "adreno"
 DEPENDS:remove:pineapple = "adreno"
+DEPENDS:remove:pebble = "adreno"
 DEPENDS += "qmmf-sdk"
 
 # Dependency on FastCV library used in FCV Video Converter.

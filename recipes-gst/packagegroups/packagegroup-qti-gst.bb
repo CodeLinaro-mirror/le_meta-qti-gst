@@ -37,11 +37,16 @@ RDEPENDS:packagegroup-qti-gst = " \
       gstreamer1.0-plugins-qti-oss-mlvsuperresolution \
       gstreamer1.0-plugins-qti-oss-mlvpose \
       gstreamer1.0-plugins-qti-oss-mldemux \
+      gstreamer1.0-plugins-qti-oss-mlmetaparser \
+      gstreamer1.0-plugins-qti-oss-metatransform \
+      gstreamer1.0-plugins-qti-oss-restricted-zone \
       gstreamer1.0-plugins-qti-oss-objtracker \
       gstreamer1.0-plugins-qti-oss-dngpacker \
       gstreamer1.0-plugins-qti-oss-jpegpacker \
       gstreamer1.0-plugins-qti-oss-heifmux \
       gstreamer1.0-plugins-qti-oss-rtspbin \
+      gstreamer1.0-plugins-qti-oss-mlpostprocess \
+      gstreamer1.0-plugins-qti-oss-sync \
       ${@bb.utils.contains("MACHINE_FEATURES", "qti-aic", "gstreamer1.0-plugins-qti-oss-mlaic", "", d)} \
       ${@bb.utils.contains("DISTRO_FEATURES", "tensorflow-lite", "gstreamer1.0-plugins-qti-oss-mltflite", "", d)} \
       ${@bb.utils.contains("DISTRO_FEATURES", "qti-snpe", "gstreamer1.0-plugins-qti-oss-mlsnpe", "", d)} \
@@ -54,6 +59,7 @@ RDEPENDS:packagegroup-qti-gst = " \
       ${@bb.utils.contains_any("MACHINE_FEATURES", "qti-cvp qti-eva", "gstreamer1.0-plugins-qti-oss-cv-optclflow", "", d)} \
       ${@bb.utils.contains("BASEMACHINE", "kera", "gstreamer1.0-plugins-qti-oss-jpegenc", "", d)} \
       ${@bb.utils.contains("BASEMACHINE", "alor", "gstreamer1.0-plugins-qti-oss-jpegenc", "", d)} \
+      ${@bb.utils.contains("BASEMACHINE", "pebble", "gstreamer1.0-plugins-qti-oss-jpegenc", "", d)} \
       ${@bb.utils.contains("BASEMACHINE", "vienna", "gstreamer1.0-plugins-qti-oss-jpegenc", "", d)} \
       ${@bb.utils.contains("BASEMACHINE", "pineapple", "gstreamer1.0-plugins-qti-oss-jpegenc", "", d)} \
       ${@bb.utils.contains("BASEMACHINE", "pineapple", "gstreamer1.0-plugins-qti-oss-hexagon", "", d)} \
@@ -64,9 +70,11 @@ RDEPENDS:packagegroup-qti-gst = " \
       ${@bb.utils.contains("BASEMACHINE", "sun", "gstreamer1.0-plugins-qti-oss-camreproc", "", d)} \
       ${@bb.utils.contains("BASEMACHINE", "kera", "gstreamer1.0-plugins-qti-oss-camreproc", "", d)} \
       ${@bb.utils.contains("BASEMACHINE", "alor", "gstreamer1.0-plugins-qti-oss-camreproc", "", d)} \
+      ${@bb.utils.contains("BASEMACHINE", "pebble", "gstreamer1.0-plugins-qti-oss-camreproc", "", d)} \
       ${@bb.utils.contains("BASEMACHINE", "vienna", "gstreamer1.0-plugins-qti-oss-camreproc", "", d)} \
       ${@bb.utils.contains("BASEMACHINE", "kera", "gstreamer1.0-plugins-qti-oss-camimgreproc", "", d)} \
       ${@bb.utils.contains("BASEMACHINE", "alor", "gstreamer1.0-plugins-qti-oss-camimgreproc", "", d)} \
+      ${@bb.utils.contains("BASEMACHINE", "pebble", "gstreamer1.0-plugins-qti-oss-camimgreproc", "", d)} \
       ${@bb.utils.contains("BASEMACHINE", "sun", "gstreamer1.0-plugins-qti-oss-camimgreproc", "", d)} \
       ${@bb.utils.contains("BASEMACHINE", "pineapple", "gstreamer1.0-plugins-qti-oss-camimgreproc", "", d)} \
       ${@bb.utils.contains("BASEMACHINE", "qrb5165", "gstreamer1.0-plugins-qti-oss-jpegenc", "", d)} \

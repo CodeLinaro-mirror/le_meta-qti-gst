@@ -1,6 +1,6 @@
 inherit cmake pkgconfig
 
-SUMMARY = "Qualcomm open-source GStreamer Plug-in for rtsp streaming"
+SUMMARY = "QTI open-source GStreamer Plug-in for rtsp streaming"
 HOMEPAGE = "http://www.qualcomm.com"
 SECTION = "multimedia"
 
@@ -13,6 +13,7 @@ DEPENDS += "gstreamer1.0-plugins-base"
 DEPENDS += "gstreamer1.0-rtsp-server"
 
 FILESPATH =+ "${WORKSPACE}/vendor/qcom/opensource/gst-plugins-qti-oss/:"
+
 SRC_URI = "file://gst-plugin-rtspbin/"
 S = "${WORKDIR}/gst-plugin-rtspbin"
 
