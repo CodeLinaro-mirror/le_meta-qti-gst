@@ -22,3 +22,5 @@ SRC_URI:append = "\
     file://0019-v4l2-Add-support-for-colorimetry-bt2100-pq-and-1-4-5.patch \
     file://0020-Add-pulsedirectsink-plugin.patch \
 "
+
+EXTRA_OEMESON:append = " -Dv4l2-probe=false"
