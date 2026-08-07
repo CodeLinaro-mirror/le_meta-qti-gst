@@ -22,6 +22,9 @@ DEPENDS += "fastcv-noship"
 DEPENDS:remove:qcm6490 = "fastcv-noship"
 DEPENDS:append:qcm6490 = " fastcv-binaries"
 
+# Remove unsupported dependency
+DEPENDS:remove:qrbx210 = "python3-pygobject"
+
 FILESPATH =+ "${WORKSPACE}/vendor/qcom/opensource/gst-plugins-qti-oss/:"
 
 SRC_URI = "file://gst-plugin-base/"
