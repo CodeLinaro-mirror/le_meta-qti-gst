@@ -35,3 +35,4 @@ FILES:${PN}-dbg += "${INSTALL_LIBDIR}/gstreamer-1.0/.debug"
 
 SOLIBS = ".so*"
 FILES_SOLIBSDEV = ""
+INSANE_SKIP:${PN} = "dev-so"
