@@ -19,6 +19,9 @@ DEPENDS:remove:pebble = "adreno"
 DEPENDS += "qmmf-sdk"
 DEPENDS += "linux-msm-headers"
 
+DEPENDS:remove:pebble = "qmmf-sdk"
+DEPENDS:append:pebble = " qcom-camera-server"
+
 # Dependency on FastCV library used in FCV Video Converter.
 DEPENDS += "fastcv-noship"
 DEPENDS:remove:qcm6490 = "fastcv-noship"

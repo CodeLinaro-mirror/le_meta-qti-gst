@@ -15,6 +15,9 @@ DEPENDS += "qmmf-sdk"
 DEPENDS:remove:qcm6490 = "qmmf-sdk"
 DEPENDS:append:qcm6490 = " camera-server"
 
+DEPENDS:remove:pebble = "qmmf-sdk"
+DEPENDS:append:pebble = " qcom-camera-server"
+
 FILESPATH =+ "${WORKSPACE}/vendor/qcom/opensource/gst-plugins-qti-oss/:"
 SRC_URI = "file://gst-plugin-qmmfsrc/"
 S = "${WORKDIR}/gst-plugin-qmmfsrc"
