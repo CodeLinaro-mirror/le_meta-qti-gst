@@ -13,6 +13,9 @@ DEPENDS += "gstreamer1.0-plugins-base"
 DEPENDS += "gstreamer1.0-plugins-qti-oss-base"
 DEPENDS += "qmmf-sdk"
 
+DEPENDS:remove:pebble = "qmmf-sdk"
+DEPENDS:append:pebble = " qcom-camera-server"
+
 FILESPATH =+ "${WORKSPACE}/vendor/qcom/opensource/gst-plugins-qti-oss/:"
 
 SRC_URI = "file://gst-plugin-camreproc/"
